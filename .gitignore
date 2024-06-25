@@ -1,0 +1,38 @@
+# 忽略生成的构建目录
+/build/
+/CMakeFiles/
+/CMakeCache.txt
+
+# 忽略生成的二进制文件
+*.out
+*.exe
+*.o
+*.a
+*.so
+
+# 忽略 cmake 生成的文件
+/CMakeFiles
+/CMakeCache.txt
+/*.cmake
+/Makefile
+/install_manifest.txt
+
+# 忽略临时文件
+*.tmp
+*.log
+
+# 忽略编辑器和 IDE 文件
+# CLion
+.idea/
+.cache/
+.antlr/
+
+# VSCode
+.vscode/
+
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+
