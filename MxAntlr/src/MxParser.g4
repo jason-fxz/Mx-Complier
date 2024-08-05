@@ -11,7 +11,7 @@ classDef:
 		varDef
 		| funcDef
 		| classConstruct
-	) '}' ';';
+	)* '}' ';';
 classConstruct: name = Identifier '(' ')' blockStmt;
 
 funcDef:
@@ -60,12 +60,13 @@ expr:
 	| (Identifier | This)									# AtomExpr;
 
 // literal Expression
-literalExpr:
-	LogicLiteral
+literalExpr
+	: False | True
+	| Null
 	| StringLiteral
 	| IntegerLiteral
 	| StringLiteral
-	| NullLiteral;
+	;
 
 arrayInitial: '{' exprList '}';
 

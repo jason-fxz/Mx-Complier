@@ -82,13 +82,16 @@ fragment LetterChar: [A-Za-z];
 // fragment PrintableChar: ~[\n\\"];
 fragment StringChar: ~[\n\\"]|EscapeChar;
 fragment FormatStrChar: ~[\n\\"$]|'$$'|EscapeChar;
+
 Identifier: LetterChar(LetterChar|NumberChar|'_')*;
 
+
 // Literal 
-LogicLiteral: False | True;
+// LogicLiteral: False | True;
 IntegerLiteral: [1-9]NumberChar*|'0';
 StringLiteral: '"' StringChar*? '"';
-NullLiteral: Null;
+// NullLiteral: Null;
+
 
 
 // Format String
