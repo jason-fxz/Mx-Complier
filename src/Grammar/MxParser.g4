@@ -1,5 +1,7 @@
 parser grammar MxParser;
 
+@header {package Grammar;}
+
 options {
 	tokenVocab = MxLexer;
 }

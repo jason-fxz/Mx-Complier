@@ -1,6 +1,8 @@
 // Lexer rules
 lexer grammar MxLexer;
 
+@header {package Grammar;}
+
 // Arithmetic operators
 Add: '+';
 Sub: '-';
