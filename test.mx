@@ -1,0 +1,5 @@
+int main() {
+    int x = 1;
+    int[] array = {2, 0, 2, 4};
+    int[] array2 = new int[]{2, 0, 2, 4};
+}
