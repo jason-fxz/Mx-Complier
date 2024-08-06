@@ -99,9 +99,9 @@ StringLiteral: '"' StringChar*? '"';
 // Format String
 FormatStrI: 'f"' (FormatStrChar)*? '"';
 
-FormatStrL: 'f"' (FormatStrChar)*? '$';
-FormatStrM: '$' (FormatStrChar)*? '$';
-FormatStrR: '$' (FormatStrChar)*? '"';
+FormatStrL: 'f"' (FormatStrChar)* '$';
+FormatStrM: '$' (FormatStrChar)* '$';
+FormatStrR: '$' (FormatStrChar)* '"';
 
 
 // Comments

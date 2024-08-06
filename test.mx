@@ -6,7 +6,9 @@ Time: 2019-11-11
 Verdict: Success
 Origin Package: Semantic Pretest
 */
+int a = 4;
 int main() {
-	int[] a = (new int[2][])[0];
+//	int[] a = f"$f"$"We are testing whether $"$ $$"$ $f"{1,1,4,5}[2]==$$ $f"$"$"$"$ {1,1,1}[1]"$: $f" $f"$$$$ (new int[]{1,1,4,5})[2] == $f"$"$"$"$$f"$"$"$"$ (new int[]{1,1,1})[1]"$"$";
+	int a = 3;
 	return a[0];
 }
