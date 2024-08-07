@@ -23,7 +23,7 @@ public class VarDefStmtNode extends StmtNode {
     public String toString() {
         String str = super.toString();
         for (VarDefNode vardef : vardefs) {
-            str += vardef.toString() + "; ";
+            str += vardef.toString() + ", ";
         }
         return str;
     }

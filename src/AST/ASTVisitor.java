@@ -31,6 +31,13 @@ public interface ASTVisitor {
     void visit(BlockStmtNode it);
     void visit(VarDefStmtNode it);
     void visit(IfStmtNode it);
+    void visit(ForStmtNode it);
+    void visit(WhileStmtNode it);
+    void visit(ReturnStmtNode it);
+    void visit(BreakStmtNode it);
+    void visit(ContinueStmtNode it);
+    void visit(ExprStmtNode it);
+
     
     
 }
