@@ -67,7 +67,6 @@ literalExpr
 	| Null
 	| StringLiteral
 	| IntegerLiteral
-	| StringLiteral
 	;
 
 arrayInitial: '{' exprList '}';

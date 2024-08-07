@@ -3,6 +3,7 @@ package Util.info;
 
 public class TypeInfo {
     public String typeName;
+    public int dim;
     public boolean isBasic;
 
     public String GetName() {

@@ -6,20 +6,20 @@ import AST.ASTVisitor;
 import AST.Node.ASTNode;
 import AST.Node.stmt.BlockStmtNode;
 import Util.position;
-import Util.Type;
+import Util.info.TypeInfo;
 
 public class FuncDefNode extends ASTNode {
     final public ArrayList<VarDefNode> params = new ArrayList<>();
     final public BlockStmtNode body;
     public String name;
-    public Type type;
+    public TypeInfo type;
 
 
     public FuncDefNode(position pos, BlockStmtNode body) {
         super(pos);
         this.body = body;
     }
-
+    
     @Override
     public String toString() {
         String str = type.GetName() + name + "(";
