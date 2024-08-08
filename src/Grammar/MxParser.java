@@ -379,15 +379,16 @@ public class MxParser extends Parser {
 	@SuppressWarnings("CheckReturnValue")
 	public static class FuncDefContext extends ParserRuleContext {
 		public Token name;
+		public BlockStmtContext body;
 		public TypeNameContext typeName() {
 			return getRuleContext(TypeNameContext.class,0);
 		}
 		public TerminalNode LeftParen() { return getToken(MxParser.LeftParen, 0); }
 		public TerminalNode RightParen() { return getToken(MxParser.RightParen, 0); }
+		public TerminalNode Identifier() { return getToken(MxParser.Identifier, 0); }
 		public BlockStmtContext blockStmt() {
 			return getRuleContext(BlockStmtContext.class,0);
 		}
-		public TerminalNode Identifier() { return getToken(MxParser.Identifier, 0); }
 		public FuncParamListContext funcParamList() {
 			return getRuleContext(FuncParamListContext.class,0);
 		}
@@ -436,7 +437,7 @@ public class MxParser extends Parser {
 			setState(85);
 			match(RightParen);
 			setState(86);
-			blockStmt();
+			((FuncDefContext)_localctx).body = blockStmt();
 			}
 		}
 		catch (RecognitionException re) {
@@ -1216,7 +1217,9 @@ public class MxParser extends Parser {
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class AssignExprContext extends ExprContext {
+		public ExprContext lhs;
 		public Token op;
+		public ExprContext rhs;
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
 		}
@@ -1241,14 +1244,16 @@ public class MxParser extends Parser {
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class ArrayExprContext extends ExprContext {
+		public ExprContext array;
+		public ExprContext index;
+		public TerminalNode LeftBrack() { return getToken(MxParser.LeftBrack, 0); }
+		public TerminalNode RightBrack() { return getToken(MxParser.RightBrack, 0); }
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
 		}
 		public ExprContext expr(int i) {
 			return getRuleContext(ExprContext.class,i);
 		}
-		public TerminalNode LeftBrack() { return getToken(MxParser.LeftBrack, 0); }
-		public TerminalNode RightBrack() { return getToken(MxParser.RightBrack, 0); }
 		public ArrayExprContext(ExprContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
@@ -1362,14 +1367,17 @@ public class MxParser extends Parser {
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class ConditionExprContext extends ExprContext {
+		public ExprContext cond;
+		public ExprContext then;
+		public ExprContext else_;
+		public TerminalNode Ques() { return getToken(MxParser.Ques, 0); }
+		public TerminalNode Colon() { return getToken(MxParser.Colon, 0); }
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
 		}
 		public ExprContext expr(int i) {
 			return getRuleContext(ExprContext.class,i);
 		}
-		public TerminalNode Ques() { return getToken(MxParser.Ques, 0); }
-		public TerminalNode Colon() { return getToken(MxParser.Colon, 0); }
 		public ConditionExprContext(ExprContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
@@ -1827,29 +1835,31 @@ public class MxParser extends Parser {
 					case 11:
 						{
 						_localctx = new ConditionExprContext(new ExprContext(_parentctx, _parentState));
+						((ConditionExprContext)_localctx).cond = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(206);
 						if (!(precpred(_ctx, 6))) throw new FailedPredicateException(this, "precpred(_ctx, 6)");
 						setState(207);
 						match(Ques);
 						setState(208);
-						expr(0);
+						((ConditionExprContext)_localctx).then = expr(0);
 						setState(209);
 						match(Colon);
 						setState(210);
-						expr(6);
+						((ConditionExprContext)_localctx).else_ = expr(6);
 						}
 						break;
 					case 12:
 						{
 						_localctx = new AssignExprContext(new ExprContext(_parentctx, _parentState));
+						((AssignExprContext)_localctx).lhs = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(212);
 						if (!(precpred(_ctx, 5))) throw new FailedPredicateException(this, "precpred(_ctx, 5)");
 						setState(213);
 						((AssignExprContext)_localctx).op = match(Assign);
 						setState(214);
-						expr(5);
+						((AssignExprContext)_localctx).rhs = expr(5);
 						}
 						break;
 					case 13:
@@ -1877,13 +1887,14 @@ public class MxParser extends Parser {
 					case 14:
 						{
 						_localctx = new ArrayExprContext(new ExprContext(_parentctx, _parentState));
+						((ArrayExprContext)_localctx).array = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(221);
 						if (!(precpred(_ctx, 21))) throw new FailedPredicateException(this, "precpred(_ctx, 21)");
 						setState(222);
 						match(LeftBrack);
 						setState(223);
-						expr(0);
+						((ArrayExprContext)_localctx).index = expr(0);
 						setState(224);
 						match(RightBrack);
 						}

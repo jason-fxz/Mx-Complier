@@ -4,13 +4,13 @@ import Util.position;
 import java.util.ArrayList;
 
 import AST.ASTVisitor;
-import AST.Node.ASTNode;
 import AST.Node.stmt.StmtNode;
+import AST.Node.stmt.VarDefStmtNode;
 
-public class ClassDefNode extends ASTNode {
+public class ClassDefNode extends DefNode {
     public ArrayList<FuncDefNode> funcDefs = new ArrayList<>();
-    public ArrayList<VarDefNode> varDefs = new ArrayList<>();
-    FuncDefNode constructor;
+    public ArrayList<VarDefStmtNode> varDefs = new ArrayList<>();
+    public FuncDefNode constructor = null;
     public String name;
     
     public ClassDefNode(position pos, String name) {

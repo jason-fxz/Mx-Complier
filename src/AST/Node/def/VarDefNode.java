@@ -2,12 +2,11 @@ package AST.Node.def;
 
 
 import AST.ASTVisitor;
-import AST.Node.ASTNode;
 import AST.Node.expr.ExprNode;
 import Util.position;
 import Util.info.TypeInfo;
 
-public class VarDefNode extends ASTNode{
+public class VarDefNode extends DefNode {
     public String name;
     public TypeInfo type;
     public ExprNode init;

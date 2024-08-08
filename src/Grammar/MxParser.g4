@@ -17,7 +17,7 @@ classDef:
 classConstruct: name = Identifier '(' ')' blockStmt;
 
 funcDef:
-	typeName name = Identifier '(' (funcParamList)? ')' blockStmt;
+	typeName name = Identifier '(' (funcParamList)? ')' body = blockStmt;
 funcParamList: funcParam (',' funcParam)*;
 funcParam: typeName varConstruct;
 
@@ -35,39 +35,39 @@ arrayUnit: '[' expr? ']';
 
 // Expression
 expr:
-	'(' expr ')'											# ParenExpr
-	| New typeName ('(' ')')?								# NewVarExpr
-	| New typeName arrayUnit+ arrayInitial?					# NewArrayExpr
-	| expr '(' exprList? ')'								# FuncExpr
-	| expr '[' expr ']'										# ArrayExpr
-	| expr '.' Identifier									# MemberExpr
-	| lhs = expr op = (SelfInc | Selfdec)					# RightExpr
-	| <assoc = right> op = (SelfInc | Selfdec) rhs = expr	# LeftExpr
-	| <assoc = right> op = (Not | BitNot | Sub) rhs = expr	# LeftExpr
-	| lhs = expr op = (Mul | Div | Mod) rhs = expr			# BinaryExpr
-	| lhs = expr op = (Add | Sub) rhs = expr				# BinaryExpr
-	| lhs = expr op = (RightShift | LeftShift) rhs = expr	# BinaryExpr
-	| lhs = expr op = (Gt | Lt | Geq | Leq) rhs = expr		# BinaryExpr
-	| lhs = expr op = (Ne | Eq) rhs = expr					# BinaryExpr
-	| lhs = expr op = BitAnd rhs = expr						# BinaryExpr
-	| lhs = expr op = BitXor rhs = expr						# BinaryExpr
-	| lhs = expr op = BitOr rhs = expr						# BinaryExpr
-	| lhs = expr op = And rhs = expr						# BinaryExpr
-	| lhs = expr op = Or rhs = expr							# BinaryExpr
-	| <assoc = right> expr Ques expr Colon expr				# ConditionExpr
-	| <assoc = right> expr op = Assign expr					# AssignExpr
-	| arrayInitial											# ArrayInitExpr
-	| literalExpr											# LiterExpr
-	| formatStrExpr											# FormatStringExpr
-	| (Identifier | This)									# AtomExpr;
+	'(' expr ')'														# ParenExpr
+	| New typeName ('(' ')')?											# NewVarExpr
+	| New typeName arrayUnit+ arrayInitial?								# NewArrayExpr
+	| expr '(' exprList? ')'											# FuncExpr
+	| array = expr '[' index = expr ']'									# ArrayExpr
+	| expr '.' Identifier												# MemberExpr
+	| lhs = expr op = (SelfInc | Selfdec)								# RightExpr
+	| <assoc = right> op = (SelfInc | Selfdec) rhs = expr				# LeftExpr
+	| <assoc = right> op = (Not | BitNot | Sub) rhs = expr				# LeftExpr
+	| lhs = expr op = (Mul | Div | Mod) rhs = expr						# BinaryExpr
+	| lhs = expr op = (Add | Sub) rhs = expr							# BinaryExpr
+	| lhs = expr op = (RightShift | LeftShift) rhs = expr				# BinaryExpr
+	| lhs = expr op = (Gt | Lt | Geq | Leq) rhs = expr					# BinaryExpr
+	| lhs = expr op = (Ne | Eq) rhs = expr								# BinaryExpr
+	| lhs = expr op = BitAnd rhs = expr									# BinaryExpr
+	| lhs = expr op = BitXor rhs = expr									# BinaryExpr
+	| lhs = expr op = BitOr rhs = expr									# BinaryExpr
+	| lhs = expr op = And rhs = expr									# BinaryExpr
+	| lhs = expr op = Or rhs = expr										# BinaryExpr
+	| <assoc = right> cond = expr Ques then = expr Colon else = expr	# ConditionExpr
+	| <assoc = right> lhs = expr op = Assign rhs = expr					# AssignExpr
+	| arrayInitial														# ArrayInitExpr
+	| literalExpr														# LiterExpr
+	| formatStrExpr														# FormatStringExpr
+	| (Identifier | This)												# AtomExpr;
 
 // literal Expression
-literalExpr
-	: False | True
+literalExpr:
+	False
+	| True
 	| Null
 	| StringLiteral
-	| IntegerLiteral
-	;
+	| IntegerLiteral;
 
 arrayInitial: '{' exprList '}';
 

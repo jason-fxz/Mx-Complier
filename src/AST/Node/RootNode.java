@@ -4,14 +4,11 @@ import Util.position;
 import java.util.ArrayList;
 
 import AST.ASTVisitor;
-import AST.Node.def.ClassDefNode;
-import AST.Node.def.FuncDefNode;
-import AST.Node.def.VarDefNode;
+import AST.Node.def.*;
+import AST.Node.stmt.VarDefStmtNode;
 
 public class RootNode extends ASTNode {
-    public ArrayList<ClassDefNode> classDefs = new ArrayList<>();
-    public ArrayList<FuncDefNode> funcDefs = new ArrayList<>();
-    public ArrayList<VarDefNode> varDefs = new ArrayList<>();
+    public ArrayList<DefNode> Defs = new ArrayList<>();
 
     public RootNode(position pos) {
         super(pos);
@@ -31,7 +28,7 @@ public class RootNode extends ASTNode {
         for (FuncDefNode funcDef : funcDefs) {
             str += funcDef.toString() + "\n";
         }
-        for (VarDefNode varDef : varDefs) {
+        for (VarDefStmtNode varDef : varDefs) {
             str += varDef.toString() + "\n";
         }
         return str;

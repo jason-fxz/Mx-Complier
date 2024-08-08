@@ -16,7 +16,7 @@ public class FuncExprNode extends ExprNode {
 
     @Override
     public String toString() {
-        String str = func.toString() + "(";
+        String str = "(";
         for (ExprNode arg : args) {
             str += arg.toString() + ", ";
         }

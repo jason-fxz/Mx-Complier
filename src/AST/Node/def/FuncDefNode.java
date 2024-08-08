@@ -3,12 +3,11 @@ package AST.Node.def;
 import java.util.ArrayList;
 
 import AST.ASTVisitor;
-import AST.Node.ASTNode;
 import AST.Node.stmt.BlockStmtNode;
 import Util.position;
 import Util.info.TypeInfo;
 
-public class FuncDefNode extends ASTNode {
+public class FuncDefNode extends DefNode {
     final public ArrayList<VarDefNode> params = new ArrayList<>();
     final public BlockStmtNode body;
     public String name;

@@ -29,12 +29,11 @@ public interface ASTVisitor {
     void visit(IntExprNode it);
     void visit(BoolExprNode it);
     void visit(StringExprNode it);
+    void visit(NullExprNode it);
     void visit(FmtStringExprNode it);
 
 
 
-    
-    
     void visit(BlockStmtNode it);
     void visit(VarDefStmtNode it);
     void visit(IfStmtNode it);
@@ -44,6 +43,7 @@ public interface ASTVisitor {
     void visit(BreakStmtNode it);
     void visit(ContinueStmtNode it);
     void visit(ExprStmtNode it);
+    void visit(EmptyStmtNode it);
 
 
     
