@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import AST.ASTVisitor;
 import AST.Node.def.*;
-import AST.Node.stmt.VarDefStmtNode;
 
 public class RootNode extends ASTNode {
     public ArrayList<DefNode> Defs = new ArrayList<>();
@@ -21,17 +20,12 @@ public class RootNode extends ASTNode {
 
     @Override
     public String toString() {
-        String str = "";
-        for (ClassDefNode classDef : classDefs) {
-            str += classDef.toString() + "\n";
+        StringBuilder sb = new StringBuilder();
+        for (DefNode Def : Defs) {
+            sb.append(Def.toString());
+            sb.append("\n");
         }
-        for (FuncDefNode funcDef : funcDefs) {
-            str += funcDef.toString() + "\n";
-        }
-        for (VarDefStmtNode varDef : varDefs) {
-            str += varDef.toString() + "\n";
-        }
-        return str;
+        return sb.toString();
     }
 
 }

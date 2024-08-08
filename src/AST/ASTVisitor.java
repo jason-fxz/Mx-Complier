@@ -13,6 +13,7 @@ public interface ASTVisitor {
     void visit(ClassDefNode it);
     void visit(FuncDefNode it);
     void visit(VarDefNode it);
+    void visit(VarsDefNode it);
     
     
     void visit(BinaryExprNode it);

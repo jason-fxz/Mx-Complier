@@ -13,7 +13,7 @@ public class StringExprNode extends ExprNode {
 
     @Override
     public String toString() {
-        return value;
+        return "\"" + value + "\"";
     }
 
     @Override

@@ -22,23 +22,16 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
     @Override
     public ASTNode visitProgram(MxParser.ProgramContext ctx) {
         RootNode root = new RootNode(new position(ctx));
-        ctx.varDef().forEach(varDef -> {
-            root.varDefs.add((VarDefStmtNode) visit(varDef));
-        });
-        ctx.funcDef().forEach(funcDef -> {
-            root.funcDefs.add((FuncDefNode) visit(funcDef));
-        });
-        ctx.classDef().forEach(classDef -> {
-            root.classDefs.add((ClassDefNode) visit(classDef));
+        ctx.children.forEach(Def -> {
+            root.Defs.add((DefNode) visit(Def));
         });
         return root;
     }
 
     @Override
     public ASTNode visitVarDef(MxParser.VarDefContext ctx) {
-        VarDefStmtNode varDefstmt = new VarDefStmtNode(new position(ctx));
+        VarsDefNode varsDef = new VarsDefNode(new position(ctx));
         TypeInfo type = new TypeInfo(ctx.typeName());
-
         ctx.varConstruct().forEach(varConstruct -> {
             VarDefNode vardef = new VarDefNode(new position(ctx),
                     varConstruct.Identifier().getText(),
@@ -47,9 +40,9 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
             if (varConstruct.expr() != null) {
                 vardef.init = (ExprNode) visit(varConstruct.expr());
             }
-            varDefstmt.vardefs.add(vardef);
+            varsDef.varDefs.add(vardef);
         });
-        return varDefstmt;
+        return varsDef;
     }
 
     @Override
@@ -253,7 +246,7 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
     public ASTNode visitLiteralExpr(MxParser.LiteralExprContext ctx) {
         if (ctx.IntegerLiteral() != null) {
             return new IntExprNode(Integer.parseInt(ctx.IntegerLiteral().getText()), new position(ctx));
-        } else if (ctx.StringLiteral() != null){
+        } else if (ctx.StringLiteral() != null) {
             return new StringExprNode(new position(ctx), ctx.StringLiteral().getText());
         } else if (ctx.Null() != null) {
             return new NullExprNode(new position(ctx));
@@ -263,7 +256,7 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
             return new BoolExprNode(new position(ctx), false);
         } else {
             throw new SemanticError("unknown literal", new position(ctx));
-        }    
+        }
     }
 
     @Override
@@ -274,6 +267,29 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
     @Override
     public ASTNode visitArrayExpr(MxParser.ArrayExprContext ctx) {
         return new ArrayExprNode(new position(ctx), (ExprNode) visit(ctx.array), (ExprNode) visit(ctx.index));
+    }
+
+    @Override
+    public ASTNode visitConditionExpr(MxParser.ConditionExprContext ctx) {
+        return new ConditionExprNode(new position(ctx), (ExprNode) visit(ctx.cond), (ExprNode) visit(ctx.then),
+                (ExprNode) visit(ctx.else_));
+    }
+
+    @Override
+    public ASTNode visitFormatStrExpr(MxParser.FormatStrExprContext ctx) {
+        FmtStringExprNode fmtexpr = new FmtStringExprNode(new position(ctx));
+        if (ctx.FormatStrI() != null) {
+            fmtexpr.strlist.add(ctx.FormatStrI().getText().substring(2, ctx.FormatStrI().getText().length() - 1));
+        } else {
+            fmtexpr.strlist.add(ctx.FormatStrL().getText().substring(2, ctx.FormatStrL().getText().length() - 1));
+            fmtexpr.exprlist.add((ExprNode) visit(ctx.expr(0)));
+            for (int i = 0; i < ctx.FormatStrM().size(); ++i) {
+                fmtexpr.strlist.add(ctx.FormatStrM(i).getText().substring(1, ctx.FormatStrM(i).getText().length() - 1));
+                fmtexpr.exprlist.add((ExprNode) visit(ctx.expr(i + 1)));
+            }
+            fmtexpr.strlist.add(ctx.FormatStrR().getText().substring(1, ctx.FormatStrR().getText().length() - 1));
+        }
+        return visitChildren(ctx);
     }
 
     // @Override
@@ -291,10 +307,9 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
     // return visitChildren(ctx);
     // }
 
-
     // @Override
     // public ASTNode visitExprList(MxParser.ExprListContext ctx) {
-    //     return visitChildren(ctx);
+    // return visitChildren(ctx);
     // }
 
     // @Override
@@ -327,44 +342,28 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
         return visitChildren(ctx);
     }
 
-    
-
-   
-
     @Override
     public ASTNode visitNewArrayExpr(MxParser.NewArrayExprContext ctx) {
         return visitChildren(ctx);
     }
 
-    @Override
-    public ASTNode visitFormatStringExpr(MxParser.FormatStringExprContext ctx) {
-        return visitChildren(ctx);
-    }
+    // @Override
+    // public ASTNode visitFormatStringExpr(MxParser.FormatStringExprContext ctx) {
+    // return visitChildren(ctx);
+    // }
 
-    @Override
-    public ASTNode visitConditionExpr(MxParser.ConditionExprContext ctx) {
-        return visitChildren(ctx);
-    }
-
-    @Override
-    public ASTNode visitLiterExpr(MxParser.LiterExprContext ctx) {
-        return visitChildren(ctx);
-    }
+    // @Override
+    // public ASTNode visitLiterExpr(MxParser.LiterExprContext ctx) {
+    // return visitChildren(ctx);
+    // }
 
     @Override
     public ASTNode visitParenExpr(MxParser.ParenExprContext ctx) {
         return visitChildren(ctx);
     }
 
-    
-
     @Override
     public ASTNode visitArrayInitial(MxParser.ArrayInitialContext ctx) {
-        return visitChildren(ctx);
-    }
-
-    @Override
-    public ASTNode visitFormatStrExpr(MxParser.FormatStrExprContext ctx) {
         return visitChildren(ctx);
     }
 
@@ -392,8 +391,6 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
     public ASTNode visitWhileStmt(MxParser.WhileStmtContext ctx) {
         return visitChildren(ctx);
     }
-
-    
 
     @Override
     public ASTNode visitJumpStmt(MxParser.JumpStmtContext ctx) {

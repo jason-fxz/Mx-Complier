@@ -1,17 +1,17 @@
 package AST.Node.stmt;
 
-import java.util.ArrayList;
 
 import AST.ASTVisitor;
-import AST.Node.def.VarDefNode;
+import AST.Node.def.VarsDefNode;
 import Util.position;
 
 // A list of variable definitions
 public class VarDefStmtNode extends StmtNode {
-    final public ArrayList<VarDefNode> vardefs = new ArrayList<>();
+    final public VarsDefNode varsDef;
 
-    public VarDefStmtNode(position pos) {
+    public VarDefStmtNode(position pos, VarsDefNode varsDef) {
         super(pos);
+        this.varsDef = varsDef;
     }
 
     @Override
@@ -21,11 +21,7 @@ public class VarDefStmtNode extends StmtNode {
 
     @Override
     public String toString() {
-        String str = super.toString();
-        for (VarDefNode vardef : vardefs) {
-            str += vardef.toString() + ", ";
-        }
-        return str;
+        return super.toString() + varsDef.toString();
     }
     
 }

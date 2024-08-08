@@ -6,5 +6,8 @@ Time: 2019-11-11
 Verdict: Success
 Origin Package: Semantic Pretest
 */
+int fun() {
+	int a = f"sda$ asds $$$da$aa$s";
+}
 
-int a = a[4][5];
+int a;

@@ -6,9 +6,8 @@ import AST.ASTVisitor;
 import Util.position;
 
 public class FmtStringExprNode extends ExprNode {
-    ArrayList<StringExprNode> strlist = new ArrayList<>();
-    ArrayList<ExprNode> exprlist = new ArrayList<>();
-
+    public ArrayList<String> strlist = new ArrayList<>();
+    public ArrayList<ExprNode> exprlist = new ArrayList<>();
 
     public FmtStringExprNode(position pos) {
         super(pos);
@@ -16,7 +15,7 @@ public class FmtStringExprNode extends ExprNode {
 
     @Override
     public String toString() {
-        String str = "";
+        String str = "f\"";
         for (int i = 0; i < strlist.size(); i++) {
             if (i < exprlist.size()) {
                 str += strlist.get(i).toString();
@@ -25,6 +24,7 @@ public class FmtStringExprNode extends ExprNode {
                 str += strlist.get(i).toString();
             }
         }
+        str += "\"";
         return str;
     }
 
