@@ -21,7 +21,7 @@ public class VarDefNode extends ASTNode{
 
     @Override
     public String toString() {
-        return type.GetName() + " " + name + " = " + init.toString();
+        return type.GetTypeName() + " " + name + " = " + init.toString();
     }
 
     @Override

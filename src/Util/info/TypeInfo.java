@@ -1,12 +1,12 @@
 package Util.info;
 
 
-public class TypeInfo {
+public class TypeInfo extends BaseInfo {
     public String typeName;
     public int dim;
     public boolean isBasic;
-
-    public String GetName() {
+    
+    public String GetTypeName() {
         return typeName;
     }
 
