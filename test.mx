@@ -1,18 +1,13 @@
 /*
 Test Package: Sema_Local_Preview
-Test Target: Basic
-Author: 16' Siyuan Feng
+Test Target: Array
+Author: 16' Boyu Tian
 Time: 2019-11-11
 Verdict: Success
 Origin Package: Semantic Pretest
 */
-
-int a;
-int fun() {
-	if (a) {
-		break;
-		return 3;
-		continue;
-		eee;
-	}
+int main()
+{
+    new int[3][3][4];
+    return 0;
 }

@@ -31,14 +31,13 @@ exprList: expr (',' expr)*;
 typeName: type arrayUnit*;
 type: Identifier | baseType;
 baseType: Bool | Int | String | Void;
-arrayUnit: '[' expr? ']';
 
 // Expression
 expr:
 	'(' expr ')'														# ParenExpr
-	| New type ('(' ')')?												# NewVarExpr
-	| New typeName arrayUnit+ arrayInitial?								# NewArrayExpr
 	| expr '(' exprList? ')'											# FuncExpr
+	| New type ('(' ')')?												# NewVarExpr
+	| New arrayFuck arrayInitial?								# NewArrayExpr
 	| array = expr '[' index = expr ']'									# ArrayExpr
 	| expr '.' Identifier												# MemberExpr
 	| lhs = expr op = (SelfInc | Selfdec)								# RightExpr
@@ -85,7 +84,10 @@ stmt:
 	| whileStmt
 	| jumpStmt
 	| exprStmt
-	| varDef;
+	| varDefStmt
+	| emptyStmt;
+
+varDefStmt: varDef;
 
 blockStmt: '{' stmt* '}';
 ifStmt: If '(' cond = expr ')' then = stmt (Else else = stmt)?;
@@ -94,3 +96,7 @@ forStmt:
 whileStmt: While '(' cond = expr ')' body = stmt;
 emptyStmt: ';';
 jumpStmt: (Continue | Break | (Return expr?)) ';';
+
+arrayUnit: '[' ']';
+arrayNewUnit: ('[' good+=expr ']')* ('[' ']')* ('[' bad+=expr ']')*;
+arrayFuck: type arrayNewUnit;

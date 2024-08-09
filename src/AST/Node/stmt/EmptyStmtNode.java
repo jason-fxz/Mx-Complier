@@ -12,5 +12,10 @@ public class EmptyStmtNode extends StmtNode {
     public void accept(ASTVisitor visitor) {
         visitor.visit(this);
     }
+
+    @Override
+    public String toString() {
+        return super.toString() + ";";
+    }
     
 }

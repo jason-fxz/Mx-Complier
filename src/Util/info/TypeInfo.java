@@ -9,7 +9,7 @@ public class TypeInfo extends BaseInfo {
     public boolean isFunc = false;
 
     public String GetTypeName() {
-        return typeName;
+        return typeName + "[]".repeat(dim);
     }
 
     public TypeInfo(String typeName) {

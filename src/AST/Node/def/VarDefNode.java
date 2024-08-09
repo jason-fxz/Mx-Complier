@@ -1,6 +1,5 @@
 package AST.Node.def;
 
-
 import AST.ASTVisitor;
 import AST.Node.expr.ExprNode;
 import Util.position;
@@ -10,7 +9,7 @@ public class VarDefNode extends DefNode {
     public String name;
     public TypeInfo type;
     public ExprNode init;
-    
+
     public VarDefNode(position pos, String name, TypeInfo type, ExprNode init) {
         super(pos);
         this.name = name;
@@ -20,7 +19,9 @@ public class VarDefNode extends DefNode {
 
     @Override
     public String toString() {
-        return type.GetTypeName() + " " + name + " = " + init.toString();
+        if (init != null)
+            return type.GetTypeName() + " " + name + " = " + init.toString();
+        else return type.GetTypeName() + " " + name;
     }
 
     @Override

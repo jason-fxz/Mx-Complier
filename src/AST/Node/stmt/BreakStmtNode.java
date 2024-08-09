@@ -15,7 +15,7 @@ public class BreakStmtNode extends StmtNode {
 
     @Override
     public String toString() {
-        return super.toString() + "break";
+        return super.toString() + "break;";
     }
     
 }

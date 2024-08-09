@@ -25,7 +25,7 @@ public class AssignExprNode extends ExprNode {
 
     @Override
     public String toString() {
-        return lhs.toString() + " " + op.toString() + " " + rhs.toString();
+        return lhs.toString() + " = " + rhs.toString();
     }
     
 }

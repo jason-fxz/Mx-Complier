@@ -6,7 +6,31 @@ import Util.position;
 public class LeftSingleExprNode extends ExprNode {
     public ExprNode rhs;
     public enum unaryleftOpType {
-        inc, dec, neg, not, bitnot
+        inc("++"),
+        dec("--"),
+        neg("-"), 
+        not("!"),
+        bitnot("~");
+
+        private final String symbol;
+        unaryleftOpType(String symbol) {
+            this.symbol = symbol;
+        }
+
+        public static unaryleftOpType fromString(String symbol) {
+            for (unaryleftOpType op : unaryleftOpType.values()) {
+                if (op.symbol.equals(symbol)) {
+                    return op;
+                }
+            }
+            throw new RuntimeException("Invalid unaryleftOpType operator: " + symbol);
+        }
+
+        @Override
+        public String toString() {
+            return symbol;
+        }
+
     };
     unaryleftOpType op;
 
@@ -23,7 +47,7 @@ public class LeftSingleExprNode extends ExprNode {
 
     @Override
     public String toString() {
-        return op.toString() + " " + rhs.toString();
+        return op.toString() + rhs.toString();
     }
     
 }

@@ -224,6 +224,12 @@ public interface MxParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitStmt(MxParser.StmtContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link MxParser#varDefStmt}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitVarDefStmt(MxParser.VarDefStmtContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link MxParser#blockStmt}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

@@ -27,6 +27,9 @@ public class FuncDefNode extends DefNode {
                 str += param.toString() + ", ";
             }
         }
+        if (str.endsWith(", ")) {
+            str = str.substring(0, str.length() - 2);
+        }
         str += ") " + body.toString();
         return str;
     }

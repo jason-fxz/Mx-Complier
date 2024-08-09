@@ -27,7 +27,7 @@ public class ForStmtNode extends StmtNode {
     public String toString() {
         String str = "for (";
         if (init != null) {
-            str += init.toString().substring(indentDepth * 2);
+            str += init.toString().substring(indentDepth * 4);
         }
         str += " ";
         if (cond != null) {
@@ -38,7 +38,7 @@ public class ForStmtNode extends StmtNode {
             str += step.toString();
         }
         str += ") ";
-        if (body != null) {
+        if (!(body instanceof EmptyStmtNode)) {
             if (body instanceof BlockStmtNode) {
                 str += body.toString();
             } else {

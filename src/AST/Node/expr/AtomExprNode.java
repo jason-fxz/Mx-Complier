@@ -14,7 +14,7 @@ public class AtomExprNode extends ExprNode {
 
     @Override
     public String toString() {
-        return name.toString();
+        return name;
     }
 
     @Override

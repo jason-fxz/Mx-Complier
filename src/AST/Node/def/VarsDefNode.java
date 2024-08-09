@@ -31,9 +31,9 @@ public class VarsDefNode extends DefNode {
             str.append(", ");
         }
         if (varDefs.size() >= 1) {
-            str.deleteCharAt(str.length() - 2);
+            str.delete(str.length() - 2, str.length());
         }
-        return str.toString();
+        return str.toString() + ";";
     }
     
 }

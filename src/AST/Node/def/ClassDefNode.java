@@ -9,7 +9,7 @@ import AST.Node.stmt.VarDefStmtNode;
 
 public class ClassDefNode extends DefNode {
     public ArrayList<FuncDefNode> funcDefs = new ArrayList<>();
-    public ArrayList<VarDefStmtNode> varDefs = new ArrayList<>();
+    public ArrayList<VarsDefNode> varDefs = new ArrayList<>();
     public FuncDefNode constructor = null;
     public String name;
     
@@ -25,14 +25,18 @@ public class ClassDefNode extends DefNode {
 
     @Override
     public String toString() {
-        String str = "Class " + name + "{\n";
+        String str = "Class " + name + " {\n";
         StmtNode.indentDepth++;
         if (constructor != null) {
-            str += " " + constructor.toString() + "\n";
+            str += "    " + constructor.toString() + "\n";
         }
-        str += varDefs.toString();
-        str += funcDefs.toString();
-        str += "\n}";
+        for (VarsDefNode varDef : varDefs) {
+            str += "    " + varDef.toString() + "\n";
+        }
+        for (FuncDefNode funcDef : funcDefs) {
+            str += "    " + funcDef.toString() + "\n";
+        }
+        str += "}";
         StmtNode.indentDepth--;
         return str;
     }

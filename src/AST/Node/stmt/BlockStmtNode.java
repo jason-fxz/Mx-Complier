@@ -20,7 +20,7 @@ public class BlockStmtNode extends StmtNode {
             str += stmt.toString() + "\n";
         }
         indentDepth--;
-        str += super.toString() + "}\n";
+        str += super.toString() + "}";
         return str;
     }
 

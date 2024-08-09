@@ -17,7 +17,7 @@ import AST.Node.stmt.*;
 public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
 
     public ASTBuilder() {
-        System.err.println("ASTBuilder init");
+
     }
 
     @Override
@@ -70,7 +70,7 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
         ClassDefNode classDef = new ClassDefNode(new position(ctx), ctx.Identifier().getText());
         if (ctx.classConstruct().size() == 1) {
             classDef.constructor = (FuncDefNode) visit(ctx.classConstruct(0));
-            if (classDef.constructor.name != classDef.name) {
+            if (!classDef.constructor.name.equals(classDef.name)) {
                 throw new SemanticError("class constructor name should be same as class name",
                         new position(ctx.classConstruct(0)));
             }
@@ -79,7 +79,7 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
                     new position(ctx.classConstruct(1)));
         }
         ctx.varDef().forEach(varDef -> {
-            classDef.varDefs.add((VarDefStmtNode) visit(varDef));
+            classDef.varDefs.add((VarsDefNode) visit(varDef));
         });
         ctx.funcDef().forEach(funcDef -> {
             classDef.funcDefs.add((FuncDefNode) visit(funcDef));
@@ -99,108 +99,21 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
     public ASTNode visitBinaryExpr(MxParser.BinaryExprContext ctx) {
         ExprNode lhs = (ExprNode) visit(ctx.lhs);
         ExprNode rhs = (ExprNode) visit(ctx.rhs);
-        BinaryExprNode.binaryOpType op = null;
-        switch (ctx.op.getText()) {
-            case "*":
-                op = BinaryExprNode.binaryOpType.mul;
-                break;
-            case "/":
-                op = BinaryExprNode.binaryOpType.div;
-                break;
-            case "%":
-                op = BinaryExprNode.binaryOpType.mod;
-                break;
-            case "+":
-                op = BinaryExprNode.binaryOpType.add;
-                break;
-            case "-":
-                op = BinaryExprNode.binaryOpType.sub;
-                break;
-            case "<<":
-                op = BinaryExprNode.binaryOpType.shl;
-                break;
-            case ">>":
-                op = BinaryExprNode.binaryOpType.shr;
-                break;
-            case "<":
-                op = BinaryExprNode.binaryOpType.lt;
-                break;
-            case ">":
-                op = BinaryExprNode.binaryOpType.gt;
-                break;
-            case "<=":
-                op = BinaryExprNode.binaryOpType.le;
-                break;
-            case ">=":
-                op = BinaryExprNode.binaryOpType.ge;
-                break;
-            case "==":
-                op = BinaryExprNode.binaryOpType.eq;
-                break;
-            case "!=":
-                op = BinaryExprNode.binaryOpType.ne;
-                break;
-            case "&&":
-                op = BinaryExprNode.binaryOpType.and;
-                break;
-            case "||":
-                op = BinaryExprNode.binaryOpType.or;
-                break;
-            case "&":
-                op = BinaryExprNode.binaryOpType.bitand;
-                break;
-            case "|":
-                op = BinaryExprNode.binaryOpType.bitor;
-                break;
-            case "^":
-                op = BinaryExprNode.binaryOpType.bitxor;
-                break;
-            default:
-                throw new SemanticError("unknown binary operator", new position(ctx));
-        }
+        BinaryExprNode.binaryOpType op = BinaryExprNode.binaryOpType.fromString(ctx.op.getText());
         return new BinaryExprNode(new position(ctx), lhs, rhs, op);
     }
 
     @Override
     public ASTNode visitLeftExpr(MxParser.LeftExprContext ctx) {
         ExprNode rhs = (ExprNode) visit(ctx.expr());
-        LeftSingleExprNode.unaryleftOpType op = null;
-        switch (ctx.op.getText()) {
-            case "++":
-                op = LeftSingleExprNode.unaryleftOpType.inc;
-                break;
-            case "--":
-                op = LeftSingleExprNode.unaryleftOpType.dec;
-                break;
-            case "!":
-                op = LeftSingleExprNode.unaryleftOpType.not;
-                break;
-            case "~":
-                op = LeftSingleExprNode.unaryleftOpType.bitnot;
-                break;
-            case "-":
-                op = LeftSingleExprNode.unaryleftOpType.neg;
-                break;
-            default:
-                throw new SemanticError("unknown left operator", new position(ctx));
-        }
+        LeftSingleExprNode.unaryleftOpType op = LeftSingleExprNode.unaryleftOpType.fromString(ctx.op.getText());
         return new LeftSingleExprNode(new position(ctx), rhs, op);
     }
 
     @Override
     public ASTNode visitRightExpr(MxParser.RightExprContext ctx) {
         ExprNode lhs = (ExprNode) visit(ctx.expr());
-        RightSingleExprNode.unaryrightOpType op = null;
-        switch (ctx.op.getText()) {
-            case "++":
-                op = RightSingleExprNode.unaryrightOpType.inc;
-                break;
-            case "--":
-                op = RightSingleExprNode.unaryrightOpType.dec;
-                break;
-            default:
-                throw new SemanticError("unknown right operator", new position(ctx));
-        }
+        RightSingleExprNode.unaryrightOpType op = RightSingleExprNode.unaryrightOpType.fromString(ctx.op.getText());
         return new RightSingleExprNode(new position(ctx), lhs, op);
     }
 
@@ -327,14 +240,19 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
         NewArrayExprNode newexpr = new NewArrayExprNode(new position(ctx), ctx.typeName().type().getText(),
                 ctx.typeName().arrayUnit().size());
         boolean flag = true;
+        System.err.println(">>> " + ctx.typeName().arrayUnit().size());
         for (int i = 0; i < ctx.typeName().arrayUnit().size(); ++i) {
+            System.err.printf("? i = %d", i);
+
             if (ctx.typeName().arrayUnit(i).expr() != null) {
                 if (flag == false) {
                     throw new SemanticError("new array size invalid", new position(ctx));
                 }
                 newexpr.dimsize.add((ExprNode) visit(ctx.typeName().arrayUnit(i).expr()));
-            } else {
+            } else {                
                 flag = false;
+                System.err.printf("!! i = %d", i);
+                newexpr.dimsize.add(null);
             }
         }
         return newexpr;
@@ -362,7 +280,7 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
         StmtNode init = ctx.init != null ? (StmtNode)visit(ctx.init) : null;  
         ExprNode cond = ctx.cond != null ? (ExprNode)visit(ctx.cond) : null;
         ExprNode step = ctx.step != null ? (ExprNode)visit(ctx.step) : null;
-        StmtNode body = ctx.body != null ? (StmtNode)visit(ctx.body) : null;  
+        StmtNode body = (StmtNode)visit(ctx.body);  
         return new ForStmtNode(new position(ctx), init, cond, step, body);
     }
 
@@ -388,6 +306,9 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
         } else throw new SyntaxError("Invalid JumpStmt", new position(ctx));
     }
 
+    @Override public ASTNode visitVarDefStmt(MxParser.VarDefStmtContext ctx) {
+        return new VarDefStmtNode(new position(ctx), (VarsDefNode) visit(ctx.varDef()));
+    }
 
     // @Override
     // public ASTNode visitFuncParamList(MxParser.FuncParamListContext ctx) {

@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 public class position {
+    static public String filename = "";
     private int row, col;
 
     public position(int row, int col) {
@@ -31,5 +32,5 @@ public class position {
         return col;
     }
 
-    public String toString() { return row + "," + col; }
+    public String toString() { return filename + ":" + row + ":" + col; }
 }

@@ -22,7 +22,9 @@ public class WhileStmtNode extends StmtNode {
     @Override
     public String toString() {
         String str = "while (" + condition.toString() + ") ";
-        if (body instanceof BlockStmtNode) {
+        if (body instanceof EmptyStmtNode) {
+            str += ";";
+        } else if (body instanceof BlockStmtNode) {
             str += " " + body.toString();
         } else {
             indentDepth++;

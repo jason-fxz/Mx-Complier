@@ -22,7 +22,11 @@ public class NewArrayExprNode extends ExprNode {
         StringBuilder str = new StringBuilder();
         str.append("new " + name);
         for (int i = 0; i < dimsize.size(); ++i) {
-            str.append("[" + dimsize.get(i).toString() + "]");
+            if (dimsize.get(i) == null) {
+                str.append("[]");
+            } else {
+                str.append("[" + dimsize.get(i).toString() + "]");
+            }
         }
         return str.toString();
     }

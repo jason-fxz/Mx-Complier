@@ -11,6 +11,7 @@ import Grammar.MxParser;
 import Grammar.MxParser.ProgramContext;
 import Util.error.error;
 import Util.MxErrorListener;
+import Util.position;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -19,6 +20,7 @@ public class Main {
         InputStream input = new FileInputStream(filename);
         
         System.err.println("file: " +  filename);
+        position.filename = filename;
         
         try {
             RootNode ASTRoot;
@@ -35,7 +37,8 @@ public class Main {
             
             ASTBuilder astBuilder = new ASTBuilder();
             ASTRoot = (RootNode) astBuilder.visit(parseTreeRoot);
-    
+            
+            
             System.out.println(ASTRoot.toString());
 
         } catch (error err) {
