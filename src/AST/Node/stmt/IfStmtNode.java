@@ -18,7 +18,7 @@ public class IfStmtNode extends StmtNode {
 
     @Override
     public String toString() {
-        String str = "if ( " + condition.toString() + ")";
+        String str = "if (" + condition.toString() + ")";
         if (thenStmt instanceof BlockStmtNode) {
             str += " " + thenStmt.toString();
         } else {

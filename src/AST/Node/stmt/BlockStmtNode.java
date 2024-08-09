@@ -17,10 +17,10 @@ public class BlockStmtNode extends StmtNode {
         indentDepth++;
         String str = "{\n";
         for (StmtNode stmt : stmts) {
-            str += stmt.toString();
+            str += stmt.toString() + "\n";
         }
-        str += "}\n";
         indentDepth--;
+        str += super.toString() + "}\n";
         return str;
     }
 

@@ -3,7 +3,7 @@ package AST.Node.expr;
 import AST.ASTVisitor;
 import Util.position;
 
-public class BoolExprNode extends ExprNode {
+public class BoolExprNode extends LiteralExprNode {
     public boolean value;
 
     public BoolExprNode(position pos, boolean value) {

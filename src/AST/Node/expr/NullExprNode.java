@@ -3,7 +3,7 @@ package AST.Node.expr;
 import AST.ASTVisitor;
 import Util.position;
 
-public class NullExprNode extends ExprNode {
+public class NullExprNode extends LiteralExprNode {
     public NullExprNode(position pos) {
         super(pos);
     }

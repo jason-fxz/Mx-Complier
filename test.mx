@@ -6,8 +6,13 @@ Time: 2019-11-11
 Verdict: Success
 Origin Package: Semantic Pretest
 */
-int fun() {
-	int a = f"sda$ asds $$$da$aa$s";
-}
 
 int a;
+int fun() {
+	if (a) {
+		break;
+		return 3;
+		continue;
+		eee;
+	}
+}

@@ -3,7 +3,7 @@ package AST.Node.expr;
 import AST.ASTVisitor;
 import Util.position;
 
-public class IntExprNode extends ExprNode {
+public class IntExprNode extends LiteralExprNode {
     public int value;
 
     public IntExprNode(int value, position pos) {

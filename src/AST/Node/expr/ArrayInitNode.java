@@ -6,7 +6,7 @@ import AST.ASTVisitor;
 import Util.position;
 
 public class ArrayInitNode extends ExprNode {
-    ArrayList<ExprNode> exprs = new ArrayList<>();
+    public ArrayList<ExprNode> exprs = new ArrayList<>();
     public int dep;
     
     public ArrayInitNode(position pos) {

@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
 import AST.Node.RootNode;
+import Frontend.ASTBuilder;
 import Grammar.MxLexer;
 import Grammar.MxParser;
 import Grammar.MxParser.ProgramContext;
@@ -13,11 +14,12 @@ import Util.MxErrorListener;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        System.out.println("Hello Mx world!");
 
         String filename = "test.mx";
         InputStream input = new FileInputStream(filename);
-
+        
+        System.err.println("file: " +  filename);
+        
         try {
             RootNode ASTRoot;
             // Lexer
@@ -31,7 +33,11 @@ public class Main {
 
             ProgramContext parseTreeRoot = parser.program();
             
-            
+            ASTBuilder astBuilder = new ASTBuilder();
+            ASTRoot = (RootNode) astBuilder.visit(parseTreeRoot);
+    
+            System.out.println(ASTRoot.toString());
+
         } catch (error err) {
             System.err.println(err.toString());
             throw new RuntimeException();

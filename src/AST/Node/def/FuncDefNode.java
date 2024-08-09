@@ -21,7 +21,7 @@ public class FuncDefNode extends DefNode {
     
     @Override
     public String toString() {
-        String str = type.GetTypeName() + name + "(";
+        String str = type.GetTypeName() + " " + name + "(";
         if (params != null) {
             for (VarDefNode param : params) {
                 str += param.toString() + ", ";

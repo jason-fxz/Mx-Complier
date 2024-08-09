@@ -36,7 +36,7 @@ arrayUnit: '[' expr? ']';
 // Expression
 expr:
 	'(' expr ')'														# ParenExpr
-	| New typeName ('(' ')')?											# NewVarExpr
+	| New type ('(' ')')?												# NewVarExpr
 	| New typeName arrayUnit+ arrayInitial?								# NewArrayExpr
 	| expr '(' exprList? ')'											# FuncExpr
 	| array = expr '[' index = expr ']'									# ArrayExpr
@@ -88,9 +88,9 @@ stmt:
 	| varDef;
 
 blockStmt: '{' stmt* '}';
-ifStmt: If '(' expr ')' stmt (Else stmt)?;
+ifStmt: If '(' cond = expr ')' then = stmt (Else else = stmt)?;
 forStmt:
 	For '(' init = stmt cond = expr? ';' step = expr? ')' body = stmt;
-whileStmt: While '(' expr ')' stmt;
+whileStmt: While '(' cond = expr ')' body = stmt;
 emptyStmt: ';';
 jumpStmt: (Continue | Break | (Return expr?)) ';';

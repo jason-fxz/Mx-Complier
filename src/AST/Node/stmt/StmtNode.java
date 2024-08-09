@@ -12,6 +12,10 @@ public abstract class StmtNode extends ASTNode {
 
     @Override
     public String toString() {
-        return " ".repeat(indentDepth);
+        return "    ".repeat(indentDepth);
     }
+
+    
+
+
 }
