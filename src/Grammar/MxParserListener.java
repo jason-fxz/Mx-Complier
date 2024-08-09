@@ -118,6 +118,16 @@ public interface MxParserListener extends ParseTreeListener {
 	 */
 	void exitTypeName(MxParser.TypeNameContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link MxParser#arrayUnit}.
+	 * @param ctx the parse tree
+	 */
+	void enterArrayUnit(MxParser.ArrayUnitContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MxParser#arrayUnit}.
+	 * @param ctx the parse tree
+	 */
+	void exitArrayUnit(MxParser.ArrayUnitContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link MxParser#type}.
 	 * @param ctx the parse tree
 	 */
@@ -137,16 +147,6 @@ public interface MxParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitBaseType(MxParser.BaseTypeContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link MxParser#arrayUnit}.
-	 * @param ctx the parse tree
-	 */
-	void enterArrayUnit(MxParser.ArrayUnitContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link MxParser#arrayUnit}.
-	 * @param ctx the parse tree
-	 */
-	void exitArrayUnit(MxParser.ArrayUnitContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code ArrayInitExpr}
 	 * labeled alternative in {@link MxParser#expr}.

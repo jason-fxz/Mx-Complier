@@ -77,6 +77,12 @@ public interface MxParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitTypeName(MxParser.TypeNameContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link MxParser#arrayUnit}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArrayUnit(MxParser.ArrayUnitContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link MxParser#type}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -88,12 +94,6 @@ public interface MxParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitBaseType(MxParser.BaseTypeContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link MxParser#arrayUnit}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitArrayUnit(MxParser.ArrayUnitContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code ArrayInitExpr}
 	 * labeled alternative in {@link MxParser#expr}.

@@ -95,6 +95,13 @@ public class MxParserBaseVisitor<T> extends AbstractParseTreeVisitor<T> implemen
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitArrayUnit(MxParser.ArrayUnitContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitType(MxParser.TypeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -103,13 +110,6 @@ public class MxParserBaseVisitor<T> extends AbstractParseTreeVisitor<T> implemen
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitBaseType(MxParser.BaseTypeContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitArrayUnit(MxParser.ArrayUnitContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

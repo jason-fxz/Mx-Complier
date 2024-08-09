@@ -237,18 +237,18 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
 
     @Override
     public ASTNode visitNewArrayExpr(MxParser.NewArrayExprContext ctx) {
-        NewArrayExprNode newexpr = new NewArrayExprNode(new position(ctx), ctx.typeName().type().getText(),
-                ctx.typeName().arrayUnit().size());
+        NewArrayExprNode newexpr = new NewArrayExprNode(new position(ctx), ctx.type().getText(),
+                ctx.arrayUnit().size());
         boolean flag = true;
-        System.err.println(">>> " + ctx.typeName().arrayUnit().size());
-        for (int i = 0; i < ctx.typeName().arrayUnit().size(); ++i) {
+        System.err.println(">>> " + ctx.arrayUnit().size());
+        for (int i = 0; i < ctx.arrayUnit().size(); ++i) {
             System.err.printf("? i = %d", i);
 
-            if (ctx.typeName().arrayUnit(i).expr() != null) {
+            if (ctx.arrayUnit(i).expr() != null) {
                 if (flag == false) {
                     throw new SemanticError("new array size invalid", new position(ctx));
                 }
-                newexpr.dimsize.add((ExprNode) visit(ctx.typeName().arrayUnit(i).expr()));
+                newexpr.dimsize.add((ExprNode) visit(ctx.arrayUnit(i).expr()));
             } else {                
                 flag = false;
                 System.err.printf("!! i = %d", i);

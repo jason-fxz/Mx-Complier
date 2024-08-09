@@ -149,6 +149,18 @@ public class MxParserBaseListener implements MxParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterArrayUnit(MxParser.ArrayUnitContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitArrayUnit(MxParser.ArrayUnitContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterType(MxParser.TypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -168,18 +180,6 @@ public class MxParserBaseListener implements MxParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitBaseType(MxParser.BaseTypeContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterArrayUnit(MxParser.ArrayUnitContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitArrayUnit(MxParser.ArrayUnitContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

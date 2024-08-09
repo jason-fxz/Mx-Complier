@@ -28,7 +28,8 @@ varConstruct: name = Identifier ('=' expr)?;
 exprStmt: expr ';';
 exprList: expr (',' expr)*;
 
-typeName: type arrayUnit*;
+typeName: type ('[' ']')*;
+arrayUnit: '[' expr? ']';
 type: Identifier | baseType;
 baseType: Bool | Int | String | Void;
 
@@ -36,8 +37,8 @@ baseType: Bool | Int | String | Void;
 expr:
 	'(' expr ')'														# ParenExpr
 	| expr '(' exprList? ')'											# FuncExpr
+	| New type arrayUnit+ arrayInitial?									# NewArrayExpr
 	| New type ('(' ')')?												# NewVarExpr
-	| New arrayFuck arrayInitial?								# NewArrayExpr
 	| array = expr '[' index = expr ']'									# ArrayExpr
 	| expr '.' Identifier												# MemberExpr
 	| lhs = expr op = (SelfInc | Selfdec)								# RightExpr
@@ -96,7 +97,3 @@ forStmt:
 whileStmt: While '(' cond = expr ')' body = stmt;
 emptyStmt: ';';
 jumpStmt: (Continue | Break | (Return expr?)) ';';
-
-arrayUnit: '[' ']';
-arrayNewUnit: ('[' good+=expr ']')* ('[' ']')* ('[' bad+=expr ']')*;
-arrayFuck: type arrayNewUnit;
