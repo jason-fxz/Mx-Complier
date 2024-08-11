@@ -45,6 +45,19 @@ public class BinaryExprNode extends ExprNode {
         public String toString() {
             return symbol;
         }
+
+        public boolean equals(String symbol) {
+            return this.symbol.equals(symbol);
+        }
+
+        public boolean in(String... symbols) {
+            for (String s : symbols) {
+                if (this.symbol.equals(s)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     public binaryOpType op;

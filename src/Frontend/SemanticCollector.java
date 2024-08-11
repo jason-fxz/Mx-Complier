@@ -9,10 +9,10 @@ import Util.scope.globalScope;
 import Util.info.*;
 import Util.BuiltinElements;
 
-public class Collector implements ASTVisitor {
+public class SemanticCollector implements ASTVisitor {
     private globalScope gScope;
 
-    public Collector(globalScope gScope) {
+    public SemanticCollector(globalScope gScope) {
         this.gScope = gScope;
         for (FuncInfo func : BuiltinElements.BuiltinFuncs) {
             gScope.DefFunc(func.label, func);

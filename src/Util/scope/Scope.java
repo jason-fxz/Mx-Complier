@@ -9,10 +9,21 @@ import Util.info.TypeInfo;
 public class Scope {
     private HashMap<String, TypeInfo> member;
     private Scope parScope;
+    public enum ScopeType {
+        globalScope, classScope, funcScope, flowScope, blockScope
+    }
+    ScopeType type;
 
     public Scope(Scope parScope) {
         member = new HashMap<>();
         this.parScope = parScope; 
+        this.type = ScopeType.blockScope;
+    }
+
+    public Scope(Scope parScope, ScopeType type) {
+        member = new HashMap<>();
+        this.parScope = parScope; 
+        this.type = type;
     }
 
     public Scope parScope() {

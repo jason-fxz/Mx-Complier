@@ -1,6 +1,5 @@
 package Util.info;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 
 import Util.position;

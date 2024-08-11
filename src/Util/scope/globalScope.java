@@ -11,7 +11,7 @@ public class globalScope extends Scope {
     private HashMap<String, FuncInfo> FunDefs;
     
     public globalScope() {
-        super(null);
+        super(null, ScopeType.globalScope);
         ClassDefs = new HashMap<>();
         FunDefs = new HashMap<>();
     }
@@ -42,6 +42,10 @@ public class globalScope extends Scope {
             return ClassDefs.get(name);
         }
         return null;
+    }
+
+    public boolean haveClass(String name) {
+        return ClassDefs.containsKey(name);
     }
 
     public TypeInfo GetClassMemberType(String className, String memberName) {

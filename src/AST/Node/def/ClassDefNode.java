@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import AST.ASTVisitor;
 import AST.Node.stmt.StmtNode;
-import AST.Node.stmt.VarDefStmtNode;
 
 public class ClassDefNode extends DefNode {
     public ArrayList<FuncDefNode> funcDefs = new ArrayList<>();
