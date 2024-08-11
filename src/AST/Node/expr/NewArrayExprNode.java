@@ -28,6 +28,9 @@ public class NewArrayExprNode extends ExprNode {
                 str.append("[" + dimsize.get(i).toString() + "]");
             }
         }
+        if (array != null) {
+            str.append(array.toString());
+        }
         return str.toString();
     }
 

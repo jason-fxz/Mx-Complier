@@ -9,7 +9,7 @@ import AST.Node.stmt.VarDefStmtNode;
 
 public class ClassDefNode extends DefNode {
     public ArrayList<FuncDefNode> funcDefs = new ArrayList<>();
-    public ArrayList<VarsDefNode> varDefs = new ArrayList<>();
+    public ArrayList<VarsDefNode> varsDefs = new ArrayList<>();
     public FuncDefNode constructor = null;
     public String name;
     
@@ -30,7 +30,7 @@ public class ClassDefNode extends DefNode {
         if (constructor != null) {
             str += "    " + constructor.toString() + "\n";
         }
-        for (VarsDefNode varDef : varDefs) {
+        for (VarsDefNode varDef : varsDefs) {
             str += "    " + varDef.toString() + "\n";
         }
         for (FuncDefNode funcDef : funcDefs) {

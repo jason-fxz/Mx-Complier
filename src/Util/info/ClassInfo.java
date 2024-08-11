@@ -17,6 +17,16 @@ public class ClassInfo extends BaseInfo {
         methods = new HashMap<>();
     }
 
+    public ClassInfo(String label, FuncInfo ...methods) {
+        super(label);
+        this.defpos = new position();
+        members = new HashMap<>();
+        this.methods = new HashMap<>();
+        for (FuncInfo method : methods) {
+            this.methods.put(method.label, method);
+        }
+    }
+
     public void AddMember(String name, TypeInfo type, position pos) {
         if (members.containsKey(name)) {
             throw new MultipleDefinitionsError(name, pos);

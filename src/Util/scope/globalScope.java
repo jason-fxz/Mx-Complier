@@ -16,14 +16,14 @@ public class globalScope extends Scope {
         FunDefs = new HashMap<>();
     }
 
-    public void AddFunc(String name, FuncInfo func) {
+    public void DefFunc(String name, FuncInfo func) {
         if (FunDefs.containsKey(name)) {
             throw new MultipleDefinitionsError(name, func.defpos);
         }
         FunDefs.put(name, func);
     }
 
-    public void AddClass(String name, ClassInfo classInfo) {
+    public void DefClass(String name, ClassInfo classInfo) {
         if (ClassDefs.containsKey(name)) {
             throw new MultipleDefinitionsError(name, classInfo.defpos);
         }

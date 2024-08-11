@@ -26,6 +26,9 @@ public class ArrayInitNode extends ExprNode {
             str.append(expr.toString());
             str.append(", ");
         }
+        if (exprs.size() > 0) {
+            str.delete(str.length() - 2, str.length());
+        }
         str.append("}");
         return str.toString();
     }

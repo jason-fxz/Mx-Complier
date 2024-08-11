@@ -17,11 +17,19 @@ public class TypeInfo extends BaseInfo {
         this.isBasic = (typeName == "int" || typeName == "bool" || typeName == "string" || typeName == "void");
     }
 
-    public TypeInfo(TypeNameContext ctx) {
-        this.typeName = ctx.type().getText();
-        this.dim = ctx.arrayUnit().size();
+    public TypeInfo(String typeName, int dim) {
+        this.dim  = dim;
+        this.typeName = typeName;
         this.isBasic = (typeName == "int" || typeName == "bool" || typeName == "string" || typeName == "void");
     }
 
-    
+    public TypeInfo(TypeNameContext ctx) {
+        this.typeName = ctx.type().getText();
+        this.dim = ctx.LeftBrack().size();
+        this.isBasic = (typeName == "int" || typeName == "bool" || typeName == "string" || typeName == "void");
+    }
+
+    boolean equals(TypeInfo other) {
+        return typeName.equals(other.typeName) && dim == other.dim;
+    }
 }

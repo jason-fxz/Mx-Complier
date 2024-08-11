@@ -79,7 +79,7 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
                     new position(ctx.classConstruct(1)));
         }
         ctx.varDef().forEach(varDef -> {
-            classDef.varDefs.add((VarsDefNode) visit(varDef));
+            classDef.varsDefs.add((VarsDefNode) visit(varDef));
         });
         ctx.funcDef().forEach(funcDef -> {
             classDef.funcDefs.add((FuncDefNode) visit(funcDef));
@@ -163,7 +163,7 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
         if (ctx.IntegerLiteral() != null) {
             return new IntExprNode(Integer.parseInt(ctx.IntegerLiteral().getText()), new position(ctx));
         } else if (ctx.StringLiteral() != null) {
-            return new StringExprNode(new position(ctx), ctx.StringLiteral().getText());
+            return new StringExprNode(new position(ctx), ctx.StringLiteral().getText().substring(1, ctx.StringLiteral().getText().length() - 1));
         } else if (ctx.Null() != null) {
             return new NullExprNode(new position(ctx));
         } else if (ctx.True() != null) {
@@ -240,10 +240,7 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
         NewArrayExprNode newexpr = new NewArrayExprNode(new position(ctx), ctx.type().getText(),
                 ctx.arrayUnit().size());
         boolean flag = true;
-        System.err.println(">>> " + ctx.arrayUnit().size());
         for (int i = 0; i < ctx.arrayUnit().size(); ++i) {
-            System.err.printf("? i = %d", i);
-
             if (ctx.arrayUnit(i).expr() != null) {
                 if (flag == false) {
                     throw new SemanticError("new array size invalid", new position(ctx));
@@ -251,9 +248,12 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
                 newexpr.dimsize.add((ExprNode) visit(ctx.arrayUnit(i).expr()));
             } else {                
                 flag = false;
-                System.err.printf("!! i = %d", i);
                 newexpr.dimsize.add(null);
             }
+        }
+        if (ctx.arrayInitial() != null) {
+            // System.err.println("new array init");
+            newexpr.array = (ArrayInitNode) visit(ctx.arrayInitial());
         }
         return newexpr;
     }
@@ -365,10 +365,10 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
     // return visitChildren(ctx);
     // }
 
-    // @Override
-    // public ASTNode visitParenExpr(MxParser.ParenExprContext ctx) {
-    // return visitChildren(ctx);
-    // }
+    @Override
+    public ASTNode visitParenExpr(MxParser.ParenExprContext ctx) {
+        return visit(ctx.expr());
+    }
 
     // @Override
     // public ASTNode visitStmt(MxParser.StmtContext ctx) {
