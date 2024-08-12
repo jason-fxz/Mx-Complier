@@ -13,6 +13,23 @@ public class TypeInfo extends BaseInfo {
         return typeName + "[]".repeat(dim);
     }
 
+    public boolean isArray() {
+        return dim > 0;
+    }
+
+    public boolean isNull() {
+        return typeName.equals("null");
+    }
+
+    public boolean isCustom() {
+        return !isBasic;
+    }
+
+    public boolean acceptNull() {
+        return isCustom() || isArray();
+    }
+
+
     public TypeInfo(String typeName) {
         this.typeName = typeName;
         this.isBasic = (typeName.equals("int") || typeName.equals("bool") || typeName.equals("string") || typeName.equals("void"));
@@ -32,6 +49,13 @@ public class TypeInfo extends BaseInfo {
         this.dim = ctx.LeftBrack().size();
         this.isBasic = (typeName.equals("int") || typeName.equals("bool") || typeName.equals("string") || typeName.equals("void"));
         this.isVoid = (typeName.equals("void"));
+    }
+
+    public TypeInfo(TypeInfo other) {
+        this.typeName = other.typeName;
+        this.dim = other.dim;
+        this.isBasic = other.isBasic;
+        this.isVoid = other.isVoid;
     }
 
     boolean equals(TypeInfo other) {

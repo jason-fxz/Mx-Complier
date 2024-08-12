@@ -40,5 +40,5 @@ public class BuiltinElements {
     static public ClassInfo stringClass = new ClassInfo("string", stringLengthFunc, stringSubstringFunc,
             stringParseIntFunc, stringOrdFunc);
 
-    static public ClassInfo[] BuiltinClasses = {intClass, boolClass, stringClass};
+    static public ClassInfo[] BuiltinClasses = {stringClass};
 }

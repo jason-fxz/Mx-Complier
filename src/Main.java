@@ -1,6 +1,5 @@
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.stream.Collector;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;

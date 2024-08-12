@@ -17,9 +17,12 @@ public class globalScope extends Scope {
     }
 
     public void DefFunc(String name, FuncInfo func) {
-        if (FunDefs.containsKey(name)) {
+        if (FunDefs.containsKey(name) || haveVar(name, false)) {
             throw new MultipleDefinitionsError(name, func.defpos);
         }
+        TypeInfo type = new TypeInfo(func.retType);
+        type.isFunc = true;
+        DefVar(name, type, func.defpos);
         FunDefs.put(name, func);
     }
 
@@ -30,14 +33,14 @@ public class globalScope extends Scope {
         ClassDefs.put(name, classInfo);
     }
 
-    public FuncInfo GetFunc(String name) {
+    public FuncInfo GetFuncInfo(String name) {
         if (FunDefs.containsKey(name)) {
             return FunDefs.get(name);
         }
         return null;
     }
 
-    public ClassInfo GetClass(String name) {
+    public ClassInfo GetClassInfo(String name) {
         if (ClassDefs.containsKey(name)) {
             return ClassDefs.get(name);
         }

@@ -31,8 +31,21 @@ public class LeftSingleExprNode extends ExprNode {
             return symbol;
         }
 
+        public boolean equals(String symbol) {
+            return this.symbol.equals(symbol);
+        }
+
+        public boolean in(String... symbols) {
+            for (String s : symbols) {
+                if (this.symbol.equals(s)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
     };
-    unaryleftOpType op;
+    public unaryleftOpType op;
 
     public LeftSingleExprNode(position pos, ExprNode right, unaryleftOpType op) {
         super(pos);

@@ -1,5 +1,6 @@
 package Frontend;
 
+
 import AST.*;
 import AST.Node.*;
 import AST.Node.def.*;
@@ -8,6 +9,7 @@ import AST.Node.stmt.*;
 import Util.scope.*;
 import Util.BuiltinElements;
 import Util.error.*;
+import Util.info.ClassInfo;
 import Util.info.ExprInfo;
 import Util.info.TypeInfo;
 
@@ -23,10 +25,6 @@ public class SemanticChecker implements ASTVisitor {
 
     private void exitScope() {
         curScope = curScope.parScope();
-    }
-
-    private Scope newScope(Scope parScope) {
-        return new Scope(parScope);
     }
 
     private boolean checkTypeValid(TypeInfo type) {
@@ -48,7 +46,7 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override
     public void visit(ClassDefNode it) {
-        Scope classScope = newScope(curScope);
+        var classScope = new classScope(curScope);
         enterScope(classScope);
         if (it.constructor != null) {
             it.constructor.accept(this);
@@ -61,7 +59,7 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override
     public void visit(FuncDefNode it) {
-        Scope funcScope = newScope(curScope);
+        var funcScope = new funcScope(curScope);
         enterScope(funcScope);
         // put parameters into scope
         it.params.forEach(par -> {
@@ -79,6 +77,10 @@ public class SemanticChecker implements ASTVisitor {
                 throw new SemanticError("Main function should have no parameters", it.pos);
             }
             haveMain = true;
+        }
+
+        if (!funcScope.haveRet && !it.type.equals(BuiltinElements.voidType) && !it.name.equals("main")) {
+            throw new SemanticError("Function " + it.name + " should have return statement", it.pos);
         }
         exitScope();
     }
@@ -114,7 +116,6 @@ public class SemanticChecker implements ASTVisitor {
         it.rhs.accept(this);
         var lhsinfo = it.lhs.info;
         var rhsinfo = it.rhs.info;
-        // TODO null type check
         if (lhsinfo.isFunc) {
             throw new SemanticError("Cannot perform binary operation on function " + lhsinfo.GetTypeName(), it.pos);
         }
@@ -166,158 +167,392 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override
     public void visit(LeftSingleExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.rhs.accept(this);
+        var rhsinfo = it.rhs.info;
+        if (rhsinfo.isFunc) {
+            throw new SemanticError("Cannot perform unary operation on function " + rhsinfo.GetTypeName(), it.pos);
+        }
+        if (rhsinfo.equals(BuiltinElements.intType)) {
+            if (it.op.in("++", "--")) {
+                if (!rhsinfo.isLvalue) {
+                    throw new SemanticError("Cannot perform unary operation on rvalue", it.pos);
+                }
+                it.info = new ExprInfo("int", false);
+            } else if (it.op.in("-", "~")) {
+                it.info = new ExprInfo("int", false);
+            } else {
+                throw new SemanticError("Left unary operator " + it.op + " is not supported for int", it.pos);
+            }
+        } else if (rhsinfo.equals(BuiltinElements.boolType)) {
+            if (it.op.in("!")) {
+                it.info = new ExprInfo("bool", false);
+            } else {
+                throw new SemanticError("Left unary operator " + it.op + " is not supported for bool", it.pos);
+            }
+        } else {
+            throw new SemanticError("Cannot perform unary operation on type " + rhsinfo.GetTypeName(), it.pos);
+        }
     }
 
     @Override
     public void visit(RightSingleExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.lhs.accept(this);
+        var lhsinfo = it.lhs.info;
+        if (lhsinfo.isFunc) {
+            throw new SemanticError("Cannot perform unary operation on function " + lhsinfo.GetTypeName(), it.pos);
+        }
+        if (lhsinfo.equals(BuiltinElements.intType)) {
+            if (it.op.in("++", "--")) {
+                if (!lhsinfo.isLvalue) {
+                    throw new SemanticError("Cannot perform unary operation on rvalue", it.pos);
+                }
+                it.info = new ExprInfo("int", false);
+            } else {
+                throw new SemanticError("Right unary operator " + it.op + " is not supported for int", it.pos);
+            }
+        } else {
+            throw new SemanticError("Cannot perform unary operation on type " + lhsinfo.GetTypeName(), it.pos);
+        }
     }
 
     @Override
     public void visit(ConditionExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.cond.accept(this);
+        it.thenExpr.accept(this);
+        it.elseExpr.accept(this);
+        if (!it.cond.info.equals(BuiltinElements.boolType)) {
+            throw new SemanticError("Condition expression should be bool " + it.cond.info.GetTypeName(), it.pos);
+        }
+        if (!it.thenExpr.info.equals(it.elseExpr.info)) {
+            throw new SemanticError("Different types in ternary expression " + it.thenExpr.info.GetTypeName() + " and "
+                    + it.elseExpr.info.GetTypeName(), it.pos);
+        }
+        it.info = new ExprInfo(it.thenExpr.info.isNull() ? it.elseExpr.info : it.thenExpr.info);
     }
 
     @Override
     public void visit(AssignExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.lhs.accept(this);
+        it.rhs.accept(this);
+        var lhsinfo = it.lhs.info;
+        var rhsinfo = it.rhs.info;
+        if (!lhsinfo.isLvalue) {
+            throw new SemanticError("Assign to rvalue " + it.lhs.toString(), it.pos);
+        }
+        if (lhsinfo.equals(rhsinfo)) {
+            it.info = new ExprInfo(lhsinfo);
+        } else {
+            throw new SemanticError("Cannot assign " + rhsinfo.GetTypeName() + " to " + lhsinfo.GetTypeName(), it.pos);
+        }
     }
 
     @Override
     public void visit(AtomExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        if (it.name.equals("this")) {
+            it.info = new ExprInfo(BuiltinElements.thisType);
+            var lastclass = curScope.getLastClass();
+            if (lastclass == null) {
+                throw new SemanticError("this should be in class", it.pos);
+            }
+        } else {
+            var atomType = curScope.getVarType(it.name, true);
+            if (atomType == null) {
+                throw new SemanticError("Identifier " + it.name + " not defined", it.pos);
+            }
+            it.info = new ExprInfo(atomType);
+            if (atomType.isFunc) {
+                it.info.funcinfo = gScope.GetFuncInfo(atomType.label);
+                it.info.isFunc = true;
+            } else {
+                it.info.isLvalue = true;
+            }
+        }
     }
 
     @Override
     public void visit(MemberExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.object.accept(this);
+        var objectType = it.object.info;
+        if (objectType.equals(BuiltinElements.intType) || objectType.equals(BuiltinElements.boolType)) {
+            throw new SemanticError("Cannot access member of non-class type " + objectType.GetTypeName(), it.pos);
+        }
+        if (objectType.equals(BuiltinElements.nullType)) {
+            throw new SemanticError("Cannot access member of null type", it.pos);
+        }
+        if (objectType.isFunc) {
+            throw new SemanticError("Cannot access member of function type " + objectType.GetTypeName(), it.pos);
+        }
+
+        if (objectType.dim > 0) { // array
+            if (it.member.equals("size")) {
+                it.info = new ExprInfo(BuiltinElements.arraySizeFunc);
+            } else {
+                throw new SemanticError(
+                        "Call to undefined member " + it.member + " of array type " + objectType.GetTypeName(), it.pos);
+            }
+        } else { // class
+            ClassInfo classInfo = gScope.GetClassInfo(objectType.typeName);
+            if (classInfo == null) {
+                throw new SemanticError("Call to undefined class " + objectType.GetTypeName(), it.pos);
+            }
+            var memberInfo = classInfo.GetMemberType(it.member);
+            if (memberInfo == null) {
+                throw new SemanticError(
+                        "Call to undefined member " + it.member + " of class " + objectType.GetTypeName(), it.pos);
+            }
+            it.info = new ExprInfo(memberInfo);
+            if (memberInfo.isFunc) {
+                it.info.funcinfo = classInfo.GetMethod(memberInfo.label);
+                it.info.isFunc = true;
+            } else {
+                it.info.isLvalue = true;
+            }
+        }
     }
 
     @Override
     public void visit(FuncExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.func.accept(this);
+        it.args.forEach(arg -> arg.accept(this));
+        var funcExprInfo = it.func.info;
+        if (!funcExprInfo.isFunc) {
+            throw new SemanticError("Call to non-function type " + funcExprInfo.GetTypeName(), it.pos);
+        }
+        var funcDefInfo = funcExprInfo.funcinfo;
+        if (it.args.size() != funcDefInfo.argsType.size()) {
+            throw new SemanticError("Function " + funcDefInfo.label + " expects " + funcDefInfo.argsType.size()
+                    + " arguments, but got " + it.args.size(), it.pos);
+        }
+
+        for (int i = 0; i < it.args.size(); i++) {
+            var argType = it.args.get(i).info;
+            var paramType = funcDefInfo.argsType.get(i);
+            if (!argType.equals(paramType)) {
+                throw new SemanticError("Function " + funcDefInfo.label + " expects " + paramType.GetTypeName()
+                        + " but got " + argType.GetTypeName(), it.pos);
+            }
+        }
+
+        it.info = new ExprInfo(funcDefInfo.retType);
     }
 
     @Override
     public void visit(NewVarExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.info = new ExprInfo(it.name, true);
+        if (!checkTypeValid(it.info) || (it.info.isBasic)) {
+            throw new SemanticError("Connot initialize type " + it.info.GetTypeName(), it.pos);
+        }
     }
 
     @Override
     public void visit(NewArrayExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        boolean haveinit = false;
+        if (it.array != null) {
+            haveinit = true;
+            it.array.dep = it.dim; // up to down set info
+            it.array.info = new ExprInfo(it.name, it.dim, true);
+            it.array.accept(this);
+        }
+        it.info = new ExprInfo(it.name, it.dim, true);
+
+        for (var expr : it.dimsize) {
+            if (expr == null)
+                break;
+            if (haveinit) {
+                throw new SemanticError("Array with initializer should not define size", it.pos);
+            }
+            expr.accept(this);
+            if (!expr.info.equals(BuiltinElements.intType)) {
+                throw new SemanticError("Array size should be int", it.pos);
+            }
+        }
     }
 
     @Override
     public void visit(ArrayInitNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        if (it.dep == 1) {
+            for (var expr : it.exprs) {
+                expr.accept(this);
+                if (!(expr instanceof LiteralExprNode)) {
+                    throw new SemanticError("Array initializer should be literal", it.pos);
+                }
+                if (!expr.info.typeName.equals(it.info.typeName) && !expr.info.isNull()) {
+                    throw new SemanticError("Array initializer type mismatch", it.pos);
+                }
+            }
+        } else {
+            for (var expr : it.exprs) {
+                if (expr instanceof NullExprNode) {
+                    continue;
+                } else if (expr instanceof ArrayInitNode) {
+                    ArrayInitNode subarray = (ArrayInitNode) expr;
+                    subarray.dep = it.dep - 1;
+                    subarray.info = new ExprInfo(it.info.typeName, subarray.dep, true);
+                    expr.accept(this);
+                } else {
+                    throw new SemanticError("Array initializer type mismatch", it.pos);
+                }
+            }
+        }
     }
 
     @Override
     public void visit(ArrayExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.array.accept(this);
+        it.index.accept(this);
+        var arrayType = it.array.info;
+        if (!arrayType.isArray()) {
+            throw new SemanticError("Access to non-array type " + arrayType.GetTypeName(), it.array.pos);
+        }
+        if (!it.index.info.equals(BuiltinElements.intType)) {
+            throw new SemanticError("Array index should be int", it.index.pos);
+        }
+        it.info = new ExprInfo(arrayType.typeName, arrayType.dim - 1, true);
     }
 
     @Override
     public void visit(IntExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.info = new ExprInfo(BuiltinElements.intType);
     }
 
     @Override
     public void visit(BoolExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.info = new ExprInfo(BuiltinElements.boolType);
     }
 
     @Override
     public void visit(StringExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.info = new ExprInfo(BuiltinElements.stringType);
     }
 
     @Override
     public void visit(NullExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.info = new ExprInfo(BuiltinElements.nullType);
     }
 
     @Override
     public void visit(FmtStringExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.exprlist.forEach(expr -> expr.accept(this));
+        it.info = new ExprInfo(BuiltinElements.stringType);
+        it.exprlist.forEach(expr -> {
+            if (!expr.info.isBasic || expr.info.isVoid) {
+                throw new SemanticError("Format string can't contain type " + expr.info.GetTypeName(), it.pos);   
+            }
+        });
     }
 
     @Override
     public void visit(BlockStmtNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        Scope blockScope = new Scope(curScope);
+        enterScope(blockScope);
+        it.stmts.forEach(stmt -> stmt.accept(this));
+        exitScope();
     }
 
     @Override
     public void visit(VarDefStmtNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.varsDef.accept(this);
     }
 
     @Override
     public void visit(IfStmtNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.condition.accept(this);
+        if (!it.condition.info.equals(BuiltinElements.boolType)) {
+            throw new SemanticError("Condition expression should be bool but got" + it.condition.info.GetTypeName(), it.condition.pos);
+        }
+        // then
+        Scope thenScope = new Scope(curScope);
+        enterScope(thenScope);
+        it.thenStmt.accept(this);
+        exitScope();
+        // else
+        if (it.elseStmt != null) {
+            Scope elseScope = new Scope(curScope);
+            enterScope(elseScope);
+            it.elseStmt.accept(this);
+            exitScope();
+        }
+        
     }
 
     @Override
     public void visit(ForStmtNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        Scope forScope = new Scope(curScope, Scope.ScopeType.loopScope);
+        enterScope(forScope);
+        if (it.init != null) {
+            it.init.accept(this);
+        }
+        if (it.cond != null) {
+            it.cond.accept(this);
+            if (!it.cond.info.equals(BuiltinElements.boolType)) {
+                throw new SemanticError("Condition expression should be bool but got" + it.cond.info.GetTypeName(), it.cond.pos);
+            }
+        }
+        if (it.step != null) {
+            it.step.accept(this);
+        }
+        it.body.accept(this);
+        exitScope();
     }
 
     @Override
     public void visit(WhileStmtNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        Scope whileScope = new Scope(curScope, Scope.ScopeType.loopScope);
+        enterScope(whileScope);
+        if (it.condition != null) {
+            it.condition.accept(this);
+            if (!it.condition.info.equals(BuiltinElements.boolType)) {
+                throw new SemanticError("While condition expression should be bool but got" + it.condition.info.GetTypeName(), it.condition.pos);
+            }
+        } else throw new SemanticError("While condition is empty", it.condition.pos);
+        it.body.accept(this);
+        exitScope();
     }
 
     @Override
     public void visit(ReturnStmtNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        if (it.expr != null) {
+            it.expr.accept(this);
+        }
+    
+        var funcScope = (funcScope) curScope.getLastFunc();
+        if (funcScope == null) {
+            throw new SemanticError("Return statement should be in function", it.pos);
+        }
+        if (it.expr == null) {
+            if (!funcScope.retType.equals(BuiltinElements.voidType)) {
+                throw new SemanticError("Return type mismatch", it.pos);
+            }
+        } else {
+            if (!it.expr.info.equals(funcScope.retType)) {
+                throw new SemanticError("Return type mismatch", it.pos);
+            }
+        }
+        funcScope.haveRet = true;
     }
 
     @Override
     public void visit(BreakStmtNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        if (curScope.getLastloop() == null) {
+            throw new SemanticError("Break statement should be in loop", it.pos);
+        }
     }
 
     @Override
     public void visit(ContinueStmtNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        if (curScope.getLastloop() == null) {
+            throw new SemanticError("Break statement should be in loop", it.pos);
+        }
     }
 
     @Override
     public void visit(ExprStmtNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        it.expr.accept(null);
     }
 
     @Override
     public void visit(EmptyStmtNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        
     }
 
 }

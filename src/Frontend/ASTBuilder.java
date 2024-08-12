@@ -163,7 +163,8 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
         if (ctx.IntegerLiteral() != null) {
             return new IntExprNode(Integer.parseInt(ctx.IntegerLiteral().getText()), new position(ctx));
         } else if (ctx.StringLiteral() != null) {
-            return new StringExprNode(new position(ctx), ctx.StringLiteral().getText().substring(1, ctx.StringLiteral().getText().length() - 1));
+            return new StringExprNode(new position(ctx),
+                    ctx.StringLiteral().getText().substring(1, ctx.StringLiteral().getText().length() - 1));
         } else if (ctx.Null() != null) {
             return new NullExprNode(new position(ctx));
         } else if (ctx.True() != null) {
@@ -191,19 +192,25 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
                 (ExprNode) visit(ctx.else_));
     }
 
+
+    // turn $$ to $
+    private String fmtstr(String str, int headoffset, int tailoffset) {
+        return str.substring(headoffset, str.length() - tailoffset).replace("$$", "$");
+    }
+
     @Override
     public ASTNode visitFormatStrExpr(MxParser.FormatStrExprContext ctx) {
         FmtStringExprNode fmtexpr = new FmtStringExprNode(new position(ctx));
         if (ctx.FormatStrI() != null) {
-            fmtexpr.strlist.add(ctx.FormatStrI().getText().substring(2, ctx.FormatStrI().getText().length() - 1));
+            fmtexpr.strlist.add(fmtstr(ctx.FormatStrI().getText(), 2, 1));
         } else {
-            fmtexpr.strlist.add(ctx.FormatStrL().getText().substring(2, ctx.FormatStrL().getText().length() - 1));
+            fmtexpr.strlist.add(fmtstr(ctx.FormatStrL().getText(), 2, 1));
             fmtexpr.exprlist.add((ExprNode) visit(ctx.expr(0)));
             for (int i = 0; i < ctx.FormatStrM().size(); ++i) {
-                fmtexpr.strlist.add(ctx.FormatStrM(i).getText().substring(1, ctx.FormatStrM(i).getText().length() - 1));
+                fmtexpr.strlist.add(fmtstr(ctx.FormatStrM(i).getText(), 1, 1));
                 fmtexpr.exprlist.add((ExprNode) visit(ctx.expr(i + 1)));
             }
-            fmtexpr.strlist.add(ctx.FormatStrR().getText().substring(1, ctx.FormatStrR().getText().length() - 1));
+            fmtexpr.strlist.add(fmtstr(ctx.FormatStrR().getText(), 1, 1));
         }
         return visitChildren(ctx);
     }
@@ -211,21 +218,13 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
     @Override
     public ASTNode visitArrayInitial(MxParser.ArrayInitialContext ctx) {
         ArrayInitNode arrayinit = new ArrayInitNode(new position(ctx));
-        if (ctx.exprList().expr().isEmpty()) {
-            arrayinit.dep = 1;
-        } else {
-            ctx.exprList().expr().forEach(expr -> {
-                ExprNode child = (ExprNode) visit(expr);
-                arrayinit.exprs.add(child);
-                if (child instanceof ArrayInitNode) {
-                    arrayinit.dep = ((ArrayInitNode) child).dep + 1;
-                } else if (child instanceof LiteralExprNode) {
-                    arrayinit.dep = 1;
-                } else {
-                    throw new SemanticError("Array Init invaild expr", new position(ctx));
-                }
-            });
-        }
+        ctx.exprList().expr().forEach(expr -> {
+            ExprNode child = (ExprNode) visit(expr);
+            if (!(child instanceof ArrayExprNode) && !(child instanceof LiteralExprNode)) {
+                throw new SemanticError("Array Init invaild expr", new position(ctx));
+            }
+            arrayinit.exprs.add(child);
+        });
         return arrayinit;
     }
 
@@ -246,7 +245,7 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
                     throw new SemanticError("new array size invalid", new position(ctx));
                 }
                 newexpr.dimsize.add((ExprNode) visit(ctx.arrayUnit(i).expr()));
-            } else {                
+            } else {
                 flag = false;
                 newexpr.dimsize.add(null);
             }
@@ -271,23 +270,23 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
     public ASTNode visitIfStmt(MxParser.IfStmtContext ctx) {
         ExprNode cond_ = (ExprNode) visit(ctx.cond);
         StmtNode then_ = (StmtNode) visit(ctx.then);
-        StmtNode else_ = ctx.else_ != null ? (StmtNode) visit(ctx.else_) : null;        
+        StmtNode else_ = ctx.else_ != null ? (StmtNode) visit(ctx.else_) : null;
         return new IfStmtNode(new position(ctx), cond_, then_, else_);
     }
 
     @Override
     public ASTNode visitForStmt(MxParser.ForStmtContext ctx) {
-        StmtNode init = ctx.init != null ? (StmtNode)visit(ctx.init) : null;  
-        ExprNode cond = ctx.cond != null ? (ExprNode)visit(ctx.cond) : null;
-        ExprNode step = ctx.step != null ? (ExprNode)visit(ctx.step) : null;
-        StmtNode body = (StmtNode)visit(ctx.body);  
+        StmtNode init = ctx.init != null ? (StmtNode) visit(ctx.init) : null;
+        ExprNode cond = ctx.cond != null ? (ExprNode) visit(ctx.cond) : null;
+        ExprNode step = ctx.step != null ? (ExprNode) visit(ctx.step) : null;
+        StmtNode body = (StmtNode) visit(ctx.body);
         return new ForStmtNode(new position(ctx), init, cond, step, body);
     }
 
     @Override
     public ASTNode visitWhileStmt(MxParser.WhileStmtContext ctx) {
-        ExprNode cond = ctx.cond != null ? (ExprNode)visit(ctx.cond) : null;
-        StmtNode body = ctx.body != null ? (StmtNode)visit(ctx.body) : null;
+        ExprNode cond = ctx.cond != null ? (ExprNode) visit(ctx.cond) : null;
+        StmtNode body = ctx.body != null ? (StmtNode) visit(ctx.body) : null;
         return new WhileStmtNode(new position(ctx), cond, body);
     }
 
@@ -295,7 +294,7 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
     public ASTNode visitJumpStmt(MxParser.JumpStmtContext ctx) {
         if (ctx.Break() != null) {
             return new BreakStmtNode(new position(ctx));
-        } else if (ctx.Continue() != null){
+        } else if (ctx.Continue() != null) {
             return new ContinueStmtNode(new position(ctx));
         } else if (ctx.Return() != null) {
             if (ctx.expr() != null) {
@@ -303,10 +302,12 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
             } else {
                 return new ReturnStmtNode(new position(ctx), null);
             }
-        } else throw new SyntaxError("Invalid JumpStmt", new position(ctx));
+        } else
+            throw new SyntaxError("Invalid JumpStmt", new position(ctx));
     }
 
-    @Override public ASTNode visitVarDefStmt(MxParser.VarDefStmtContext ctx) {
+    @Override
+    public ASTNode visitVarDefStmt(MxParser.VarDefStmtContext ctx) {
         return new VarDefStmtNode(new position(ctx), (VarsDefNode) visit(ctx.varDef()));
     }
 
@@ -372,7 +373,7 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
 
     // @Override
     // public ASTNode visitStmt(MxParser.StmtContext ctx) {
-    //     return visitChildren(ctx);
+    // return visitChildren(ctx);
     // }
 
 }

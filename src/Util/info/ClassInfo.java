@@ -27,6 +27,8 @@ public class ClassInfo extends BaseInfo {
         }
     }
 
+    
+
     public void AddMember(String name, TypeInfo type, position pos) {
         if (members.containsKey(name)) {
             throw new MultipleDefinitionsError(name, pos);
@@ -35,9 +37,12 @@ public class ClassInfo extends BaseInfo {
     }
 
     public void AddMethod(String name, FuncInfo func, position pos) {
-        if (methods.containsKey(name)) {
+        if (methods.containsKey(name) || members.containsKey(name)) {
             throw new MultipleDefinitionsError(name, pos);
         }
+        var type = new TypeInfo(func.retType);
+        type.isFunc = true;
+        members.put(name, type);
         methods.put(name, func);
     }
 

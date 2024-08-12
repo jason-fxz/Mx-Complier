@@ -10,9 +10,33 @@ public class Scope {
     private HashMap<String, TypeInfo> member;
     private Scope parScope;
     public enum ScopeType {
-        globalScope, classScope, funcScope, flowScope, blockScope
+        globalScope, classScope, funcScope, loopScope, blockScope
     }
     ScopeType type;
+
+    public Scope getLastloop() {
+        Scope now = this;
+        while (now != null && now.type != ScopeType.loopScope) {
+            now = now.parScope;
+        }
+        return now;
+    }
+
+    public Scope getLastClass() {
+        Scope now = this;
+        while (now != null && now.type != ScopeType.classScope) {
+            now = now.parScope;
+        }
+        return now;
+    }
+
+    public Scope getLastFunc() {
+        Scope now = this;
+        while (now != null && now.type != ScopeType.funcScope) {
+            now = now.parScope;
+        }
+        return now;
+    }
 
     public Scope(Scope parScope) {
         member = new HashMap<>();
