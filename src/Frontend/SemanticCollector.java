@@ -20,12 +20,17 @@ public class SemanticCollector implements ASTVisitor {
         for (ClassInfo classInfo : BuiltinElements.BuiltinClasses) {
             gScope.DefClass(classInfo.label, classInfo);
         }
-        
+
     }
 
     @Override
     public void visit(RootNode it) {
-        it.Defs.forEach(sd -> sd.accept(this));
+        it.Defs.forEach(sd -> {
+            if (!(sd instanceof VarsDefNode)) {
+                sd.accept(this);
+            }
+        });
+        
     }
 
     @Override

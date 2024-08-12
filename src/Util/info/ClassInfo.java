@@ -23,7 +23,7 @@ public class ClassInfo extends BaseInfo {
         members = new HashMap<>();
         this.methods = new HashMap<>();
         for (FuncInfo method : methods) {
-            this.methods.put(method.label, method);
+            this.AddMethod(method.label, method, new position());
         }
     }
 

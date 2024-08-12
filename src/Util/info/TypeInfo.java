@@ -1,5 +1,6 @@
 package Util.info;
 
+
 import Grammar.MxParser.TypeNameContext;
 
 public class TypeInfo extends BaseInfo {
@@ -58,7 +59,12 @@ public class TypeInfo extends BaseInfo {
         this.isVoid = other.isVoid;
     }
 
-    boolean equals(TypeInfo other) {
-        return typeName.equals(other.typeName) && dim == other.dim;
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof TypeInfo)) {
+            throw new RuntimeException("bad equals");
+        }
+        var o = (TypeInfo) other;
+        return typeName.equals(o.typeName) && dim == o.dim;
     }
 }

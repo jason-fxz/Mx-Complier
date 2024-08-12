@@ -26,6 +26,7 @@ public class FuncInfo extends BaseInfo {
         }
     }
 
+
     public void AddArguement(TypeInfo arg) {
         argsType.add(arg);
     }

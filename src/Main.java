@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 
 import AST.Node.RootNode;
 import Frontend.ASTBuilder;
+import Frontend.SemanticChecker;
 import Frontend.SemanticCollector;
 import Grammar.MxLexer;
 import Grammar.MxParser;
@@ -17,13 +18,19 @@ import Util.position;
 
 public class Main {
     public static void main(String[] args) throws Exception {
+        String filename;
+        InputStream input;
 
-        String filename = "test.mx";
-        InputStream input = new FileInputStream(filename);
+        if (args.length > 0) {
+            filename = args[0];
+            input = new FileInputStream(filename);
+            System.err.println("file: " +  filename);
+            position.filename = filename;
+        } else {
+            input = System.in;
+        }
         
-        System.err.println("file: " +  filename);
-        position.filename = filename;
-        
+        // InputStream input = System.in;
         try {
             RootNode ASTRoot;
             globalScope gScope = new globalScope();
@@ -42,14 +49,13 @@ public class Main {
             ASTBuilder astBuilder = new ASTBuilder();
             ASTRoot = (RootNode) astBuilder.visit(parseTreeRoot);
             
+            System.out.println(ASTRoot.toString());
+
+            
             // Collector
             new SemanticCollector(gScope).visit(ASTRoot);
             // Checker
-            
-            
-            System.out.println(ASTRoot.toString());
-            
-
+            new SemanticChecker(gScope).visit(ASTRoot);
 
         } catch (error err) {
             System.err.println(err.toString());

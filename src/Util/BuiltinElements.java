@@ -30,9 +30,9 @@ public class BuiltinElements {
     // builtin methods for array and string
     static public FuncInfo arraySizeFunc = new FuncInfo("size", intType);
     static public FuncInfo stringLengthFunc = new FuncInfo("length", intType);
-    static public FuncInfo stringSubstringFunc = new FuncInfo("substring", intType);
+    static public FuncInfo stringSubstringFunc = new FuncInfo("substring", stringType, intType, intType);
     static public FuncInfo stringParseIntFunc = new FuncInfo("parseInt", intType);
-    static public FuncInfo stringOrdFunc = new FuncInfo("ord", intType);
+    static public FuncInfo stringOrdFunc = new FuncInfo("ord", intType, intType);
 
     // builtin classes
     static public ClassInfo intClass = new ClassInfo("int");

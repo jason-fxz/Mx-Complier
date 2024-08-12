@@ -51,7 +51,6 @@ RightBrace: '}';
 Comma: ',';
 SemiColon: ';';
 
-
 // Ternary operator
 Ques: '?';
 Colon: ':';
@@ -75,26 +74,20 @@ Break: 'break';
 Continue: 'continue';
 Return: 'return';
 
-
-
 // Special symbols
-fragment EscapeChar: '\\\\' | '\\n' | '\\"';   // Escape characters
+fragment EscapeChar: '\\\\' | '\\n' | '\\"'; // Escape characters
 fragment NumberChar: [0-9];
 fragment LetterChar: [A-Za-z];
 // fragment PrintableChar: ~[\n\\"];
-fragment StringChar: ~[\n\\"]|EscapeChar;
-fragment FormatStrChar: ~[\n\\"$]|'$$'|EscapeChar;
+fragment StringChar: ~[\n\\"]| EscapeChar;
+fragment FormatStrChar: ~[\n\\"$]| '$$' | EscapeChar;
 
-Identifier: LetterChar(LetterChar|NumberChar|'_')*;
+Identifier: LetterChar (LetterChar | NumberChar | '_')*;
 
-
-// Literal 
-// LogicLiteral: False | True;
-IntegerLiteral: [1-9]NumberChar*|'0';
+// Literal LogicLiteral: False | True;
+IntegerLiteral: [1-9]NumberChar* | '0';
 StringLiteral: '"' StringChar*? '"';
 // NullLiteral: Null;
-
-
 
 // Format String
 FormatStrI: 'f"' (FormatStrChar)*? '"';
@@ -103,9 +96,8 @@ FormatStrL: 'f"' (FormatStrChar)* '$';
 FormatStrM: '$' (FormatStrChar)* '$';
 FormatStrR: '$' (FormatStrChar)* '"';
 
-
 // Comments
-LineComment: '//' .*? NewLine -> skip;
+LineComment: '//' .*? (NewLine | EOF) -> skip;
 BlockComment: '/*' .*? '*/' -> skip;
 
 // Skip 

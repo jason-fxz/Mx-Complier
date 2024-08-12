@@ -11,6 +11,7 @@ import Util.BuiltinElements;
 import Util.error.*;
 import Util.info.ClassInfo;
 import Util.info.ExprInfo;
+import Util.info.FuncInfo;
 import Util.info.TypeInfo;
 
 public class SemanticChecker implements ASTVisitor {
@@ -48,6 +49,7 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(ClassDefNode it) {
         var classScope = new classScope(curScope);
         enterScope(classScope);
+        classScope.className = it.name;
         if (it.constructor != null) {
             it.constructor.accept(this);
         }
@@ -61,6 +63,7 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(FuncDefNode it) {
         var funcScope = new funcScope(curScope);
         enterScope(funcScope);
+        funcScope.retType = new TypeInfo(it.type);
         // put parameters into scope
         it.params.forEach(par -> {
             curScope.DefVar(par.name, par.type, par.pos);
@@ -71,7 +74,7 @@ public class SemanticChecker implements ASTVisitor {
         // check main function
         if (it.name.equals("main")) {
             if (!it.type.equals(BuiltinElements.intType)) {
-                throw new SemanticError("Main function should return int", it.pos);
+                throw new SemanticError("Main function should return int but got " + it.type.GetTypeName(), it.pos);
             }
             if (it.params.size() != 0) {
                 throw new SemanticError("Main function should have no parameters", it.pos);
@@ -261,7 +264,7 @@ public class SemanticChecker implements ASTVisitor {
             }
             it.info = new ExprInfo(atomType);
             if (atomType.isFunc) {
-                it.info.funcinfo = gScope.GetFuncInfo(atomType.label);
+                it.info.funcinfo = gScope.GetFuncInfo(it.name);
                 it.info.isFunc = true;
             } else {
                 it.info.isLvalue = true;
@@ -276,7 +279,7 @@ public class SemanticChecker implements ASTVisitor {
         if (objectType.equals(BuiltinElements.intType) || objectType.equals(BuiltinElements.boolType)) {
             throw new SemanticError("Cannot access member of non-class type " + objectType.GetTypeName(), it.pos);
         }
-        if (objectType.equals(BuiltinElements.nullType)) {
+        if (objectType.isNull()) {
             throw new SemanticError("Cannot access member of null type", it.pos);
         }
         if (objectType.isFunc) {
@@ -286,12 +289,21 @@ public class SemanticChecker implements ASTVisitor {
         if (objectType.dim > 0) { // array
             if (it.member.equals("size")) {
                 it.info = new ExprInfo(BuiltinElements.arraySizeFunc);
+                it.info.funcinfo = BuiltinElements.arraySizeFunc;
             } else {
                 throw new SemanticError(
                         "Call to undefined member " + it.member + " of array type " + objectType.GetTypeName(), it.pos);
             }
         } else { // class
-            ClassInfo classInfo = gScope.GetClassInfo(objectType.typeName);
+            ClassInfo classInfo = null;
+            if (objectType.equals(BuiltinElements.thisType)) {
+                var classScope = (classScope)curScope.getLastClass();
+                if (classScope == null) throw new SemanticError("this should be used in class", it.pos);
+                classInfo = gScope.GetClassInfo(classScope.className);
+            } else {
+                classInfo = gScope.GetClassInfo(objectType.typeName);
+            }
+
             if (classInfo == null) {
                 throw new SemanticError("Call to undefined class " + objectType.GetTypeName(), it.pos);
             }
@@ -302,7 +314,7 @@ public class SemanticChecker implements ASTVisitor {
             }
             it.info = new ExprInfo(memberInfo);
             if (memberInfo.isFunc) {
-                it.info.funcinfo = classInfo.GetMethod(memberInfo.label);
+                it.info.funcinfo = classInfo.GetMethod(it.member);
                 it.info.isFunc = true;
             } else {
                 it.info.isLvalue = true;
@@ -319,6 +331,9 @@ public class SemanticChecker implements ASTVisitor {
             throw new SemanticError("Call to non-function type " + funcExprInfo.GetTypeName(), it.pos);
         }
         var funcDefInfo = funcExprInfo.funcinfo;
+        if (funcDefInfo == null) {
+            throw new RuntimeException("FUCK");
+        }
         if (it.args.size() != funcDefInfo.argsType.size()) {
             throw new SemanticError("Function " + funcDefInfo.label + " expects " + funcDefInfo.argsType.size()
                     + " arguments, but got " + it.args.size(), it.pos);
@@ -436,7 +451,7 @@ public class SemanticChecker implements ASTVisitor {
         it.info = new ExprInfo(BuiltinElements.stringType);
         it.exprlist.forEach(expr -> {
             if (!expr.info.isBasic || expr.info.isVoid) {
-                throw new SemanticError("Format string can't contain type " + expr.info.GetTypeName(), it.pos);   
+                throw new SemanticError("Format string can't contain type " + expr.info.GetTypeName(), it.pos);
             }
         });
     }
@@ -458,7 +473,8 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(IfStmtNode it) {
         it.condition.accept(this);
         if (!it.condition.info.equals(BuiltinElements.boolType)) {
-            throw new SemanticError("Condition expression should be bool but got" + it.condition.info.GetTypeName(), it.condition.pos);
+            throw new SemanticError("Condition expression should be bool but got" + it.condition.info.GetTypeName(),
+                    it.condition.pos);
         }
         // then
         Scope thenScope = new Scope(curScope);
@@ -472,7 +488,7 @@ public class SemanticChecker implements ASTVisitor {
             it.elseStmt.accept(this);
             exitScope();
         }
-        
+
     }
 
     @Override
@@ -485,7 +501,8 @@ public class SemanticChecker implements ASTVisitor {
         if (it.cond != null) {
             it.cond.accept(this);
             if (!it.cond.info.equals(BuiltinElements.boolType)) {
-                throw new SemanticError("Condition expression should be bool but got" + it.cond.info.GetTypeName(), it.cond.pos);
+                throw new SemanticError("Condition expression should be bool but got" + it.cond.info.GetTypeName(),
+                        it.cond.pos);
             }
         }
         if (it.step != null) {
@@ -502,9 +519,12 @@ public class SemanticChecker implements ASTVisitor {
         if (it.condition != null) {
             it.condition.accept(this);
             if (!it.condition.info.equals(BuiltinElements.boolType)) {
-                throw new SemanticError("While condition expression should be bool but got" + it.condition.info.GetTypeName(), it.condition.pos);
+                throw new SemanticError(
+                        "While condition expression should be bool but got" + it.condition.info.GetTypeName(),
+                        it.condition.pos);
             }
-        } else throw new SemanticError("While condition is empty", it.condition.pos);
+        } else
+            throw new SemanticError("While condition is empty", it.condition.pos);
         it.body.accept(this);
         exitScope();
     }
@@ -514,7 +534,7 @@ public class SemanticChecker implements ASTVisitor {
         if (it.expr != null) {
             it.expr.accept(this);
         }
-    
+
         var funcScope = (funcScope) curScope.getLastFunc();
         if (funcScope == null) {
             throw new SemanticError("Return statement should be in function", it.pos);
@@ -547,12 +567,12 @@ public class SemanticChecker implements ASTVisitor {
 
     @Override
     public void visit(ExprStmtNode it) {
-        it.expr.accept(null);
+        it.expr.accept(this);
     }
 
     @Override
     public void visit(EmptyStmtNode it) {
-        
+
     }
 
 }
