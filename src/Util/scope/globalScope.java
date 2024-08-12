@@ -33,6 +33,7 @@ public class globalScope extends Scope {
         ClassDefs.put(name, classInfo);
     }
 
+    @Override
     public FuncInfo GetFuncInfo(String name) {
         if (FunDefs.containsKey(name)) {
             return FunDefs.get(name);

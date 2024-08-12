@@ -1,6 +1,5 @@
 package Frontend;
 
-
 import AST.*;
 import AST.Node.*;
 import AST.Node.def.*;
@@ -50,6 +49,13 @@ public class SemanticChecker implements ASTVisitor {
         var classScope = new classScope(curScope);
         enterScope(classScope);
         classScope.className = it.name;
+        var classInfo = gScope.GetClassInfo(it.name);
+        classInfo.GetMembers().forEach((name, type) -> {
+            classScope.DefVar(name, type, it.pos);
+        });
+        classInfo.GetMethods().forEach((name, func) -> {
+            classScope.DefFunc(name, func);
+        });
         if (it.constructor != null) {
             it.constructor.accept(this);
         }
@@ -180,7 +186,7 @@ public class SemanticChecker implements ASTVisitor {
                 if (!rhsinfo.isLvalue) {
                     throw new SemanticError("Cannot perform unary operation on rvalue", it.pos);
                 }
-                it.info = new ExprInfo("int", false);
+                it.info = new ExprInfo("int", true);
             } else if (it.op.in("-", "~")) {
                 it.info = new ExprInfo("int", false);
             } else {
@@ -252,11 +258,11 @@ public class SemanticChecker implements ASTVisitor {
     @Override
     public void visit(AtomExprNode it) {
         if (it.name.equals("this")) {
-            it.info = new ExprInfo(BuiltinElements.thisType);
-            var lastclass = curScope.getLastClass();
+            var lastclass = (classScope)curScope.getLastClass();
             if (lastclass == null) {
                 throw new SemanticError("this should be in class", it.pos);
             }
+            it.info = new ExprInfo(lastclass.className, false);
         } else {
             var atomType = curScope.getVarType(it.name, true);
             if (atomType == null) {
@@ -264,7 +270,7 @@ public class SemanticChecker implements ASTVisitor {
             }
             it.info = new ExprInfo(atomType);
             if (atomType.isFunc) {
-                it.info.funcinfo = gScope.GetFuncInfo(it.name);
+                it.info.funcinfo = curScope.GetFuncInfo(it.name);
                 it.info.isFunc = true;
             } else {
                 it.info.isLvalue = true;
@@ -297,8 +303,9 @@ public class SemanticChecker implements ASTVisitor {
         } else { // class
             ClassInfo classInfo = null;
             if (objectType.equals(BuiltinElements.thisType)) {
-                var classScope = (classScope)curScope.getLastClass();
-                if (classScope == null) throw new SemanticError("this should be used in class", it.pos);
+                var classScope = (classScope) curScope.getLastClass();
+                if (classScope == null)
+                    throw new SemanticError("this should be used in class", it.pos);
                 classInfo = gScope.GetClassInfo(classScope.className);
             } else {
                 classInfo = gScope.GetClassInfo(objectType.typeName);
@@ -544,7 +551,12 @@ public class SemanticChecker implements ASTVisitor {
                 throw new SemanticError("Return type mismatch", it.pos);
             }
         } else {
-            if (!it.expr.info.equals(funcScope.retType)) {
+            if (it.expr.info.equals(BuiltinElements.thisType)) {
+                var curClass = (classScope)curScope.getLastClass();
+                if (!curClass.className.equals(funcScope.retType.typeName)) {
+                    throw new SemanticError("Return type mismatch", it.pos);
+                }
+            } else if (!it.expr.info.equals(funcScope.retType)) {
                 throw new SemanticError("Return type mismatch", it.pos);
             }
         }

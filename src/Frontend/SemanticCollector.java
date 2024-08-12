@@ -20,7 +20,6 @@ public class SemanticCollector implements ASTVisitor {
         for (ClassInfo classInfo : BuiltinElements.BuiltinClasses) {
             gScope.DefClass(classInfo.label, classInfo);
         }
-
     }
 
     @Override
@@ -30,7 +29,6 @@ public class SemanticCollector implements ASTVisitor {
                 sd.accept(this);
             }
         });
-        
     }
 
     @Override

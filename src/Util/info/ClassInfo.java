@@ -60,4 +60,11 @@ public class ClassInfo extends BaseInfo {
         return null;
     }
     
+    public HashMap<String, TypeInfo> GetMembers() {
+        return members;
+    }
+
+    public HashMap<String, FuncInfo> GetMethods() {
+        return methods;
+    }
 }

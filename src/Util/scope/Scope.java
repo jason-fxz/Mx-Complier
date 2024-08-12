@@ -4,11 +4,12 @@ import java.util.HashMap;
 
 import Util.position;
 import Util.error.MultipleDefinitionsError;
+import Util.info.FuncInfo;
 import Util.info.TypeInfo;
 
 public class Scope {
     private HashMap<String, TypeInfo> member;
-    private Scope parScope;
+    protected Scope parScope;
     public enum ScopeType {
         globalScope, classScope, funcScope, loopScope, blockScope
     }
@@ -70,6 +71,11 @@ public class Scope {
     public TypeInfo getVarType(String name, boolean lookup) {
         if (member.containsKey(name)) return member.get(name);
         else if (parScope != null && lookup) return parScope.getVarType(name, true);
+        return null;
+    }
+
+    public FuncInfo GetFuncInfo(String name) {
+        if (parScope != null) return parScope.GetFuncInfo(name);
         return null;
     }
 }
