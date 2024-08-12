@@ -35,6 +35,6 @@
 Thumbs.db
 Desktop.ini
 
-/lib/*
+testcases/**
 
 
