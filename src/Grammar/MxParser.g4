@@ -69,7 +69,7 @@ literalExpr:
 	| StringLiteral
 	| IntegerLiteral;
 
-arrayInitial: '{' exprList '}';
+arrayInitial: '{' exprList? '}';
 
 // Format String
 formatStrExpr:

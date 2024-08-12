@@ -212,15 +212,18 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
             }
             fmtexpr.strlist.add(fmtstr(ctx.FormatStrR().getText(), 1, 1));
         }
-        return visitChildren(ctx);
+        return fmtexpr;
     }
 
     @Override
     public ASTNode visitArrayInitial(MxParser.ArrayInitialContext ctx) {
         ArrayInitNode arrayinit = new ArrayInitNode(new position(ctx));
+        if (ctx.exprList() == null) {
+            return arrayinit;
+        }
         ctx.exprList().expr().forEach(expr -> {
             ExprNode child = (ExprNode) visit(expr);
-            if (!(child instanceof ArrayExprNode) && !(child instanceof LiteralExprNode)) {
+            if (!(child instanceof ArrayInitNode) && !(child instanceof LiteralExprNode)) {
                 throw new SemanticError("Array Init invaild expr", new position(ctx));
             }
             arrayinit.exprs.add(child);

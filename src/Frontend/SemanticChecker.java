@@ -103,6 +103,12 @@ public class SemanticChecker implements ASTVisitor {
             throw new MultipleDefinitionsError("Variable " + it.name + " already defined", it.pos);
         }
         if (it.init != null) {
+            if (it.type.isArray() && it.init instanceof ArrayInitNode) {
+                var arrayInit = (ArrayInitNode) it.init;
+                arrayInit.dep = it.type.dim;
+                arrayInit.info = new ExprInfo(it.type.typeName, it.type.dim, true);
+            }
+
             it.init.accept(this);
             if (!it.init.info.equals(it.type)) {
                 throw new SemanticError("Cannot assign " + it.init.info.GetTypeName() + " to " + it.type.GetTypeName(),
@@ -242,12 +248,19 @@ public class SemanticChecker implements ASTVisitor {
     @Override
     public void visit(AssignExprNode it) {
         it.lhs.accept(this);
-        it.rhs.accept(this);
         var lhsinfo = it.lhs.info;
-        var rhsinfo = it.rhs.info;
         if (!lhsinfo.isLvalue) {
             throw new SemanticError("Assign to rvalue " + it.lhs.toString(), it.pos);
         }
+
+        // if (lhsinfo.isArray() && it.rhs instanceof ArrayInitNode) {
+        //     var arrayInit = (ArrayInitNode) it.rhs;
+        //     arrayInit.dep = lhsinfo.dim;
+        //     arrayInit.info = new ExprInfo(lhsinfo.typeName, lhsinfo.dim, true);
+        // }
+
+        it.rhs.accept(this);
+        var rhsinfo = it.rhs.info;
         if (lhsinfo.equals(rhsinfo)) {
             it.info = new ExprInfo(lhsinfo);
         } else {
