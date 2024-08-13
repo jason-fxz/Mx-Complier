@@ -49,8 +49,7 @@ public class Main {
             ASTBuilder astBuilder = new ASTBuilder();
             ASTRoot = (RootNode) astBuilder.visit(parseTreeRoot);
             
-            System.out.println(ASTRoot.toString());
-
+            // System.out.println(ASTRoot.toString());
             
             // Collector
             new SemanticCollector(gScope).visit(ASTRoot);
@@ -58,10 +57,11 @@ public class Main {
             new SemanticChecker(gScope).visit(ASTRoot);
 
         } catch (error err) {
-            
             System.err.println(err.toString());
             System.out.println(err.getErrorType());
-            throw new RuntimeException();
+            System.exit(127);
         }
+
+        System.exit(0);
     }
 }
