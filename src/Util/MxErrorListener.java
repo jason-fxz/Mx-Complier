@@ -1,6 +1,6 @@
 package Util;
 
-import Util.error.SyntaxError;
+import Util.error.*;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
@@ -13,6 +13,6 @@ public class MxErrorListener extends BaseErrorListener {
             String msg,
             RecognitionException e) {
 
-        throw new SyntaxError(msg, new position(line, charPositionInLine));
+        throw new InvalidIdentifierError(msg, new position(line, charPositionInLine));
     }
 }

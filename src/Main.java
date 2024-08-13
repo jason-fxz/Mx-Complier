@@ -58,7 +58,9 @@ public class Main {
             new SemanticChecker(gScope).visit(ASTRoot);
 
         } catch (error err) {
+            
             System.err.println(err.toString());
+            System.out.println(err.getErrorType());
             throw new RuntimeException();
         }
     }

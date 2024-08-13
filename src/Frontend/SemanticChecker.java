@@ -89,7 +89,7 @@ public class SemanticChecker implements ASTVisitor {
         }
 
         if (!funcScope.haveRet && !it.type.equals(BuiltinElements.voidType) && !it.name.equals("main")) {
-            throw new SemanticError("Function " + it.name + " should have return statement", it.pos);
+            throw new MissingReturnStatementError("Function " + it.name + " should have return statement", it.pos);
         }
         exitScope();
     }
@@ -97,7 +97,7 @@ public class SemanticChecker implements ASTVisitor {
     @Override
     public void visit(VarDefNode it) {
         if (!checkTypeValid(it.type)) {
-            throw new SemanticError("Invalid type " + it.type.GetTypeName(), it.pos);
+            throw new InvalidTypeError("Invalid type " + it.type.GetTypeName(), it.pos);
         }
         if (curScope.haveVar(it.name, false)) {
             throw new MultipleDefinitionsError("Variable " + it.name + " already defined", it.pos);
@@ -111,7 +111,7 @@ public class SemanticChecker implements ASTVisitor {
 
             it.init.accept(this);
             if (!it.init.info.equals(it.type)) {
-                throw new SemanticError("Cannot assign " + it.init.info.GetTypeName() + " to " + it.type.GetTypeName(),
+                throw new TypeMismatchError("Cannot assign " + it.init.info.GetTypeName() + " to " + it.type.GetTypeName(),
                         it.pos);
             }
         }
@@ -132,19 +132,19 @@ public class SemanticChecker implements ASTVisitor {
         var lhsinfo = it.lhs.info;
         var rhsinfo = it.rhs.info;
         if (lhsinfo.isFunc) {
-            throw new SemanticError("Cannot perform binary operation on function " + lhsinfo.GetTypeName(), it.pos);
+            throw new TypeMismatchError("Cannot perform binary operation on function " + lhsinfo.GetTypeName(), it.pos);
         }
         if (rhsinfo.isFunc) {
-            throw new SemanticError("Cannot perform binary operation on function " + rhsinfo.GetTypeName(), it.pos);
+            throw new TypeMismatchError("Cannot perform binary operation on function " + rhsinfo.GetTypeName(), it.pos);
         }
         if (!lhsinfo.equals(rhsinfo)) {
-            throw new SemanticError("Cannot perform binary operation on different types " + lhsinfo.GetTypeName()
+            throw new TypeMismatchError("Cannot perform binary operation on different types " + lhsinfo.GetTypeName()
                     + " and " + rhsinfo.GetTypeName(), it.pos);
         }
         if (lhsinfo.dim == 0) { // non-array
             if (lhsinfo.equals(BuiltinElements.intType)) { // int type
                 if (it.op.in("&&", "||")) { // logic op
-                    throw new SemanticError("Operator " + it.op + " is not supported for int", it.pos);
+                    throw new TypeMismatchError("Operator " + it.op + " is not supported for int", it.pos);
                 } else if (it.op.in("==", "!=", "<", ">", "<=", ">=")) { // camp op
                     it.info = new ExprInfo("bool", false);
                 } else { // arith op / bit op
@@ -154,7 +154,7 @@ public class SemanticChecker implements ASTVisitor {
                 if (it.op.in("==", "!=", "&&", "||")) {
                     it.info = new ExprInfo("bool", false);
                 } else {
-                    throw new SemanticError("Operator " + it.op + " is not supported for bool", it.pos);
+                    throw new TypeMismatchError("Operator " + it.op + " is not supported for bool", it.pos);
                 }
             } else if (lhsinfo.equals(BuiltinElements.stringType)) {
                 if (it.op.equals("+")) { // str concat
@@ -162,20 +162,20 @@ public class SemanticChecker implements ASTVisitor {
                 } else if (it.op.in("==", "!=", "<", ">", "<=", ">=")) {
                     it.info = new ExprInfo("bool", false);
                 } else {
-                    throw new SemanticError("Operator " + it.op + " is not supported for string", it.pos);
+                    throw new TypeMismatchError("Operator " + it.op + " is not supported for string", it.pos);
                 }
             } else { // class
                 if (it.op.in("==", "!=")) {
                     it.info = new ExprInfo("bool", false);
                 } else {
-                    throw new SemanticError("Operator " + it.op + " is not supported for class", it.pos);
+                    throw new TypeMismatchError("Operator " + it.op + " is not supported for class", it.pos);
                 }
             }
         } else { // array
             if (it.op.in("==", "!=")) {
                 it.info = new ExprInfo("bool", false);
             } else {
-                throw new SemanticError("Operator " + it.op + " is not supported for array", it.pos);
+                throw new TypeMismatchError("Operator " + it.op + " is not supported for array", it.pos);
             }
         }
     }
@@ -185,27 +185,27 @@ public class SemanticChecker implements ASTVisitor {
         it.rhs.accept(this);
         var rhsinfo = it.rhs.info;
         if (rhsinfo.isFunc) {
-            throw new SemanticError("Cannot perform unary operation on function " + rhsinfo.GetTypeName(), it.pos);
+            throw new TypeMismatchError("Cannot perform unary operation on function " + rhsinfo.GetTypeName(), it.pos);
         }
         if (rhsinfo.equals(BuiltinElements.intType)) {
             if (it.op.in("++", "--")) {
                 if (!rhsinfo.isLvalue) {
-                    throw new SemanticError("Cannot perform unary operation on rvalue", it.pos);
+                    throw new TypeMismatchError("Cannot perform unary operation on rvalue", it.pos);
                 }
                 it.info = new ExprInfo("int", true);
             } else if (it.op.in("-", "~")) {
                 it.info = new ExprInfo("int", false);
             } else {
-                throw new SemanticError("Left unary operator " + it.op + " is not supported for int", it.pos);
+                throw new TypeMismatchError("Left unary operator " + it.op + " is not supported for int", it.pos);
             }
         } else if (rhsinfo.equals(BuiltinElements.boolType)) {
             if (it.op.in("!")) {
                 it.info = new ExprInfo("bool", false);
             } else {
-                throw new SemanticError("Left unary operator " + it.op + " is not supported for bool", it.pos);
+                throw new TypeMismatchError("Left unary operator " + it.op + " is not supported for bool", it.pos);
             }
         } else {
-            throw new SemanticError("Cannot perform unary operation on type " + rhsinfo.GetTypeName(), it.pos);
+            throw new TypeMismatchError("Cannot perform unary operation on type " + rhsinfo.GetTypeName(), it.pos);
         }
     }
 
@@ -214,19 +214,19 @@ public class SemanticChecker implements ASTVisitor {
         it.lhs.accept(this);
         var lhsinfo = it.lhs.info;
         if (lhsinfo.isFunc) {
-            throw new SemanticError("Cannot perform unary operation on function " + lhsinfo.GetTypeName(), it.pos);
+            throw new TypeMismatchError("Cannot perform unary operation on function " + lhsinfo.GetTypeName(), it.pos);
         }
         if (lhsinfo.equals(BuiltinElements.intType)) {
             if (it.op.in("++", "--")) {
                 if (!lhsinfo.isLvalue) {
-                    throw new SemanticError("Cannot perform unary operation on rvalue", it.pos);
+                    throw new TypeMismatchError("Cannot perform unary operation on rvalue", it.pos);
                 }
                 it.info = new ExprInfo("int", false);
             } else {
-                throw new SemanticError("Right unary operator " + it.op + " is not supported for int", it.pos);
+                throw new TypeMismatchError("Right unary operator " + it.op + " is not supported for int", it.pos);
             }
         } else {
-            throw new SemanticError("Cannot perform unary operation on type " + lhsinfo.GetTypeName(), it.pos);
+            throw new TypeMismatchError("Cannot perform unary operation on type " + lhsinfo.GetTypeName(), it.pos);
         }
     }
 
@@ -236,10 +236,10 @@ public class SemanticChecker implements ASTVisitor {
         it.thenExpr.accept(this);
         it.elseExpr.accept(this);
         if (!it.cond.info.equals(BuiltinElements.boolType)) {
-            throw new SemanticError("Condition expression should be bool " + it.cond.info.GetTypeName(), it.pos);
+            throw new InvalidTypeError("Condition expression should be bool " + it.cond.info.GetTypeName(), it.pos);
         }
         if (!it.thenExpr.info.equals(it.elseExpr.info)) {
-            throw new SemanticError("Different types in ternary expression " + it.thenExpr.info.GetTypeName() + " and "
+            throw new TypeMismatchError("Different types in ternary expression " + it.thenExpr.info.GetTypeName() + " and "
                     + it.elseExpr.info.GetTypeName(), it.pos);
         }
         it.info = new ExprInfo(it.thenExpr.info.isNull() ? it.elseExpr.info : it.thenExpr.info);
@@ -250,7 +250,7 @@ public class SemanticChecker implements ASTVisitor {
         it.lhs.accept(this);
         var lhsinfo = it.lhs.info;
         if (!lhsinfo.isLvalue) {
-            throw new SemanticError("Assign to rvalue " + it.lhs.toString(), it.pos);
+            throw new TypeMismatchError("Assign to rvalue " + it.lhs.toString(), it.pos);
         }
 
         // if (lhsinfo.isArray() && it.rhs instanceof ArrayInitNode) {
@@ -264,7 +264,7 @@ public class SemanticChecker implements ASTVisitor {
         if (lhsinfo.equals(rhsinfo)) {
             it.info = new ExprInfo(lhsinfo);
         } else {
-            throw new SemanticError("Cannot assign " + rhsinfo.GetTypeName() + " to " + lhsinfo.GetTypeName(), it.pos);
+            throw new TypeMismatchError("Cannot assign " + rhsinfo.GetTypeName() + " to " + lhsinfo.GetTypeName(), it.pos);
         }
     }
 
@@ -273,13 +273,13 @@ public class SemanticChecker implements ASTVisitor {
         if (it.name.equals("this")) {
             var lastclass = (classScope)curScope.getLastClass();
             if (lastclass == null) {
-                throw new SemanticError("this should be in class", it.pos);
+                throw new UndefinedIdentifierError("this should be in class", it.pos);
             }
             it.info = new ExprInfo(lastclass.className, false);
         } else {
             var atomType = curScope.getVarType(it.name, true);
             if (atomType == null) {
-                throw new SemanticError("Identifier " + it.name + " not defined", it.pos);
+                throw new UndefinedIdentifierError("Identifier " + it.name + " not defined", it.pos);
             }
             it.info = new ExprInfo(atomType);
             if (atomType.isFunc) {
@@ -296,13 +296,13 @@ public class SemanticChecker implements ASTVisitor {
         it.object.accept(this);
         var objectType = it.object.info;
         if (objectType.equals(BuiltinElements.intType) || objectType.equals(BuiltinElements.boolType)) {
-            throw new SemanticError("Cannot access member of non-class type " + objectType.GetTypeName(), it.pos);
+            throw new InvalidTypeError("Cannot access member of non-class type " + objectType.GetTypeName(), it.pos);
         }
         if (objectType.isNull()) {
-            throw new SemanticError("Cannot access member of null type", it.pos);
+            throw new InvalidTypeError("Cannot access member of null type", it.pos);
         }
         if (objectType.isFunc) {
-            throw new SemanticError("Cannot access member of function type " + objectType.GetTypeName(), it.pos);
+            throw new InvalidTypeError("Cannot access member of function type " + objectType.GetTypeName(), it.pos);
         }
 
         if (objectType.dim > 0) { // array
@@ -310,7 +310,7 @@ public class SemanticChecker implements ASTVisitor {
                 it.info = new ExprInfo(BuiltinElements.arraySizeFunc);
                 it.info.funcinfo = BuiltinElements.arraySizeFunc;
             } else {
-                throw new SemanticError(
+                throw new UndefinedIdentifierError(
                         "Call to undefined member " + it.member + " of array type " + objectType.GetTypeName(), it.pos);
             }
         } else { // class
@@ -318,18 +318,18 @@ public class SemanticChecker implements ASTVisitor {
             if (objectType.equals(BuiltinElements.thisType)) {
                 var classScope = (classScope) curScope.getLastClass();
                 if (classScope == null)
-                    throw new SemanticError("this should be used in class", it.pos);
+                    throw new UndefinedIdentifierError("this should be used in class", it.pos);
                 classInfo = gScope.GetClassInfo(classScope.className);
             } else {
                 classInfo = gScope.GetClassInfo(objectType.typeName);
             }
 
             if (classInfo == null) {
-                throw new SemanticError("Call to undefined class " + objectType.GetTypeName(), it.pos);
+                throw new UndefinedIdentifierError("Call to undefined class " + objectType.GetTypeName(), it.pos);
             }
             var memberInfo = classInfo.GetMemberType(it.member);
             if (memberInfo == null) {
-                throw new SemanticError(
+                throw new UndefinedIdentifierError(
                         "Call to undefined member " + it.member + " of class " + objectType.GetTypeName(), it.pos);
             }
             it.info = new ExprInfo(memberInfo);
@@ -348,14 +348,14 @@ public class SemanticChecker implements ASTVisitor {
         it.args.forEach(arg -> arg.accept(this));
         var funcExprInfo = it.func.info;
         if (!funcExprInfo.isFunc) {
-            throw new SemanticError("Call to non-function type " + funcExprInfo.GetTypeName(), it.pos);
+            throw new InvalidTypeError("Call to non-function type " + funcExprInfo.GetTypeName(), it.pos);
         }
         var funcDefInfo = funcExprInfo.funcinfo;
         if (funcDefInfo == null) {
             throw new RuntimeException("FUCK");
         }
         if (it.args.size() != funcDefInfo.argsType.size()) {
-            throw new SemanticError("Function " + funcDefInfo.label + " expects " + funcDefInfo.argsType.size()
+            throw new TypeMismatchError("Function " + funcDefInfo.label + " expects " + funcDefInfo.argsType.size()
                     + " arguments, but got " + it.args.size(), it.pos);
         }
 
@@ -363,7 +363,7 @@ public class SemanticChecker implements ASTVisitor {
             var argType = it.args.get(i).info;
             var paramType = funcDefInfo.argsType.get(i);
             if (!argType.equals(paramType)) {
-                throw new SemanticError("Function " + funcDefInfo.label + " expects " + paramType.GetTypeName()
+                throw new TypeMismatchError("Function " + funcDefInfo.label + " expects " + paramType.GetTypeName()
                         + " but got " + argType.GetTypeName(), it.pos);
             }
         }
@@ -375,7 +375,7 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(NewVarExprNode it) {
         it.info = new ExprInfo(it.name, true);
         if (!checkTypeValid(it.info) || (it.info.isBasic)) {
-            throw new SemanticError("Connot initialize type " + it.info.GetTypeName(), it.pos);
+            throw new TypeMismatchError("Connot initialize type " + it.info.GetTypeName(), it.pos);
         }
     }
 
@@ -398,7 +398,7 @@ public class SemanticChecker implements ASTVisitor {
             }
             expr.accept(this);
             if (!expr.info.equals(BuiltinElements.intType)) {
-                throw new SemanticError("Array size should be int", it.pos);
+                throw new InvalidTypeError("Array size should be int", it.pos);
             }
         }
     }
@@ -409,10 +409,10 @@ public class SemanticChecker implements ASTVisitor {
             for (var expr : it.exprs) {
                 expr.accept(this);
                 if (!(expr instanceof LiteralExprNode)) {
-                    throw new SemanticError("Array initializer should be literal", it.pos);
+                    throw new InvalidTypeError("Array initializer should be literal", it.pos);
                 }
                 if (!expr.info.typeName.equals(it.info.typeName) && !expr.info.isNull()) {
-                    throw new SemanticError("Array initializer type mismatch", it.pos);
+                    throw new TypeMismatchError("Array initializer type mismatch", it.pos);
                 }
             }
         } else {
@@ -425,7 +425,7 @@ public class SemanticChecker implements ASTVisitor {
                     subarray.info = new ExprInfo(it.info.typeName, subarray.dep, true);
                     expr.accept(this);
                 } else {
-                    throw new SemanticError("Array initializer type mismatch", it.pos);
+                    throw new TypeMismatchError("Array initializer type mismatch", it.pos);
                 }
             }
         }
@@ -437,10 +437,10 @@ public class SemanticChecker implements ASTVisitor {
         it.index.accept(this);
         var arrayType = it.array.info;
         if (!arrayType.isArray()) {
-            throw new SemanticError("Access to non-array type " + arrayType.GetTypeName(), it.array.pos);
+            throw new DimensionOutOfBoundError("Access to non-array type " + arrayType.GetTypeName(), it.array.pos);
         }
         if (!it.index.info.equals(BuiltinElements.intType)) {
-            throw new SemanticError("Array index should be int", it.index.pos);
+            throw new InvalidTypeError("Array index should be int", it.index.pos);
         }
         it.info = new ExprInfo(arrayType.typeName, arrayType.dim - 1, true);
     }
@@ -471,7 +471,7 @@ public class SemanticChecker implements ASTVisitor {
         it.info = new ExprInfo(BuiltinElements.stringType);
         it.exprlist.forEach(expr -> {
             if (!expr.info.isBasic || expr.info.isVoid) {
-                throw new SemanticError("Format string can't contain type " + expr.info.GetTypeName(), it.pos);
+                throw new InvalidTypeError("Format string can't contain type " + expr.info.GetTypeName(), it.pos);
             }
         });
     }
@@ -493,7 +493,7 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(IfStmtNode it) {
         it.condition.accept(this);
         if (!it.condition.info.equals(BuiltinElements.boolType)) {
-            throw new SemanticError("Condition expression should be bool but got" + it.condition.info.GetTypeName(),
+            throw new InvalidTypeError("Condition expression should be bool but got" + it.condition.info.GetTypeName(),
                     it.condition.pos);
         }
         // then
@@ -521,7 +521,7 @@ public class SemanticChecker implements ASTVisitor {
         if (it.cond != null) {
             it.cond.accept(this);
             if (!it.cond.info.equals(BuiltinElements.boolType)) {
-                throw new SemanticError("Condition expression should be bool but got" + it.cond.info.GetTypeName(),
+                throw new InvalidTypeError("Condition expression should be bool but got" + it.cond.info.GetTypeName(),
                         it.cond.pos);
             }
         }
@@ -539,12 +539,12 @@ public class SemanticChecker implements ASTVisitor {
         if (it.condition != null) {
             it.condition.accept(this);
             if (!it.condition.info.equals(BuiltinElements.boolType)) {
-                throw new SemanticError(
+                throw new InvalidTypeError(
                         "While condition expression should be bool but got" + it.condition.info.GetTypeName(),
                         it.condition.pos);
             }
         } else
-            throw new SemanticError("While condition is empty", it.condition.pos);
+            throw new InvalidTypeError("While condition is empty", it.condition.pos);
         it.body.accept(this);
         exitScope();
     }
@@ -557,20 +557,20 @@ public class SemanticChecker implements ASTVisitor {
 
         var funcScope = (funcScope) curScope.getLastFunc();
         if (funcScope == null) {
-            throw new SemanticError("Return statement should be in function", it.pos);
+            throw new InvalidControlFlowError("Return statement should be in function", it.pos);
         }
         if (it.expr == null) {
             if (!funcScope.retType.equals(BuiltinElements.voidType)) {
-                throw new SemanticError("Return type mismatch", it.pos);
+                throw new TypeMismatchError("Return type mismatch", it.pos);
             }
         } else {
             if (it.expr.info.equals(BuiltinElements.thisType)) {
                 var curClass = (classScope)curScope.getLastClass();
                 if (!curClass.className.equals(funcScope.retType.typeName)) {
-                    throw new SemanticError("Return type mismatch", it.pos);
+                    throw new TypeMismatchError("Return type mismatch", it.pos);
                 }
             } else if (!it.expr.info.equals(funcScope.retType)) {
-                throw new SemanticError("Return type mismatch", it.pos);
+                throw new TypeMismatchError("Return type mismatch", it.pos);
             }
         }
         funcScope.haveRet = true;
@@ -579,14 +579,14 @@ public class SemanticChecker implements ASTVisitor {
     @Override
     public void visit(BreakStmtNode it) {
         if (curScope.getLastloop() == null) {
-            throw new SemanticError("Break statement should be in loop", it.pos);
+            throw new InvalidControlFlowError("Break statement should be in loop", it.pos);
         }
     }
 
     @Override
     public void visit(ContinueStmtNode it) {
         if (curScope.getLastloop() == null) {
-            throw new SemanticError("Break statement should be in loop", it.pos);
+            throw new InvalidControlFlowError("Break statement should be in loop", it.pos);
         }
     }
 

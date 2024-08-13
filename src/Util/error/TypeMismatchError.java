@@ -5,6 +5,6 @@ import Util.position;
 
 public class TypeMismatchError extends SemanticError {
     public TypeMismatchError(String message, position pos) {
-        super("Invalid Identifier Error: " + message, pos);
+        super("Type Mismatch Error: " + message, "Type Mismatch", pos);
     }
 }

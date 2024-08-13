@@ -16,12 +16,19 @@ import Util.position;
 public abstract class error extends RuntimeException {
     private position pos;
     private String message;
+    private String type;
 
-    public error(String message, position pos) {
+    public String getErrorType() {
+        return type;
+    }
+
+    public error(String message, String type, position pos) {
+        this.type = type;
         this.message = message;
         this.pos = pos;
     }
 
+    @Override
     public String toString() {
         return message + " at " + pos.toString();
     }
