@@ -132,10 +132,10 @@ public class SemanticChecker implements ASTVisitor {
         var lhsinfo = it.lhs.info;
         var rhsinfo = it.rhs.info;
         if (lhsinfo.isFunc) {
-            throw new TypeMismatchError("Cannot perform binary operation on function " + lhsinfo.GetTypeName(), it.pos);
+            throw new InvalidTypeError("Cannot perform binary operation on function " + lhsinfo.GetTypeName(), it.pos);
         }
         if (rhsinfo.isFunc) {
-            throw new TypeMismatchError("Cannot perform binary operation on function " + rhsinfo.GetTypeName(), it.pos);
+            throw new InvalidTypeError("Cannot perform binary operation on function " + rhsinfo.GetTypeName(), it.pos);
         }
         if (!lhsinfo.equals(rhsinfo)) {
             throw new TypeMismatchError("Cannot perform binary operation on different types " + lhsinfo.GetTypeName()
@@ -144,7 +144,7 @@ public class SemanticChecker implements ASTVisitor {
         if (lhsinfo.dim == 0) { // non-array
             if (lhsinfo.equals(BuiltinElements.intType)) { // int type
                 if (it.op.in("&&", "||")) { // logic op
-                    throw new TypeMismatchError("Operator " + it.op + " is not supported for int", it.pos);
+                    throw new InvalidTypeError("Operator " + it.op + " is not supported for int", it.pos);
                 } else if (it.op.in("==", "!=", "<", ">", "<=", ">=")) { // camp op
                     it.info = new ExprInfo("bool", false);
                 } else { // arith op / bit op
@@ -154,7 +154,7 @@ public class SemanticChecker implements ASTVisitor {
                 if (it.op.in("==", "!=", "&&", "||")) {
                     it.info = new ExprInfo("bool", false);
                 } else {
-                    throw new TypeMismatchError("Operator " + it.op + " is not supported for bool", it.pos);
+                    throw new InvalidTypeError("Operator " + it.op + " is not supported for bool", it.pos);
                 }
             } else if (lhsinfo.equals(BuiltinElements.stringType)) {
                 if (it.op.equals("+")) { // str concat
@@ -162,20 +162,20 @@ public class SemanticChecker implements ASTVisitor {
                 } else if (it.op.in("==", "!=", "<", ">", "<=", ">=")) {
                     it.info = new ExprInfo("bool", false);
                 } else {
-                    throw new TypeMismatchError("Operator " + it.op + " is not supported for string", it.pos);
+                    throw new InvalidTypeError("Operator " + it.op + " is not supported for string", it.pos);
                 }
             } else { // class
                 if (it.op.in("==", "!=")) {
                     it.info = new ExprInfo("bool", false);
                 } else {
-                    throw new TypeMismatchError("Operator " + it.op + " is not supported for class", it.pos);
+                    throw new InvalidTypeError("Operator " + it.op + " is not supported for class", it.pos);
                 }
             }
         } else { // array
             if (it.op.in("==", "!=")) {
                 it.info = new ExprInfo("bool", false);
             } else {
-                throw new TypeMismatchError("Operator " + it.op + " is not supported for array", it.pos);
+                throw new InvalidTypeError("Operator " + it.op + " is not supported for array", it.pos);
             }
         }
     }
