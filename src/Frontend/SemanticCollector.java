@@ -9,7 +9,7 @@ import Util.scope.globalScope;
 import Util.info.*;
 import Util.BuiltinElements;
 
-public class SemanticCollector implements ASTVisitor {
+public class SemanticCollector implements ASTVisitor<Void> {
     private globalScope gScope;
 
     public SemanticCollector(globalScope gScope) {
@@ -23,16 +23,17 @@ public class SemanticCollector implements ASTVisitor {
     }
 
     @Override
-    public void visit(RootNode it) {
+    public Void visit(RootNode it) {
         it.Defs.forEach(sd -> {
             if (!(sd instanceof VarsDefNode)) {
                 sd.accept(this);
             }
         });
+        return null;
     }
 
     @Override
-    public void visit(ClassDefNode it) {
+    public Void visit(ClassDefNode it) {
         ClassInfo classInfo = new ClassInfo(it.name, it.pos);
 
         it.varsDefs.forEach(varsdefs -> {
@@ -54,134 +55,166 @@ public class SemanticCollector implements ASTVisitor {
         }
 
         gScope.DefClass(it.name, classInfo);
+
+        return null;
     }
 
     @Override
-    public void visit(FuncDefNode it) {
+    public Void visit(FuncDefNode it) {
         FuncInfo funcInfo = new FuncInfo(it.name, it.type, it.pos);
         it.params.forEach(par -> {
             funcInfo.AddArguement(par.type);
         });
         gScope.DefFunc(it.name, funcInfo);
+        return null;
     }
 
     @Override
-    public void visit(VarsDefNode it) {
+    public Void visit(VarsDefNode it) {
         it.varDefs.forEach(var -> {
             gScope.DefVar(var.name, var.type, var.pos);
         });
+        return null;
     }
 
     @Override
-    public void visit(VarDefNode it) {
+    public Void visit(VarDefNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(BinaryExprNode it) {
+    public Void visit(BinaryExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(LeftSingleExprNode it) {
+    public Void visit(LeftSingleExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(RightSingleExprNode it) {
+    public Void visit(RightSingleExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(ConditionExprNode it) {
+    public Void visit(ConditionExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(AssignExprNode it) {
+    public Void visit(AssignExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(AtomExprNode it) {
+    public Void visit(AtomExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(MemberExprNode it) {
+    public Void visit(MemberExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(FuncExprNode it) {
+    public Void visit(FuncExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(NewVarExprNode it) {
+    public Void visit(NewVarExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(NewArrayExprNode it) {
+    public Void visit(NewArrayExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(ArrayInitNode it) {
+    public Void visit(ArrayInitNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(ArrayExprNode it) {
+    public Void visit(ArrayExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(IntExprNode it) {
+    public Void visit(IntExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(BoolExprNode it) {
+    public Void visit(BoolExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(StringExprNode it) {
+    public Void visit(StringExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(NullExprNode it) {
+    public Void visit(NullExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(FmtStringExprNode it) {
+    public Void visit(FmtStringExprNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(BlockStmtNode it) {
+    public Void visit(BlockStmtNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(VarDefStmtNode it) {
+    public Void visit(VarDefStmtNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(IfStmtNode it) {
+    public Void visit(IfStmtNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(ForStmtNode it) {
+    public Void visit(ForStmtNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(WhileStmtNode it) {
+    public Void visit(WhileStmtNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(ReturnStmtNode it) {
+    public Void visit(ReturnStmtNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(BreakStmtNode it) {
+    public Void visit(BreakStmtNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(ContinueStmtNode it) {
+    public Void visit(ContinueStmtNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(ExprStmtNode it) {
+    public Void visit(ExprStmtNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
-    public void visit(EmptyStmtNode it) {
+    public Void visit(EmptyStmtNode it) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
 }

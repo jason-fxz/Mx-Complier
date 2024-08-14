@@ -13,7 +13,7 @@ import Util.info.ExprInfo;
 import Util.info.FuncInfo;
 import Util.info.TypeInfo;
 
-public class SemanticChecker implements ASTVisitor {
+public class SemanticChecker implements ASTVisitor<Void> {
 
     private Scope curScope;
     private globalScope gScope;
@@ -37,15 +37,16 @@ public class SemanticChecker implements ASTVisitor {
     }
 
     @Override
-    public void visit(RootNode it) {
+    public Void visit(RootNode it) {
         it.Defs.forEach(sd -> sd.accept(this));
         if (!haveMain) {
             throw new SemanticError("No main function", it.pos);
         }
+        return null;
     }
 
     @Override
-    public void visit(ClassDefNode it) {
+    public Void visit(ClassDefNode it) {
         var classScope = new classScope(curScope);
         enterScope(classScope);
         classScope.className = it.name;
@@ -63,10 +64,11 @@ public class SemanticChecker implements ASTVisitor {
             funcDef.accept(this);
         }
         exitScope();
+        return null;
     }
 
     @Override
-    public void visit(FuncDefNode it) {
+    public Void visit(FuncDefNode it) {
         var funcScope = new funcScope(curScope);
         enterScope(funcScope);
         funcScope.retType = new TypeInfo(it.type);
@@ -92,10 +94,11 @@ public class SemanticChecker implements ASTVisitor {
             throw new MissingReturnStatementError("Function " + it.name + " should have return statement", it.pos);
         }
         exitScope();
+        return null;
     }
 
     @Override
-    public void visit(VarDefNode it) {
+    public Void visit(VarDefNode it) {
         if (!checkTypeValid(it.type)) {
             throw new InvalidTypeError("Invalid type " + it.type.GetTypeName(), it.pos);
         }
@@ -116,17 +119,19 @@ public class SemanticChecker implements ASTVisitor {
             }
         }
         curScope.DefVar(it.name, it.type, it.pos);
+        return null;
     }
 
     @Override
-    public void visit(VarsDefNode it) {
+    public Void visit(VarsDefNode it) {
         for (var varDef : it.varDefs) {
             varDef.accept(this);
         }
+        return null;
     }
 
     @Override
-    public void visit(BinaryExprNode it) {
+    public Void visit(BinaryExprNode it) {
         it.lhs.accept(this);
         it.rhs.accept(this);
         var lhsinfo = it.lhs.info;
@@ -178,10 +183,11 @@ public class SemanticChecker implements ASTVisitor {
                 throw new InvalidTypeError("Operator " + it.op + " is not supported for array", it.pos);
             }
         }
+        return null;
     }
 
     @Override
-    public void visit(LeftSingleExprNode it) {
+    public Void visit(LeftSingleExprNode it) {
         it.rhs.accept(this);
         var rhsinfo = it.rhs.info;
         if (rhsinfo.isFunc) {
@@ -207,10 +213,11 @@ public class SemanticChecker implements ASTVisitor {
         } else {
             throw new TypeMismatchError("Cannot perform unary operation on type " + rhsinfo.GetTypeName(), it.pos);
         }
+        return null;
     }
 
     @Override
-    public void visit(RightSingleExprNode it) {
+    public Void visit(RightSingleExprNode it) {
         it.lhs.accept(this);
         var lhsinfo = it.lhs.info;
         if (lhsinfo.isFunc) {
@@ -228,10 +235,11 @@ public class SemanticChecker implements ASTVisitor {
         } else {
             throw new TypeMismatchError("Cannot perform unary operation on type " + lhsinfo.GetTypeName(), it.pos);
         }
+        return null;
     }
 
     @Override
-    public void visit(ConditionExprNode it) {
+    public Void visit(ConditionExprNode it) {
         it.cond.accept(this);
         it.thenExpr.accept(this);
         it.elseExpr.accept(this);
@@ -243,10 +251,11 @@ public class SemanticChecker implements ASTVisitor {
                     + it.elseExpr.info.GetTypeName(), it.pos);
         }
         it.info = new ExprInfo(it.thenExpr.info.isNull() ? it.elseExpr.info : it.thenExpr.info);
+        return null;
     }
 
     @Override
-    public void visit(AssignExprNode it) {
+    public Void visit(AssignExprNode it) {
         it.lhs.accept(this);
         var lhsinfo = it.lhs.info;
         if (!lhsinfo.isLvalue) {
@@ -266,10 +275,11 @@ public class SemanticChecker implements ASTVisitor {
         } else {
             throw new TypeMismatchError("Cannot assign " + rhsinfo.GetTypeName() + " to " + lhsinfo.GetTypeName(), it.pos);
         }
+        return null;
     }
 
     @Override
-    public void visit(AtomExprNode it) {
+    public Void visit(AtomExprNode it) {
         if (it.name.equals("this")) {
             var lastclass = (classScope)curScope.getLastClass();
             if (lastclass == null) {
@@ -289,10 +299,11 @@ public class SemanticChecker implements ASTVisitor {
                 it.info.isLvalue = true;
             }
         }
+        return null;
     }
 
     @Override
-    public void visit(MemberExprNode it) {
+    public Void visit(MemberExprNode it) {
         it.object.accept(this);
         var objectType = it.object.info;
         if (objectType.equals(BuiltinElements.intType) || objectType.equals(BuiltinElements.boolType)) {
@@ -340,10 +351,11 @@ public class SemanticChecker implements ASTVisitor {
                 it.info.isLvalue = true;
             }
         }
+        return null;
     }
 
     @Override
-    public void visit(FuncExprNode it) {
+    public Void visit(FuncExprNode it) {
         it.func.accept(this);
         it.args.forEach(arg -> arg.accept(this));
         var funcExprInfo = it.func.info;
@@ -369,18 +381,20 @@ public class SemanticChecker implements ASTVisitor {
         }
 
         it.info = new ExprInfo(funcDefInfo.retType);
+        return null;
     }
 
     @Override
-    public void visit(NewVarExprNode it) {
+    public Void visit(NewVarExprNode it) {
         it.info = new ExprInfo(it.name, true);
         if (!checkTypeValid(it.info) || (it.info.isBasic)) {
             throw new TypeMismatchError("Connot initialize type " + it.info.GetTypeName(), it.pos);
         }
+        return null;
     }
 
     @Override
-    public void visit(NewArrayExprNode it) {
+    public Void visit(NewArrayExprNode it) {
         boolean haveinit = false;
         if (it.array != null) {
             haveinit = true;
@@ -401,10 +415,11 @@ public class SemanticChecker implements ASTVisitor {
                 throw new InvalidTypeError("Array size should be int", it.pos);
             }
         }
+        return null;
     }
 
     @Override
-    public void visit(ArrayInitNode it) {
+    public Void visit(ArrayInitNode it) {
         if (it.dep == 1) {
             for (var expr : it.exprs) {
                 expr.accept(this);
@@ -429,10 +444,11 @@ public class SemanticChecker implements ASTVisitor {
                 }
             }
         }
+        return null;
     }
 
     @Override
-    public void visit(ArrayExprNode it) {
+    public Void visit(ArrayExprNode it) {
         it.array.accept(this);
         it.index.accept(this);
         var arrayType = it.array.info;
@@ -443,30 +459,35 @@ public class SemanticChecker implements ASTVisitor {
             throw new InvalidTypeError("Array index should be int", it.index.pos);
         }
         it.info = new ExprInfo(arrayType.typeName, arrayType.dim - 1, true);
+        return null;
     }
 
     @Override
-    public void visit(IntExprNode it) {
+    public Void visit(IntExprNode it) {
         it.info = new ExprInfo(BuiltinElements.intType);
+        return null;
     }
 
     @Override
-    public void visit(BoolExprNode it) {
+    public Void visit(BoolExprNode it) {
         it.info = new ExprInfo(BuiltinElements.boolType);
+        return null;
     }
 
     @Override
-    public void visit(StringExprNode it) {
+    public Void visit(StringExprNode it) {
         it.info = new ExprInfo(BuiltinElements.stringType);
+        return null;
     }
 
     @Override
-    public void visit(NullExprNode it) {
+    public Void visit(NullExprNode it) {
         it.info = new ExprInfo(BuiltinElements.nullType);
+        return null;
     }
 
     @Override
-    public void visit(FmtStringExprNode it) {
+    public Void visit(FmtStringExprNode it) {
         it.exprlist.forEach(expr -> expr.accept(this));
         it.info = new ExprInfo(BuiltinElements.stringType);
         it.exprlist.forEach(expr -> {
@@ -474,23 +495,26 @@ public class SemanticChecker implements ASTVisitor {
                 throw new InvalidTypeError("Format string can't contain type " + expr.info.GetTypeName(), it.pos);
             }
         });
+        return null;
     }
 
     @Override
-    public void visit(BlockStmtNode it) {
+    public Void visit(BlockStmtNode it) {
         Scope blockScope = new Scope(curScope);
         enterScope(blockScope);
         it.stmts.forEach(stmt -> stmt.accept(this));
         exitScope();
+        return null;
     }
 
     @Override
-    public void visit(VarDefStmtNode it) {
+    public Void visit(VarDefStmtNode it) {
         it.varsDef.accept(this);
+        return null;
     }
 
     @Override
-    public void visit(IfStmtNode it) {
+    public Void visit(IfStmtNode it) {
         it.condition.accept(this);
         if (!it.condition.info.equals(BuiltinElements.boolType)) {
             throw new InvalidTypeError("Condition expression should be bool but got" + it.condition.info.GetTypeName(),
@@ -508,11 +532,11 @@ public class SemanticChecker implements ASTVisitor {
             it.elseStmt.accept(this);
             exitScope();
         }
-
+        return null;
     }
 
     @Override
-    public void visit(ForStmtNode it) {
+    public Void visit(ForStmtNode it) {
         Scope forScope = new Scope(curScope, Scope.ScopeType.loopScope);
         enterScope(forScope);
         if (it.init != null) {
@@ -530,10 +554,11 @@ public class SemanticChecker implements ASTVisitor {
         }
         it.body.accept(this);
         exitScope();
+        return null;
     }
 
     @Override
-    public void visit(WhileStmtNode it) {
+    public Void visit(WhileStmtNode it) {
         Scope whileScope = new Scope(curScope, Scope.ScopeType.loopScope);
         enterScope(whileScope);
         if (it.condition != null) {
@@ -547,10 +572,11 @@ public class SemanticChecker implements ASTVisitor {
             throw new InvalidTypeError("While condition is empty", it.condition.pos);
         it.body.accept(this);
         exitScope();
+        return null;
     }
 
     @Override
-    public void visit(ReturnStmtNode it) {
+    public Void visit(ReturnStmtNode it) {
         if (it.expr != null) {
             it.expr.accept(this);
         }
@@ -574,30 +600,34 @@ public class SemanticChecker implements ASTVisitor {
             }
         }
         funcScope.haveRet = true;
+        return null;
     }
 
     @Override
-    public void visit(BreakStmtNode it) {
+    public Void visit(BreakStmtNode it) {
         if (curScope.getLastloop() == null) {
             throw new InvalidControlFlowError("Break statement should be in loop", it.pos);
         }
+        return null;
     }
 
     @Override
-    public void visit(ContinueStmtNode it) {
+    public Void visit(ContinueStmtNode it) {
         if (curScope.getLastloop() == null) {
             throw new InvalidControlFlowError("Break statement should be in loop", it.pos);
         }
+        return null;
     }
 
     @Override
-    public void visit(ExprStmtNode it) {
+    public Void visit(ExprStmtNode it) {
         it.expr.accept(this);
+        return null;
     }
 
     @Override
-    public void visit(EmptyStmtNode it) {
-
+    public Void visit(EmptyStmtNode it) {
+        return null;
     }
 
 }

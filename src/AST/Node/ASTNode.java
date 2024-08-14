@@ -14,5 +14,5 @@ abstract public class ASTNode {
 
     abstract public String toString();
 
-    abstract public void accept(ASTVisitor visitor);
+    abstract public <T> T accept(ASTVisitor<T> visitor);
 }
