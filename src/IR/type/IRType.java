@@ -4,6 +4,12 @@ import Util.BuiltinElements;
 import Util.info.TypeInfo;
 
 public class IRType {
+    static public IRType IRvoidType = new IRType("void");
+    static public IRType IRBoolType = new IRType("i1");
+    static public IRType IRIntType = new IRType("i32");
+    static public IRType IRPtrType = new IRType("ptr");
+
+
     private String typeName;
     public IRType(String typeName) {
         this.typeName = typeName;
@@ -33,6 +39,10 @@ public class IRType {
 
     @Override
     public String toString() {
+        return typeName;
+    }
+
+    public String gettypeName() {
         return typeName;
     }
 }

@@ -23,4 +23,6 @@ public class IRStructType extends IRType {
         str += " }";
         return str;
     }
+
+    
 }
