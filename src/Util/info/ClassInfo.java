@@ -1,27 +1,28 @@
 package Util.info;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import Util.position;
 import Util.error.MultipleDefinitionsError;
 
 public class ClassInfo extends BaseInfo {
-    private HashMap<String, TypeInfo> members;
-    private HashMap<String, FuncInfo> methods;
+    private LinkedHashMap<String, TypeInfo> members;
+    private LinkedHashMap<String, FuncInfo> methods;
     public position defpos;
 
     public ClassInfo(String label, position defpos) {
         super(label);
         this.defpos = defpos;
-        members = new HashMap<>();
-        methods = new HashMap<>();
+        members = new LinkedHashMap<>();
+        methods = new LinkedHashMap<>();
     }
 
     public ClassInfo(String label, FuncInfo ...methods) {
         super(label);
         this.defpos = new position();
-        members = new HashMap<>();
-        this.methods = new HashMap<>();
+        members = new LinkedHashMap<>();
+        this.methods = new LinkedHashMap<>();
         for (FuncInfo method : methods) {
             this.AddMethod(method.label, method, new position());
         }
@@ -60,11 +61,11 @@ public class ClassInfo extends BaseInfo {
         return null;
     }
     
-    public HashMap<String, TypeInfo> GetMembers() {
+    public LinkedHashMap<String, TypeInfo> GetMembers() {
         return members;
     }
 
-    public HashMap<String, FuncInfo> GetMethods() {
+    public LinkedHashMap<String, FuncInfo> GetMethods() {
         return methods;
     }
 }

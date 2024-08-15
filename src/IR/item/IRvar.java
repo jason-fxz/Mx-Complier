@@ -2,6 +2,7 @@ package IR.item;
 
 import AST.Node.def.VarDefNode;
 import IR.type.IRType;
+import Util.IRLabeler;
 
 public class IRvar extends IRitem{
     public String name;
@@ -14,9 +15,13 @@ public class IRvar extends IRitem{
         }
     }
 
-    public IRvar(VarDefNode varDefNode) {
+    public IRvar(VarDefNode varDefNode, boolean isGlobal) {
         super(new IRType(varDefNode.type));
-        this.name = "%" + varDefNode.name;
+        if (isGlobal) {
+            this.name = "@" + varDefNode.name;
+        } else {
+            this.name = "%" + varDefNode.name;
+        }
     }
 
     @Override

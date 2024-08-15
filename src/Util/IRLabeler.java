@@ -13,7 +13,7 @@ public class IRLabeler {
             return name + "." + cnt;
         } else {
             IdMap.put(name, 1);
-            return name;
+            return name + ".0";
         }
     }
 }

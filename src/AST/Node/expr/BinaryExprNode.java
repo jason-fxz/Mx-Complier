@@ -46,6 +46,31 @@ public class BinaryExprNode extends ExprNode {
             return symbol;
         }
 
+        public String toIRIns() {
+            switch (this) {
+                case mul: return "mul";
+                case add: return "add";
+                case sub: return "sub";
+                case div: return "sdiv";
+                case mod: return "srem";
+                case shl: return "shl";
+                case shr: return "ashr";
+                case and: return "and";
+                case or: return "or";
+                case bitand: return "and";
+                case bitor: return "or";
+                case bitxor: return "xor";
+                case lt: return "slt";
+                case gt: return "sgt";
+                case le: return "sle";
+                case ge: return "sge";
+                case eq: return "eq";
+                case ne: return "ne";
+                default:
+                    throw new RuntimeException("toIRIns(): Invalid binary operator: " + this);
+            }
+        }
+
         public boolean equals(String symbol) {
             return this.symbol.equals(symbol);
         }

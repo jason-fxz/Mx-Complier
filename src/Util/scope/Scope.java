@@ -62,8 +62,16 @@ public class Scope {
         if (member.containsKey(name)) {
             throw new MultipleDefinitionsError(name, pos);
         }
-        varLabel.put(name, IRLabeler.getIdLabel(name));
-        member.put(name, type);
+        if (this.type.equals(ScopeType.globalScope)) {
+            varLabel.put(name, "@" + name);
+        } else {
+            if (this.type.equals(ScopeType.classScope)) {
+                // var classScope = (classScope)this;
+                // varLabel.put(name, "%" + classScope.className + "." + name);
+            } else {
+                varLabel.put(name, "%" + name);
+            }
+        }
     }
 
     public String getVarLabel(String name) {

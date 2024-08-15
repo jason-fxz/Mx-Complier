@@ -118,6 +118,7 @@ public class SemanticChecker implements ASTVisitor<Void> {
             }
         }
         curScope.DefVar(it.name, it.type, it.pos);
+        it.type.label = curScope.getVarLabel(it.name);
         return null;
     }
 

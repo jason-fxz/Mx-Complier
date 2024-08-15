@@ -5,6 +5,10 @@ import IR.type.IRType;
 
 public class IRglobalVarDef {
     IRvar var;
+
+    public IRglobalVarDef(IRvar var) {
+        this.var = var;
+    }
     
     @Override
     public String toString() {

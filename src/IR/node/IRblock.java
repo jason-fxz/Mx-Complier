@@ -15,6 +15,7 @@ public class IRblock {
     public IRblock(String Label) {
         this.Label = Label;
         insList = new ArrayList<IRIns>();
+        endIns = null;
     }
 
     public void addIns(IRIns ins) {
@@ -25,6 +26,9 @@ public class IRblock {
     }
 
     public void setEndIns(IRIns ins) {
+        if (endIns != null) {
+            throw new RuntimeException("endIns have been set");
+        }
         if (ins instanceof returnIns || ins instanceof branchIns || ins instanceof jumpIns) {
             endIns = ins;
         } else {
