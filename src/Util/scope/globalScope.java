@@ -10,6 +10,7 @@ public class globalScope extends Scope {
     private HashMap<String, ClassInfo> ClassDefs;
     private HashMap<String, FuncInfo> FunDefs;
     
+    
     public globalScope() {
         super(null, ScopeType.globalScope);
         ClassDefs = new HashMap<>();

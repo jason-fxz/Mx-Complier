@@ -2,6 +2,7 @@ package Util.scope;
 
 import java.util.HashMap;
 
+import Util.IRLabeler;
 import Util.position;
 import Util.error.MultipleDefinitionsError;
 import Util.info.FuncInfo;
@@ -9,6 +10,8 @@ import Util.info.TypeInfo;
 
 public class Scope {
     private HashMap<String, TypeInfo> member;
+    private HashMap<String, String> varLabel;
+
     protected Scope parScope;
     public enum ScopeType {
         globalScope, classScope, funcScope, loopScope, blockScope
@@ -59,7 +62,12 @@ public class Scope {
         if (member.containsKey(name)) {
             throw new MultipleDefinitionsError(name, pos);
         }
+        varLabel.put(name, IRLabeler.getIdLabel(name));
         member.put(name, type);
+    }
+
+    public String getVarLabel(String name) {
+        return varLabel.get(name);
     }
 
     public boolean haveVar(String name, boolean lookup) {

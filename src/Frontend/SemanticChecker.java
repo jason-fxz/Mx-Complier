@@ -10,7 +10,6 @@ import Util.BuiltinElements;
 import Util.error.*;
 import Util.info.ClassInfo;
 import Util.info.ExprInfo;
-import Util.info.FuncInfo;
 import Util.info.TypeInfo;
 
 public class SemanticChecker implements ASTVisitor<Void> {

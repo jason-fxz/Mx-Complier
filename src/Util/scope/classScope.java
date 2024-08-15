@@ -2,7 +2,6 @@ package Util.scope;
 
 import java.util.HashMap;
 
-import Util.error.MultipleDefinitionsError;
 import Util.info.FuncInfo;
 import Util.info.TypeInfo;
 

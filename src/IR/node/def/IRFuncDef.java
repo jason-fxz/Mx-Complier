@@ -9,12 +9,27 @@ public class IRFuncDef {
     String name;
     IRType returnType;
     ArrayList<IRvar> params;
+    public IRblock entryBlock;
     public ArrayList<IRblock> blockList;
 
-    public IRFuncDef(String name, IRType returnType, ArrayList<IRvar> params) {
+
+    public IRFuncDef(String name, IRType returnType) {
         this.name = name;
         this.returnType = returnType;
-        this.params = params;
+        this.params = new ArrayList<>();
+        this.entryBlock = new IRblock("entry");
+        this.blockList = new ArrayList<>();
+        this.blockList.add(this.entryBlock);
+    }
+
+    public void addParam(IRvar param) {
+        params.add(param);
+    }
+
+    public IRblock newBlock(String label) {
+        IRblock block = new IRblock(label);
+        blockList.add(block);
+        return block;
     }
 
     @Override
