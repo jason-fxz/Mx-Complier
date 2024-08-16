@@ -44,12 +44,14 @@ public class Scope {
 
     public Scope(Scope parScope) {
         member = new HashMap<>();
+        varLabel = new HashMap<>();
         this.parScope = parScope; 
         this.type = ScopeType.blockScope;
     }
 
     public Scope(Scope parScope, ScopeType type) {
         member = new HashMap<>();
+        varLabel = new HashMap<>();
         this.parScope = parScope; 
         this.type = type;
     }
@@ -64,7 +66,7 @@ public class Scope {
         }
         if (this.type.equals(ScopeType.globalScope)) {
             varLabel.put(name, "@" + name);
-        } else {
+        } else { 
             if (this.type.equals(ScopeType.classScope)) {
                 // var classScope = (classScope)this;
                 // varLabel.put(name, "%" + classScope.className + "." + name);
@@ -72,6 +74,7 @@ public class Scope {
                 varLabel.put(name, "%" + name);
             }
         }
+        member.put(name, type);
     }
 
     public String getVarLabel(String name) {

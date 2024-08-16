@@ -9,6 +9,8 @@ abstract public class IRitem {
         this.type = type;
     }
 
+    public IRitem() {}
+
     @Override
     public abstract String toString();
 

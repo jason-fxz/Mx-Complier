@@ -11,6 +11,7 @@ public class IRType {
 
     private String typeName;
     private String typeLabel;
+    private int arraySize = 0;
 
     public IRType(String typeName) {
         this.typeName = typeName;
@@ -50,5 +51,9 @@ public class IRType {
 
     public String getTypeLabel() {
         return typeLabel;
+    }
+
+    public boolean isArray() {
+        return arraySize != 0;
     }
 }

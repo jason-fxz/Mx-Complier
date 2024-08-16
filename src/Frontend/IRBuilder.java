@@ -41,6 +41,7 @@ import IR.item.IRvar;
 import IR.node.*;
 import IR.node.def.*;
 import IR.node.ins.*;
+import IR.node.ins.phiIns.phiItem;
 import IR.type.*;
 import Util.BuiltinElements;
 import Util.IRLabeler;
@@ -142,57 +143,151 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     public IRhelper visit(BinaryExprNode it) {
 
         String opstr = it.op.toIRIns();
-        IRvar result = null;
-
+        IRvar res = null;
         var lhsinfo = it.lhs.info;
         var rhsinfo = it.rhs.info;
-        
+
         if (it.op.in("&&", "||")) {
             // Short-circuit evaluation
-            
-        } else {
-            if (lhsinfo.isArray() || lhsinfo.isCustom()) {
-                // only support == and !=  for array and class
-                
-                // TODO
+            IRvar lhsvar = (IRvar)it.lhs.accept(this).exprVar;
+            IRblock land_rhs = curFunc.newBlock(IRLabeler.getIdLabel("land.rhs"));
+            IRblock land_end = curFunc.newBlock(IRLabeler.getIdLabel("land.end"));
+            land_rhs.setEndIns(new jumpIns(land_end.getLabel()));
+            res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel(opstr));
+
+            IRblock lastcur = curBlock;
+            curBlock = land_rhs;
+            IRvar rhsvar = (IRvar)it.rhs.accept(this).exprVar;
+
+            if (it.op.equals("&&")) {
+                lastcur.setEndIns(new branchIns(lhsvar, land_rhs.getLabel(), land_end.getLabel()));
+                land_end.addIns(new phiIns(res,
+                        new phiItem(new IRLiteral(IRType.IRBoolType, "false"), lastcur.getLabel()),
+                        new phiItem(rhsvar, land_rhs.getLabel())));
             } else {
-                // TODO
+                lastcur.setEndIns(new branchIns(lhsvar, land_end.getLabel(), land_rhs.getLabel()));
+                land_end.addIns(new phiIns(res,
+                        new phiItem(new IRLiteral(IRType.IRBoolType, "ture"), lastcur.getLabel()),
+                        new phiItem(rhsvar, land_rhs.getLabel())));
+            }
+            curBlock = land_end;
+
+        } else {
+            IRvar lhsvar = (IRvar)it.lhs.accept(this).exprVar;
+            IRvar rhsvar = (IRvar)it.rhs.accept(this).exprVar;
+            if (lhsinfo.isArray() || lhsinfo.isCustom()) {
+                // only support == and != for array and class
+                res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel(opstr));
+                if (it.op.in("==", "!=")) {
+                    curBlock.addIns(new icmpIns(res, opstr, lhsvar, rhsvar));
+                }
+            } else if (lhsinfo.equals(BuiltinElements.stringType)) {
+                if (it.op.equals("+")) {
+                    // strcat TODO
+                } else if (it.op.in("==", "!=", "<", ">", "<=", ">=")) {
+                    // strcmp TODO
+                }
+                throw new UnsupportedOperationException("WTF? String binary");
+            } else if (lhsinfo.equals(BuiltinElements.intType)) {
+                if (it.op.in("==", "!=", "<", ">", "<=", ">=")) {
+                    // camp
+                    res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel(opstr));
+                    curBlock.addIns(new icmpIns(res, opstr, lhsvar, rhsvar));
+                } else {
+                    // arith
+                    res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel(opstr));
+                    curBlock.addIns(new arithIns(res, opstr, lhsvar, rhsvar));
+                }
+            } else if (lhsinfo.equals(BuiltinElements.boolType)) {
+                if (it.op.in("==", "!=")) {
+                    res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel(opstr));
+                    curBlock.addIns(new icmpIns(res, opstr, lhsvar, rhsvar));
+                }
             }
 
-
-
+        }
+        if (res == null) {
+            throw new UnsupportedOperationException("res == null !!! visit(BinaryExprNode it) ");
         }
 
-
-        return null; // TODO
+        return new IRhelper(res); // TODO
     }
 
     @Override
     public IRhelper visit(LeftSingleExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        IRhelper rhs = it.rhs.accept(this), helper = new IRhelper();
+        var rhsinfo = it.rhs.info;
+        IRvar res = null;
+        if (rhsinfo.equals(BuiltinElements.intType)) {
+            if (it.op.in("++")) { // LValue
+                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("Lselfinc"));
+                curBlock.addIns(new arithIns(res, "add", rhs.exprVar, new IRLiteral("1")));
+                curBlock.addIns(new storeIns(res, rhs.exprAddr));
+                helper.exprAddr = rhs.exprAddr;
+            } else if (it.op.in("--")) {
+                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("Lselfdec"));
+                curBlock.addIns(new arithIns(res, "sub", rhs.exprVar, new IRLiteral("1")));
+                curBlock.addIns(new storeIns(res, rhs.exprAddr));
+                helper.exprAddr = rhs.exprAddr;
+            } else if (it.op.in("-")) {
+                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("neg"));
+                curBlock.addIns(new arithIns(res, "sub", new IRLiteral(IRType.IRIntType, "0"), helper.exprVar));
+            } else if (it.op.in("~")) {
+                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("not"));
+                curBlock.addIns(new arithIns(res, "xor", helper.exprVar, new IRLiteral("-1")));
+            } else throw new UnsupportedOperationException("WTF? int LeftSingleExprNode");
+        } else if (rhsinfo.equals(BuiltinElements.boolType)) {
+            if (it.op.in("!")) {
+                res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("not"));
+                curBlock.addIns(new arithIns(res, "xor",  helper.exprVar, new IRLiteral("true")));
+            } else throw new UnsupportedOperationException("WTF? bool LeftSingleExprNode");
+        } else throw new UnsupportedOperationException("WTF?? LeftSingleExprNode");
+        
+        helper.exprVar = res;
+        return helper;
     }
 
     @Override
     public IRhelper visit(RightSingleExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        IRhelper lhs = it.lhs.accept(this), helper = new IRhelper();
+        var lhsinfo = it.lhs.info;
+        IRvar res = null;
+
+        if (lhsinfo.equals(BuiltinElements.intType)) {
+            if (it.op.in("++")) {
+                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("Rselfinc"));
+                curBlock.addIns(new arithIns(res, "add", lhs.exprVar, new IRLiteral("1")));
+            } else if (it.op.in("--")) {
+                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("Rselfdec"));
+                curBlock.addIns(new arithIns(res, "sub", lhs.exprVar, new IRLiteral("1")));                
+            } else throw new UnsupportedOperationException("WTF? int RightSingleExprNode");
+        } else throw new UnsupportedOperationException("WTF?? RightSingleExprNode");
+        helper.exprVar = res;
+        return helper;
     }
 
     @Override
     public IRhelper visit(ConditionExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        IRvar cond = (IRvar)it.cond.accept(this).exprVar;
+        IRvar truevar = (IRvar)it.thenExpr.accept(this).exprVar;
+        IRvar falsevar = (IRvar)it.elseExpr.accept(this).exprVar;
+        IRvar res = new IRvar(truevar.type, IRLabeler.getIdLabel("cond"));
+        curBlock.addIns(new selectIns(res, cond, truevar, falsevar));
+        return new IRhelper(res);
     }
 
     @Override
     public IRhelper visit(AssignExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        IRhelper lhs = it.lhs.accept(this), rhs = it.rhs.accept(this), helper = new IRhelper();
+        curBlock.addIns(new storeIns(rhs.exprVar, rhs.exprAddr));
+        helper.exprVar = rhs.exprVar;
+        helper.exprAddr = lhs.exprAddr;
+        return helper;
     }
 
     @Override
     public IRhelper visit(AtomExprNode it) {
+
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
@@ -235,18 +330,18 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
     @Override
     public IRhelper visit(IntExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        return new IRhelper(new IRLiteral(IRType.IRIntType, String.valueOf(it.value)));
     }
 
     @Override
     public IRhelper visit(BoolExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        return new IRhelper(new IRLiteral(IRType.IRBoolType, String.valueOf(it.value)));
     }
 
     @Override
     public IRhelper visit(StringExprNode it) {
+        
+        
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }

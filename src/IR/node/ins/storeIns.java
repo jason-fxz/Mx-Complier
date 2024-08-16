@@ -3,6 +3,7 @@ package IR.node.ins;
 import IR.item.IRitem;
 import IR.item.IRvar;
 
+// store <ty> <value>, ptr <pointer>
 public class storeIns extends IRIns {
     IRitem value;
     IRvar pointer;

@@ -17,7 +17,18 @@ LLVM IR
 
 for ExprNode:
 
-   after visit, return a var (type + name), which is the result of the expression
+   after visit, return a var (type + name), which is the result of the expression. If the expression is Lvalue, also return the addr or expr
+
+   for atomExpr:
+      var:
+         globelvar: @var is addr
+         funcparam: %var.addr is addr 
+         localvar:  %var is addr
+         this:      %this is addr
+      
+         return (exprVar, exprAddr)
+
+      func:
 
 for For/While/If StmtNode:
 
@@ -49,4 +60,5 @@ for FuncDefNode:
 for blockStmt:
 
    just visit blocklist
+
 
