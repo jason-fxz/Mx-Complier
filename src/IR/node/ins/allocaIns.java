@@ -1,7 +1,6 @@
 package IR.node.ins;
 
 import IR.item.IRvar;
-import IR.type.IRType;
 
 public class allocaIns extends IRIns {
     IRvar result;

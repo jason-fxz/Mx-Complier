@@ -13,7 +13,7 @@ public class loadIns extends IRIns {
 
     @Override
     public String toString() {
-        return result.toString() + " = load " + result.type.toString() + pointer.toString();
+        return result.toString() + " = load " + result.type.toString() + ", ptr " + pointer.toString();
     }
     
 }

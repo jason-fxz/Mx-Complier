@@ -9,10 +9,27 @@ public class callIns extends IRIns {
     String func;
     ArrayList<IRitem> args;
 
+    public callIns(IRvar result, String func, IRitem ... args) {
+        this.result = result;
+        this.func = func;
+        this.args = new ArrayList<>();
+        for (var arg : args) {
+            this.args.add(arg);
+        }
+    }
+
     public callIns(IRvar result, String func, ArrayList<IRitem> args) {
         this.result = result;
         this.func = func;
         this.args = args;
+    }
+
+    public callIns(String func, IRitem ... args) {
+        this.func = func;
+        this.args = new ArrayList<>();
+        for (var arg : args) {
+            this.args.add(arg);
+        }
     }
 
     public callIns(String func, ArrayList<IRitem> args) {

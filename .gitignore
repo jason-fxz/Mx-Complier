@@ -20,3 +20,6 @@ testcases/**
 bin/**
 test.mx
 
+# llvm ir
+*.ll
+

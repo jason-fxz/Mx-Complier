@@ -1,33 +1,49 @@
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.PrintStream;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
 import AST.Node.RootNode;
 import Frontend.ASTBuilder;
+import Frontend.IRBuilder;
 import Frontend.SemanticChecker;
 import Frontend.SemanticCollector;
 import Grammar.MxLexer;
 import Grammar.MxParser;
 import Grammar.MxParser.ProgramContext;
+import IR.node.IRRoot;
 import Util.error.error;
 import Util.scope.globalScope;
+import Util.ArgumentParser;
 import Util.MxErrorListener;
 import Util.position;
 
+
 public class Main {
     public static void main(String[] args) throws Exception {
+        ArgumentParser ArgP = new ArgumentParser(args);
+
         String filename;
         InputStream input;
+        PrintStream output;
 
-        if (args.length > 0) {
-            filename = args[0];
+        if (ArgP.hasArgument("-f")) {
+            filename = ArgP.getArgument("-f");
             input = new FileInputStream(filename);
             System.err.println("file: " +  filename);
             position.filename = filename;
         } else {
             input = System.in;
+        }
+
+        if (ArgP.hasArgument("-o")) {
+            String outputfile = ArgP.getArgument("-o");
+            System.err.println("output: " + outputfile);
+            output = new PrintStream(outputfile);
+        } else {
+            output = System.out;
         }
         
         // InputStream input = System.in;
@@ -49,12 +65,30 @@ public class Main {
             ASTBuilder astBuilder = new ASTBuilder();
             ASTRoot = (RootNode) astBuilder.visit(parseTreeRoot);
             
-            // System.out.println(ASTRoot.toString());
+            // print AST
+            if (ArgP.hasArgument("-debug-ast")) {
+                output.println(ASTRoot.toString());
+            }
             
             // Collector
             new SemanticCollector(gScope).visit(ASTRoot);
             // Checker
             new SemanticChecker(gScope).visit(ASTRoot);
+
+            if (ArgP.hasArgument("-fsyntax-only")) {
+                System.exit(0);
+            }
+
+            // IRBuilder
+            IRBuilder irBuilder = new IRBuilder();
+            irBuilder.visit(ASTRoot);
+            IRRoot irRoot = irBuilder.getRoot();
+
+            // print IR
+            if (ArgP.hasArgument("-emit-llvm")) {
+                output.println(irRoot.toString());
+            }
+            
 
         } catch (error err) {
             System.err.println(err.toString());
@@ -62,6 +96,8 @@ public class Main {
             System.exit(127);
         }
 
+        output.flush();
+        output.close();
         System.exit(0);
     }
 }

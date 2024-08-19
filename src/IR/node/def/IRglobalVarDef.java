@@ -14,11 +14,11 @@ public class IRglobalVarDef {
     public String toString() {
         String str = var.toString() + " = global " + var.type.toString();
         if (var.type.equals(IRType.IRBoolType)) {
-            str += " false\n";
+            str += " false";
         } else if (var.type.equals(IRType.IRIntType)) {
-            str += " 0\n";
+            str += " 0";
         } else if (var.type.equals(IRType.IRPtrType)) {
-            str += " null\n";
+            str += " null";
         } else {
             throw new RuntimeException("Unsupported type in global variable definition");
         }

@@ -15,7 +15,7 @@ public class storeIns extends IRIns {
 
     @Override
     public String toString() {
-        return "store " + value.type.toString() + value.toString() + ", ptr " + pointer.type.toString();
+        return "store " + value.type.toString() + " " + value.toString() + ", ptr " + pointer.toString();
     }
 
 }

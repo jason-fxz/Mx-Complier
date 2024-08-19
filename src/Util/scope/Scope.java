@@ -70,10 +70,10 @@ public class Scope {
             varLabel.put(name, "@" + name);
         } else {
             if (this.type.equals(ScopeType.classScope)) {
-                var classScope = (classScope) this;
+                // var classScope = (classScope) this;
                 // class var
                 // Use of class member !!!
-                varLabel.put(name, "%this::" + name);
+                varLabel.put(name, "%this.m." + name);
             } else {
                 // local var
                 varLabel.put(name, IRLabeler.getIdLabel("%" + name));

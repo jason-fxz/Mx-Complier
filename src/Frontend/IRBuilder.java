@@ -8,6 +8,7 @@ import AST.Node.expr.*;
 import AST.Node.stmt.*;
 import IR.IRhelper;
 import IR.item.IRLiteral;
+import IR.item.IRitem;
 import IR.item.IRvar;
 import IR.node.*;
 import IR.node.def.*;
@@ -24,20 +25,27 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     private IRFuncDef gInit;
     private IRRoot root;
     private String curClassName;
+    private ArrayList<IRvar> curClassMembers;
     private ArrayList<String> LoopStack_break;
     private ArrayList<String> LoopStack_continue;
 
     public IRBuilder() {
         curBlock = null;
         curFunc = null;
+        curClassMembers = null;
         root = new IRRoot();
         LoopStack_break = new ArrayList<>();
         LoopStack_continue = new ArrayList<>();
-        gInit = new IRFuncDef("__global_init", new IRType("void"));
+        gInit = new IRFuncDef("@__mx_global_init", new IRType("void"));
+    }
+    
+    public IRRoot getRoot() {
+        return root;
     }
 
     private void handleglobalVar(VarDefNode varDef) {
         IRvar var = new IRvar(varDef, true);
+        // in fact global variable is a global pointer
         root.gVars.add(new IRglobalVarDef(var));
         if (varDef.init != null) {
             var t = varDef.init.accept(this); // calc the init expr
@@ -47,6 +55,22 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
     @Override
     public IRhelper visit(RootNode it) {
+        // Builtin Functions Declaration
+        root.builtinfuncs.add(new IRFuncDec("@print", new IRType("void"), new IRType("ptr")));
+        root.builtinfuncs.add(new IRFuncDec("@println", new IRType("void"), new IRType("ptr")));
+        root.builtinfuncs.add(new IRFuncDec("@printInt", new IRType("void"), new IRType("i32")));
+        root.builtinfuncs.add(new IRFuncDec("@printlnInt", new IRType("void"), new IRType("i32")));
+        root.builtinfuncs.add(new IRFuncDec("@getString", new IRType("ptr")));
+        root.builtinfuncs.add(new IRFuncDec("@getInt", new IRType("i32")));
+        root.builtinfuncs.add(new IRFuncDec("@toString", new IRType("ptr"), new IRType("i32")));
+
+        root.builtinfuncs.add(new IRFuncDec("@__mx_string_concat", new IRType("ptr"), new IRType("ptr"), new IRType("ptr")));
+        root.builtinfuncs.add(new IRFuncDec("@__mx_string_compare", new IRType("i32"), new IRType("ptr"), new IRType("ptr")));
+        root.builtinfuncs.add(new IRFuncDec("@string.length", new IRType("i32"), new IRType("ptr")));
+        root.builtinfuncs.add(new IRFuncDec("@string.substring", new IRType("ptr"), new IRType("ptr"), new IRType("i32"), new IRType("i32")));
+        root.builtinfuncs.add(new IRFuncDec("@string.parseInt", new IRType("i32"), new IRType("ptr")));
+        root.builtinfuncs.add(new IRFuncDec("@string.ord", new IRType("i32"), new IRType("ptr"), new IRType("i32")));
+
         // First Collect all the global variable
         curFunc = gInit;
         curBlock = gInit.entryBlock;
@@ -65,6 +89,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         // Then handle the function or Class
         it.Defs.forEach(sd -> {
             if (!(sd instanceof VarsDefNode)) {
+                
                 sd.accept(this);
             }
         });
@@ -75,9 +100,11 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     public IRhelper visit(ClassDefNode it) {
         curClassName = it.name;
         IRStructType classType = new IRStructType("class." + it.name);
+        curClassMembers = new ArrayList<>();
 
         it.classInfo.GetMembers().forEach((name, info) -> {
             classType.AddMember(new IRType(info));
+            curClassMembers.add(new IRvar("%this.m." + name));
         });
 
         root.gStrust.add(new IRStructDef(classType));
@@ -95,16 +122,22 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
     @Override
     public IRhelper visit(FuncDefNode it) {
-        IRFuncDef funcDef = new IRFuncDef("@" + curClassName == null ? it.name : curClassName + "." + it.name,
-                new IRType(it.type));
-    
+        IRFuncDef funcDef = new IRFuncDef("@" + (curClassName == null ? it.name : curClassName + "." + it.name),
+        new IRType(it.type));
+        root.funcs.add(funcDef);
         curFunc = funcDef;
         curBlock = funcDef.entryBlock;
-
+        if (it.name.equals("main")) {
+            curBlock.addIns(new callIns("__mx_global_init"));
+        }
+        
         if (curClassName != null) {
             funcDef.addParam(new IRvar(IRType.IRPtrType, "%this"));
-            // TODO for all the member variable, %this.var = alloca ....
-
+            
+            for (int i = 0; i < curClassMembers.size(); ++i) {
+                IRvar tmpvar = curClassMembers.get(i);
+                funcDef.entryBlock.addIns(new getelementptr(tmpvar, new IRvar("%this"), "%class." + curClassName, 0, i));
+            }
         }
 
         it.params.forEach(p -> {
@@ -125,7 +158,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         curFunc.entryBlock.addIns(new allocaIns(var)); // set the alloca instruction
         if (it.init != null) {
             IRhelper t = it.init.accept(this); // calc the init expr
-            curFunc.entryBlock.addIns(new storeIns(t.exprVar, var)); // store the result to the variable
+            curBlock.addIns(new storeIns(t.exprVar, var)); // store the result to the variable
         }
         return null;
     }
@@ -144,7 +177,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         String opstr = it.op.toIRIns();
         IRvar res = null;
         var lhsinfo = it.lhs.info;
-        var rhsinfo = it.rhs.info;
+        // var rhsinfo = it.rhs.info;
 
         if (it.op.in("&&", "||")) {
             // Short-circuit evaluation
@@ -152,7 +185,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
             IRblock land_rhs = curFunc.newBlock(IRLabeler.getIdLabel("land.rhs"));
             IRblock land_end = curFunc.newBlock(IRLabeler.getIdLabel("land.end"));
 
-            res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel(opstr));
+            res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
 
             IRblock lastcur = curBlock; // land.lhs done
             curBlock = land_rhs;
@@ -173,34 +206,41 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
             curBlock = land_end;
 
         } else {
-            IRvar lhsvar = (IRvar) it.lhs.accept(this).exprVar;
-            IRvar rhsvar = (IRvar) it.rhs.accept(this).exprVar;
+            IRitem lhsvar = it.lhs.accept(this).exprVar;
+            IRitem rhsvar = it.rhs.accept(this).exprVar;
             if (lhsinfo.isArray() || lhsinfo.isCustom()) {
                 // only support == and != for array and class
-                res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel(opstr));
+                res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
                 if (it.op.in("==", "!=")) {
                     curBlock.addIns(new icmpIns(res, opstr, lhsvar, rhsvar));
                 }
             } else if (lhsinfo.equals(BuiltinElements.stringType)) {
                 if (it.op.equals("+")) {
-                    // strcat TODO
+                    // strcat my builtin.c 
+                    // char *__mx_string_concat(char *s1, char *s2)
+                    res = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("%str.concat"));
+                    curBlock.addIns(new callIns(res, "__mx_string_concat", lhsvar, rhsvar));
                 } else if (it.op.in("==", "!=", "<", ">", "<=", ">=")) {
-                    // strcmp TODO
-                }
-                throw new UnsupportedOperationException("WTF? String binary");
+                    // strcmp my builtin.c
+                    // int __mx_string_compare(char *s1, char *s2)
+                    IRvar tmpcmp = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%str.cmp"));
+                    res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%str.cmp." + opstr));
+                    curBlock.addIns(new callIns(tmpcmp, "__mx_string_compare", lhsvar, rhsvar));
+                    curBlock.addIns(new icmpIns(res, opstr, tmpcmp, new IRLiteral("0")));
+                } else throw new UnsupportedOperationException("WTF? String binary: " + it.op);
             } else if (lhsinfo.equals(BuiltinElements.intType)) {
                 if (it.op.in("==", "!=", "<", ">", "<=", ">=")) {
                     // camp
-                    res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel(opstr));
+                    res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
                     curBlock.addIns(new icmpIns(res, opstr, lhsvar, rhsvar));
                 } else {
                     // arith
-                    res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel(opstr));
+                    res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%" + opstr));
                     curBlock.addIns(new arithIns(res, opstr, lhsvar, rhsvar));
                 }
             } else if (lhsinfo.equals(BuiltinElements.boolType)) {
                 if (it.op.in("==", "!=")) {
-                    res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel(opstr));
+                    res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
                     curBlock.addIns(new icmpIns(res, opstr, lhsvar, rhsvar));
                 }
             }
@@ -220,26 +260,26 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         IRvar res = null;
         if (rhsinfo.equals(BuiltinElements.intType)) {
             if (it.op.in("++")) { // LValue
-                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("Lselfinc"));
+                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%Lselfinc"));
                 curBlock.addIns(new arithIns(res, "add", rhs.exprVar, new IRLiteral("1")));
                 curBlock.addIns(new storeIns(res, rhs.exprAddr));
                 helper.exprAddr = rhs.exprAddr;
             } else if (it.op.in("--")) {
-                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("Lselfdec"));
+                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%Lselfdec"));
                 curBlock.addIns(new arithIns(res, "sub", rhs.exprVar, new IRLiteral("1")));
                 curBlock.addIns(new storeIns(res, rhs.exprAddr));
                 helper.exprAddr = rhs.exprAddr;
             } else if (it.op.in("-")) {
-                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("neg"));
+                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%neg"));
                 curBlock.addIns(new arithIns(res, "sub", new IRLiteral(IRType.IRIntType, "0"), helper.exprVar));
             } else if (it.op.in("~")) {
-                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("not"));
+                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%not"));
                 curBlock.addIns(new arithIns(res, "xor", helper.exprVar, new IRLiteral("-1")));
             } else
                 throw new UnsupportedOperationException("WTF? int LeftSingleExprNode");
         } else if (rhsinfo.equals(BuiltinElements.boolType)) {
             if (it.op.in("!")) {
-                res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("not"));
+                res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%not"));
                 curBlock.addIns(new arithIns(res, "xor", helper.exprVar, new IRLiteral("true")));
             } else
                 throw new UnsupportedOperationException("WTF? bool LeftSingleExprNode");
@@ -258,10 +298,10 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         if (lhsinfo.equals(BuiltinElements.intType)) {
             if (it.op.in("++")) {
-                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("Rselfinc"));
+                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%Rselfinc"));
                 curBlock.addIns(new arithIns(res, "add", lhs.exprVar, new IRLiteral("1")));
             } else if (it.op.in("--")) {
-                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("Rselfdec"));
+                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%Rselfdec"));
                 curBlock.addIns(new arithIns(res, "sub", lhs.exprVar, new IRLiteral("1")));
             } else
                 throw new UnsupportedOperationException("WTF? int RightSingleExprNode");
@@ -284,7 +324,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     @Override
     public IRhelper visit(AssignExprNode it) {
         IRhelper lhs = it.lhs.accept(this), rhs = it.rhs.accept(this), helper = new IRhelper();
-        curBlock.addIns(new storeIns(rhs.exprVar, rhs.exprAddr));
+        curBlock.addIns(new storeIns(rhs.exprVar, lhs.exprAddr));
         helper.exprVar = rhs.exprVar;
         helper.exprAddr = lhs.exprAddr;
         return helper;
@@ -293,7 +333,11 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     @Override
     public IRhelper visit(AtomExprNode it) {
         if (it.info.isFunc) {
-            return new IRhelper(it.info.label);
+            IRhelper helper = new IRhelper(it.info.label);
+            if (it.info.label.contains(".")) {
+                helper.funthis = new IRvar("%this");
+            }
+            return helper;
         } else {
             // if (it.info.label.startsWith("!this!")) {
             //     IRvar tmpthis = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("%atom.this"));
@@ -325,29 +369,39 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         if (it.info.isFunc) {
             helper.funName = it.info.label;
             helper.funthis = (IRvar)obj.exprVar;
-        } else if (it.object.info.equals(BuiltinElements.stringType)) {
-
         } else {
-            IRvar tmpvar = new IRvar(new IRType(it.info), IRLabeler.getIdLabel("%member." + it.member));
-            IRvar varaddr = new IRvar(IRLabeler.getIdLabel("%member." + it.member + ".addr"));
+            IRvar tmpvar = new IRvar(new IRType(it.info), IRLabeler.getIdLabel("%" + it.member));
+            IRvar varaddr = new IRvar(IRLabeler.getIdLabel("%" + it.member + ".addr"));
             
-
-
-            // it.info.label
-
-
-            curBlock.addIns(new getelementptr(varaddr, obj.exprVar, "%class." + it.object.info.typeName, null));
-            
+            int elementId = Integer.parseInt(it.info.label);
+            curBlock.addIns(new getelementptr(varaddr, obj.exprVar, "%class." + it.object.info.typeName, 0, elementId));
+            curBlock.addIns(new loadIns(tmpvar, varaddr));
+            helper.exprVar = tmpvar;
+            helper.exprAddr = varaddr;
         }
-        
-        
         return helper;
     }
 
     @Override
     public IRhelper visit(FuncExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        IRhelper func = it.func.accept(this);
+        ArrayList<IRitem> args = new ArrayList<>();
+        if (func.funthis != null) {
+            args.add(func.funthis);
+        }
+        it.args.forEach(arg -> {
+            args.add(arg.accept(this).exprVar);
+        });
+        IRhelper helper = new IRhelper();
+        if (it.func.info.isVoid) {
+            curBlock.addIns(new callIns(func.funName, args));
+        } else {
+            IRvar res = new IRvar(new IRType(it.info), IRLabeler.getIdLabel("%call." + func.funName));
+            curBlock.addIns(new callIns(res, func.funName, args));
+            helper.exprVar = res; 
+        }
+
+        return helper;
     }
 
     @Override
@@ -386,7 +440,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
     @Override
     public IRhelper visit(StringExprNode it) {
-        IRvar var = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel(".str"));
+        IRvar var = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("@.str"));
         root.gStr.add(new IRStrDef(var.name, it.value));
         return new IRhelper(var);
     }
@@ -431,13 +485,13 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         curBlock = if_then;
         it.thenStmt.accept(this);
-        curBlock.setEndIns(new jumpIns(if_end.getLabel()));
+        if (!curBlock.isEnd()) curBlock.setEndIns(new jumpIns(if_end.getLabel()));
 
         curBlock = if_else;
         if (it.elseStmt != null) {
             it.elseStmt.accept(this);
         }
-        curBlock.setEndIns(new jumpIns(if_end.getLabel()));
+        if (!curBlock.isEnd()) curBlock.setEndIns(new jumpIns(if_end.getLabel()));
 
         curBlock = if_end;
         return null;
@@ -497,7 +551,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         curBlock.setEndIns(new jumpIns(while_cond.getLabel()));
 
         curBlock = while_cond;
-        IRvar cond = (IRvar) it.condition.accept(this).exprVar;
+        IRitem cond = it.condition.accept(this).exprVar;
         curBlock.setEndIns(new branchIns(cond, while_body.getLabel(), while_end.getLabel()));
 
         curBlock = while_body;

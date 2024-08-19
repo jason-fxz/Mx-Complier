@@ -25,6 +25,10 @@ public class IRblock {
         insList.add(ins);
     }
 
+    public boolean isEnd() {
+        return endIns != null;
+    }
+
     public void setEndIns(IRIns ins) {
         if (endIns != null) {
             throw new RuntimeException("endIns have been set");
@@ -45,9 +49,9 @@ public class IRblock {
         StringBuilder str = new StringBuilder();
         str.append(Label + ":\n");
         for (IRIns ins : insList) {
-            str.append("  " + ins.toString());
+            str.append("  " + ins.toString() + "\n");
         }
-        str.append("  " + endIns.toString());
+        str.append("  " + endIns.toString() + "\n");
         return str.toString();
     }
     

@@ -45,6 +45,7 @@ public class IRFuncDef {
         str.append(") {\n");
         for (IRblock block : blockList) {
             str.append(block.toString());
+            str.append("\n");
         }
         str.append("}\n");   
         return str.toString();
