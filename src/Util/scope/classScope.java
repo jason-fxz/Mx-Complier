@@ -2,11 +2,13 @@ package Util.scope;
 
 import java.util.HashMap;
 
+import Util.info.ClassInfo;
 import Util.info.FuncInfo;
 import Util.info.TypeInfo;
 
 public class classScope extends Scope {
     public String className = null;
+    public ClassInfo classInfo = null;
     private HashMap<String, FuncInfo> FunDefs;
 
     public void DefFunc(String name, FuncInfo func) {

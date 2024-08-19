@@ -1,6 +1,8 @@
 package AST.Node.def;
 
 import Util.position;
+import Util.info.ClassInfo;
+
 import java.util.ArrayList;
 
 import AST.ASTVisitor;
@@ -9,6 +11,7 @@ import AST.Node.stmt.StmtNode;
 public class ClassDefNode extends DefNode {
     public ArrayList<FuncDefNode> funcDefs = new ArrayList<>();
     public ArrayList<VarsDefNode> varsDefs = new ArrayList<>();
+    public ClassInfo classInfo = null;
     public FuncDefNode constructor = null;
     public String name;
     

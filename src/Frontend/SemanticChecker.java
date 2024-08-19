@@ -49,6 +49,7 @@ public class SemanticChecker implements ASTVisitor<Void> {
         var classScope = new classScope(curScope);
         enterScope(classScope);
         classScope.className = it.name;
+        it.classInfo = classScope.classInfo = gScope.GetClassInfo(it.name);
         var classInfo = gScope.GetClassInfo(it.name);
         classInfo.GetMembers().forEach((name, type) -> {
             classScope.DefVar(name, type, it.pos);
@@ -73,7 +74,7 @@ public class SemanticChecker implements ASTVisitor<Void> {
         funcScope.retType = new TypeInfo(it.type);
         // put parameters into scope
         it.params.forEach(par -> {
-            curScope.DefVar(par.name, par.type, par.pos);
+            funcScope.DefParamVar(par.name, par.type, par.pos);
         });
         for (var stmt : it.body.stmts) {
             stmt.accept(this);
@@ -118,7 +119,7 @@ public class SemanticChecker implements ASTVisitor<Void> {
             }
         }
         curScope.DefVar(it.name, it.type, it.pos);
-        it.type.label = curScope.getVarLabel(it.name);
+        it.type.label = curScope.getVarLabel(it.name); // set label 
         return null;
     }
 
@@ -286,6 +287,7 @@ public class SemanticChecker implements ASTVisitor<Void> {
                 throw new UndefinedIdentifierError("this should be in class", it.pos);
             }
             it.info = new ExprInfo(lastclass.className, false);
+            it.info.label = "%this";
         } else {
             var atomType = curScope.getVarType(it.name, true);
             if (atomType == null) {
@@ -295,8 +297,10 @@ public class SemanticChecker implements ASTVisitor<Void> {
             if (atomType.isFunc) {
                 it.info.funcinfo = curScope.GetFuncInfo(it.name);
                 it.info.isFunc = true;
+                it.info.label = it.info.funcinfo.label;
             } else {
                 it.info.isLvalue = true;
+                it.info.label = curScope.getVarLabel(it.name);
             }
         }
         return null;
@@ -347,8 +351,11 @@ public class SemanticChecker implements ASTVisitor<Void> {
             if (memberInfo.isFunc) {
                 it.info.funcinfo = classInfo.GetMethod(it.member);
                 it.info.isFunc = true;
+                it.info.label = it.info.funcinfo.label;
             } else {
                 it.info.isLvalue = true;
+                // class member label
+                it.info.label = String.valueOf(classInfo.GetMemberId(it.member));
             }
         }
         return null;

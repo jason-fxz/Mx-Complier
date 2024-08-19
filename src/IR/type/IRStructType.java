@@ -11,6 +11,15 @@ public class IRStructType extends IRType {
         this.members = members;
     }
 
+    public IRStructType(String typeName) {
+        super(typeName);
+        this.members = new ArrayList<>();
+    }
+
+    public void AddMember(IRType member) {
+        members.add(member);
+    }
+
     @Override
     public String toString() {
         String str = "{ ";

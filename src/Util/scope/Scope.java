@@ -9,13 +9,15 @@ import Util.info.FuncInfo;
 import Util.info.TypeInfo;
 
 public class Scope {
-    private HashMap<String, TypeInfo> member;
-    private HashMap<String, String> varLabel;
+    protected HashMap<String, TypeInfo> member;
+    protected HashMap<String, String> varLabel;
 
     protected Scope parScope;
+
     public enum ScopeType {
         globalScope, classScope, funcScope, loopScope, blockScope
     }
+
     ScopeType type;
 
     public Scope getLastloop() {
@@ -45,14 +47,14 @@ public class Scope {
     public Scope(Scope parScope) {
         member = new HashMap<>();
         varLabel = new HashMap<>();
-        this.parScope = parScope; 
+        this.parScope = parScope;
         this.type = ScopeType.blockScope;
     }
 
     public Scope(Scope parScope, ScopeType type) {
         member = new HashMap<>();
         varLabel = new HashMap<>();
-        this.parScope = parScope; 
+        this.parScope = parScope;
         this.type = type;
     }
 
@@ -60,25 +62,30 @@ public class Scope {
         return parScope;
     }
 
-    public void DefVar(String name, TypeInfo type, position pos)  {
+    public void DefVar(String name, TypeInfo type, position pos) {
         if (member.containsKey(name)) {
             throw new MultipleDefinitionsError(name, pos);
         }
-        if (this.type.equals(ScopeType.globalScope)) {
+        if (this.type.equals(ScopeType.globalScope)) { // global var
             varLabel.put(name, "@" + name);
-        } else { 
+        } else {
             if (this.type.equals(ScopeType.classScope)) {
-                // var classScope = (classScope)this;
-                // varLabel.put(name, "%" + classScope.className + "." + name);
+                var classScope = (classScope) this;
+                // class var
+                // Use of class member !!!
+                varLabel.put(name, "%this::" + name);
             } else {
-                varLabel.put(name, "%" + name);
+                // local var
+                varLabel.put(name, IRLabeler.getIdLabel("%" + name));
             }
         }
         member.put(name, type);
     }
 
     public String getVarLabel(String name) {
-        return varLabel.get(name);
+        if (varLabel.containsKey(name)) return varLabel.get(name);
+        else if (parScope != null) return parScope.getVarLabel(name);
+        else throw new RuntimeException("No such var in scope");
     }
 
     public boolean haveVar(String name, boolean lookup) {

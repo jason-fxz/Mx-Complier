@@ -8,7 +8,7 @@ import Util.position;
 public class ArrayInitNode extends ExprNode {
     public ArrayList<ExprNode> exprs = new ArrayList<>();
     public int dep;
-    
+
     public ArrayInitNode(position pos) {
         super(pos);
     }

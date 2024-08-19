@@ -8,6 +8,7 @@ import Util.error.MultipleDefinitionsError;
 
 public class ClassInfo extends BaseInfo {
     private LinkedHashMap<String, TypeInfo> members;
+    private HashMap<String, Integer> memberId; 
     private LinkedHashMap<String, FuncInfo> methods;
     public position defpos;
 
@@ -16,6 +17,7 @@ public class ClassInfo extends BaseInfo {
         this.defpos = defpos;
         members = new LinkedHashMap<>();
         methods = new LinkedHashMap<>();
+        memberId = new HashMap<>();
     }
 
     public ClassInfo(String label, FuncInfo ...methods) {
@@ -35,6 +37,7 @@ public class ClassInfo extends BaseInfo {
             throw new MultipleDefinitionsError(name, pos);
         }
         members.put(name, type);
+        memberId.put(name, memberId.size());
     }
 
     public void AddMethod(String name, FuncInfo func, position pos) {
@@ -59,6 +62,13 @@ public class ClassInfo extends BaseInfo {
             return methods.get(name);
         }
         return null;
+    }
+
+    public int GetMemberId(String name) {
+        if (memberId.containsKey(name)) {
+            return memberId.get(name);
+        }
+        return -1;
     }
     
     public LinkedHashMap<String, TypeInfo> GetMembers() {

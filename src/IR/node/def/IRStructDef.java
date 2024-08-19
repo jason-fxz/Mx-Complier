@@ -11,7 +11,7 @@ public class IRStructDef {
 
     @Override
     public String toString() {
-        return structType.gettypeName() + " = type " + structType.toString();
+        return "%" + structType.gettypeName() + " = type " + structType.toString();
     }
     
 }
