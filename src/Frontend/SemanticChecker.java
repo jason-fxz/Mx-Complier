@@ -7,6 +7,7 @@ import AST.Node.expr.*;
 import AST.Node.stmt.*;
 import Util.scope.*;
 import Util.BuiltinElements;
+import Util.position;
 import Util.error.*;
 import Util.info.ClassInfo;
 import Util.info.ExprInfo;
@@ -59,6 +60,11 @@ public class SemanticChecker implements ASTVisitor<Void> {
         });
         if (it.constructor != null) {
             it.constructor.accept(this);
+        } else {
+            it.constructor = new FuncDefNode(new position(), new BlockStmtNode(new position()));
+            it.constructor.name = it.name;
+            it.constructor.type = BuiltinElements.voidType;
+            it.constructor.body.stmts.add(new ReturnStmtNode(new position(), null));
         }
         for (var funcDef : it.funcDefs) {
             funcDef.accept(this);
@@ -92,6 +98,13 @@ public class SemanticChecker implements ASTVisitor<Void> {
 
         if (!funcScope.haveRet && !it.type.equals(BuiltinElements.voidType) && !it.name.equals("main")) {
             throw new MissingReturnStatementError("Function " + it.name + " should have return statement", it.pos);
+        }
+        if (!funcScope.haveRet) {
+            if (it.name.equals("main")) {
+                it.body.stmts.add(new ReturnStmtNode(new position(), new IntExprNode(0, new position())));
+            } else {
+                it.body.stmts.add(new ReturnStmtNode(new position(), null));
+            }
         }
         exitScope();
         return null;
@@ -324,6 +337,7 @@ public class SemanticChecker implements ASTVisitor<Void> {
             if (it.member.equals("size")) {
                 it.info = new ExprInfo(BuiltinElements.arraySizeFunc);
                 it.info.funcinfo = BuiltinElements.arraySizeFunc;
+                it.info.label = "__mx_array_size";
             } else {
                 throw new UndefinedIdentifierError(
                         "Call to undefined member " + it.member + " of array type " + objectType.GetTypeName(), it.pos);
@@ -393,7 +407,7 @@ public class SemanticChecker implements ASTVisitor<Void> {
 
     @Override
     public Void visit(NewVarExprNode it) {
-        it.info = new ExprInfo(it.name, true);
+        it.info = new ExprInfo(it.name, false);
         if (!checkTypeValid(it.info) || (it.info.isBasic)) {
             throw new TypeMismatchError("Connot initialize type " + it.info.GetTypeName(), it.pos);
         }

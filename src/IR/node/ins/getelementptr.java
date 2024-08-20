@@ -8,15 +8,15 @@ public class getelementptr extends IRIns {
     IRvar result;
     IRitem pointer;
     String type;
-    ArrayList<Integer> indices;
+    ArrayList<IRitem> indices;
 
 
-    public getelementptr(IRvar result, IRitem pointer, String type, int ... indices) {
+    public getelementptr(IRvar result, IRitem pointer, String type, IRitem ... indices) {
         this.result = result;
         this.pointer = pointer;
         this.type = type;
         this.indices = new ArrayList<>();
-        for (int i : indices) {
+        for (var i : indices) {
             this.indices.add(i);
         }
     }
@@ -25,7 +25,7 @@ public class getelementptr extends IRIns {
     public String toString() {
         String str = result.toString() + " = getelementptr " + type + ", ptr " + pointer.toString();
         for (var ind : indices) {
-            str += ", i32 " + ind; 
+            str += ", " + ind.type.toString() + " " + ind.toString(); 
         }
         return str;
     }

@@ -1,6 +1,5 @@
 package Frontend;
 
-
 import AST.ASTVisitor;
 import AST.Node.RootNode;
 import AST.Node.def.*;
@@ -18,6 +17,7 @@ import IR.type.*;
 import Util.BuiltinElements;
 import Util.IRLabeler;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class IRBuilder implements ASTVisitor<IRhelper> {
     private IRblock curBlock;
@@ -28,17 +28,19 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     private ArrayList<IRvar> curClassMembers;
     private ArrayList<String> LoopStack_break;
     private ArrayList<String> LoopStack_continue;
+    private HashMap<String, Integer> sizeof;
 
     public IRBuilder() {
         curBlock = null;
         curFunc = null;
         curClassMembers = null;
+        sizeof = new HashMap<>();
         root = new IRRoot();
         LoopStack_break = new ArrayList<>();
         LoopStack_continue = new ArrayList<>();
         gInit = new IRFuncDef("@__mx_global_init", new IRType("void"));
     }
-    
+
     public IRRoot getRoot() {
         return root;
     }
@@ -64,12 +66,24 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         root.builtinfuncs.add(new IRFuncDec("@getInt", new IRType("i32")));
         root.builtinfuncs.add(new IRFuncDec("@toString", new IRType("ptr"), new IRType("i32")));
 
-        root.builtinfuncs.add(new IRFuncDec("@__mx_string_concat", new IRType("ptr"), new IRType("ptr"), new IRType("ptr")));
-        root.builtinfuncs.add(new IRFuncDec("@__mx_string_compare", new IRType("i32"), new IRType("ptr"), new IRType("ptr")));
+        root.builtinfuncs
+                .add(new IRFuncDec("@__mx_string_concat", new IRType("ptr"), new IRType("ptr"), new IRType("ptr")));
+        root.builtinfuncs
+                .add(new IRFuncDec("@__mx_string_compare", new IRType("i32"), new IRType("ptr"), new IRType("ptr")));
         root.builtinfuncs.add(new IRFuncDec("@string.length", new IRType("i32"), new IRType("ptr")));
-        root.builtinfuncs.add(new IRFuncDec("@string.substring", new IRType("ptr"), new IRType("ptr"), new IRType("i32"), new IRType("i32")));
+        root.builtinfuncs.add(new IRFuncDec("@string.substring", new IRType("ptr"), new IRType("ptr"),
+                new IRType("i32"), new IRType("i32")));
         root.builtinfuncs.add(new IRFuncDec("@string.parseInt", new IRType("i32"), new IRType("ptr")));
         root.builtinfuncs.add(new IRFuncDec("@string.ord", new IRType("i32"), new IRType("ptr"), new IRType("i32")));
+
+        root.builtinfuncs.add(new IRFuncDec("@__mx_allocate", new IRType("ptr"), new IRType("i32")));
+        root.builtinfuncs
+                .add(new IRFuncDec("@__mx_allocate_array", new IRType("ptr"), new IRType("i32"), new IRType("i32")));
+        root.builtinfuncs.add(new IRFuncDec("@__mx_array_size", new IRType("i32"), new IRType("ptr")));
+        root.builtinfuncs.add(new IRFuncDec("@__mx_bool_to_string", new IRType("ptr"), new IRType("i1")));
+
+        sizeof.put("int", 4);
+        sizeof.put("bool", 4);
 
         // First Collect all the global variable
         curFunc = gInit;
@@ -89,7 +103,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         // Then handle the function or Class
         it.Defs.forEach(sd -> {
             if (!(sd instanceof VarsDefNode)) {
-                
+
                 sd.accept(this);
             }
         });
@@ -101,11 +115,13 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         curClassName = it.name;
         IRStructType classType = new IRStructType("class." + it.name);
         curClassMembers = new ArrayList<>();
-
         it.classInfo.GetMembers().forEach((name, info) -> {
-            classType.AddMember(new IRType(info));
-            curClassMembers.add(new IRvar("%this.m." + name));
+            if (!info.isFunc) {
+                classType.AddMember(new IRType(info));
+                curClassMembers.add(new IRvar("%this.m." + name));
+            }
         });
+        sizeof.put(it.name, it.classInfo.memberId.size() * 4);
 
         root.gStrust.add(new IRStructDef(classType));
 
@@ -123,25 +139,31 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     @Override
     public IRhelper visit(FuncDefNode it) {
         IRFuncDef funcDef = new IRFuncDef("@" + (curClassName == null ? it.name : curClassName + "." + it.name),
-        new IRType(it.type));
+                new IRType(it.type));
         root.funcs.add(funcDef);
         curFunc = funcDef;
         curBlock = funcDef.entryBlock;
         if (it.name.equals("main")) {
             curBlock.addIns(new callIns("__mx_global_init"));
         }
-        
+
         if (curClassName != null) {
             funcDef.addParam(new IRvar(IRType.IRPtrType, "%this"));
-            
+
             for (int i = 0; i < curClassMembers.size(); ++i) {
                 IRvar tmpvar = curClassMembers.get(i);
-                funcDef.entryBlock.addIns(new getelementptr(tmpvar, new IRvar("%this"), "%class." + curClassName, 0, i));
+                funcDef.entryBlock.addIns(new getelementptr(tmpvar, new IRvar("%this"), "%class." + curClassName,
+                        new IRLiteral("0"), new IRLiteral(String.valueOf(i))));
             }
         }
 
         it.params.forEach(p -> {
-            funcDef.addParam(new IRvar(p, false));
+            IRvar pvar = new IRvar(p, false);
+            IRvar paddr = new IRvar(p, false);
+            funcDef.addParam(pvar);
+            paddr.name += ".addr";
+            curFunc.entryBlock.addIns(new allocaIns(paddr));
+            curFunc.entryBlock.addIns(new storeIns(pvar, paddr));
         });
 
         for (var stmt : it.body.stmts) {
@@ -150,6 +172,12 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         curFunc = null;
         curBlock = null;
         return null;
+    }
+
+    private IRvar handleTmpVarDef(IRType type) {
+        IRvar var = new IRvar(type, IRLabeler.getIdLabel("%tmp"));
+        curFunc.entryBlock.addIns(new allocaIns(var));
+        return var;
     }
 
     @Override
@@ -216,7 +244,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
                 }
             } else if (lhsinfo.equals(BuiltinElements.stringType)) {
                 if (it.op.equals("+")) {
-                    // strcat my builtin.c 
+                    // strcat my builtin.c
                     // char *__mx_string_concat(char *s1, char *s2)
                     res = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("%str.concat"));
                     curBlock.addIns(new callIns(res, "__mx_string_concat", lhsvar, rhsvar));
@@ -227,7 +255,8 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
                     res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%str.cmp." + opstr));
                     curBlock.addIns(new callIns(tmpcmp, "__mx_string_compare", lhsvar, rhsvar));
                     curBlock.addIns(new icmpIns(res, opstr, tmpcmp, new IRLiteral("0")));
-                } else throw new UnsupportedOperationException("WTF? String binary: " + it.op);
+                } else
+                    throw new UnsupportedOperationException("WTF? String binary: " + it.op);
             } else if (lhsinfo.equals(BuiltinElements.intType)) {
                 if (it.op.in("==", "!=", "<", ">", "<=", ">=")) {
                     // camp
@@ -338,27 +367,34 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
                 helper.funthis = new IRvar("%this");
             }
             return helper;
+        } else if (it.info.label.equals("%this")) {
+            IRvar var = new IRvar(IRType.IRPtrType, "%this");
+            return new IRhelper(var);
         } else {
             // if (it.info.label.startsWith("!this!")) {
-            //     IRvar tmpthis = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("%atom.this"));
-            //     curBlock.addIns(new loadIns(tmpthis, new IRvar("%this.addr")));
-            //     IRvar varaddr = new IRvar(IRLabeler.getIdLabel("%member." + it.name + ".addr"));
-            //     IRvar tmpvar = new IRvar(new IRType(it.info), IRLabeler.getIdLabel("%member." + it.name));
-                
-            //     int elementId = Integer.parseInt(it.info.label.substring(6));
-            //     curBlock.addIns(new getelementptr(varaddr, tmpthis, "%class." + curClassName, 0, elementId));
-            //     curBlock.addIns(new loadIns(tmpvar, varaddr));
+            // IRvar tmpthis = new IRvar(IRType.IRPtrType,
+            // IRLabeler.getIdLabel("%atom.this"));
+            // curBlock.addIns(new loadIns(tmpthis, new IRvar("%this.addr")));
+            // IRvar varaddr = new IRvar(IRLabeler.getIdLabel("%member." + it.name +
+            // ".addr"));
+            // IRvar tmpvar = new IRvar(new IRType(it.info), IRLabeler.getIdLabel("%member."
+            // + it.name));
 
-            //     return new IRhelper(tmpvar, varaddr);
+            // int elementId = Integer.parseInt(it.info.label.substring(6));
+            // curBlock.addIns(new getelementptr(varaddr, tmpthis, "%class." + curClassName,
+            // 0, elementId));
+            // curBlock.addIns(new loadIns(tmpvar, varaddr));
+
+            // return new IRhelper(tmpvar, varaddr);
             // } else {
 
-                // a tmp var load from 
-                IRvar tmpvar = new IRvar(new IRType(it.info), IRLabeler.getIdLabel("%atom." + it.name));
-                IRvar varaddr = new IRvar(it.info.label);
-                curBlock.addIns(new loadIns(tmpvar, varaddr));
-                return new IRhelper(tmpvar, varaddr);
+            // a tmp var load from
+            IRvar tmpvar = new IRvar(new IRType(it.info), IRLabeler.getIdLabel("%atom." + it.name));
+            IRvar varaddr = new IRvar(it.info.label);
+            curBlock.addIns(new loadIns(tmpvar, varaddr));
+            return new IRhelper(tmpvar, varaddr);
             // }
-            
+
         }
     }
 
@@ -368,13 +404,14 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         if (it.info.isFunc) {
             helper.funName = it.info.label;
-            helper.funthis = (IRvar)obj.exprVar;
+            helper.funthis = (IRvar) obj.exprVar;
         } else {
             IRvar tmpvar = new IRvar(new IRType(it.info), IRLabeler.getIdLabel("%" + it.member));
             IRvar varaddr = new IRvar(IRLabeler.getIdLabel("%" + it.member + ".addr"));
-            
+
             int elementId = Integer.parseInt(it.info.label);
-            curBlock.addIns(new getelementptr(varaddr, obj.exprVar, "%class." + it.object.info.typeName, 0, elementId));
+            curBlock.addIns(new getelementptr(varaddr, obj.exprVar, "%class." + it.object.info.typeName,
+                    new IRLiteral("0"), new IRLiteral(String.valueOf(elementId))));
             curBlock.addIns(new loadIns(tmpvar, varaddr));
             helper.exprVar = tmpvar;
             helper.exprAddr = varaddr;
@@ -396,9 +433,9 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         if (it.func.info.isVoid) {
             curBlock.addIns(new callIns(func.funName, args));
         } else {
-            IRvar res = new IRvar(new IRType(it.info), IRLabeler.getIdLabel("%call." + func.funName));
+            IRvar res = new IRvar(new IRType(it.info), IRLabeler.getIdLabel("%call"));
             curBlock.addIns(new callIns(res, func.funName, args));
-            helper.exprVar = res; 
+            helper.exprVar = res;
         }
 
         return helper;
@@ -406,26 +443,125 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
     @Override
     public IRhelper visit(NewVarExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        var info = it.info;
+        IRvar var = new IRvar(IRLabeler.getIdLabel("%new." + it.info.typeName));
+        curBlock.addIns(new callIns(var, "__mx_allocate", new IRLiteral(sizeof.get(info.typeName).toString())));
+        curBlock.addIns(new callIns(it.info.typeName + "." + it.info.typeName, var));
+        return new IRhelper(var);
+    }
+
+    private IRitem handleNewArray(ArrayList<IRitem> asize, int idx) {
+        if (idx == asize.size()) return new IRLiteral("null");
+        IRvar var = new IRvar(IRLabeler.getIdLabel("%new.array"));
+        curBlock.addIns(new callIns(var, "__mx_allocate_array", new IRLiteral("4"), asize.get(idx)));
+
+
+        // TODO FOR ARRAY INIT
+        String looplabel = IRLabeler.getIdLabel("arrayinit.for");
+        LoopStack_break.add(looplabel + ".end");
+        LoopStack_continue.add(looplabel + ".step");
+
+        IRblock for_cond = curFunc.newBlock(looplabel + ".cond");
+        IRblock for_body = curFunc.newBlock(looplabel + ".body");
+        IRblock for_step = curFunc.newBlock(looplabel + ".step");
+        IRblock for_end = curFunc.newBlock(looplabel + ".end");
+
+        // init: i = 0
+        IRvar variaddr = handleTmpVarDef(IRType.IRIntType);
+        curBlock.addIns(new storeIns(new IRLiteral("0"), variaddr));
+        curBlock.setEndIns(new jumpIns(for_cond.getLabel()));
+
+        curBlock = for_cond;
+        IRvar cond = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%tmp"));
+        IRvar vari = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%tmp"));
+
+        curBlock.addIns(new loadIns(vari, variaddr));
+        curBlock.addIns(new icmpIns(cond, "slt", vari, asize.get(idx)));
+        curBlock.setEndIns(new branchIns(cond, for_body.getLabel(), for_end.getLabel()));
+
+        curBlock = for_step;
+        IRvar vari1 = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%tmp"));
+        IRvar vari2 = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%tmp"));
+        curBlock.addIns(new loadIns(vari1, variaddr));
+        curBlock.addIns(new arithIns(vari2, "add", vari1, new IRLiteral("1")));
+        curBlock.addIns(new storeIns(vari2, variaddr));
+        curBlock.setEndIns(new jumpIns(for_cond.getLabel()));
+
+        curBlock = for_body;
+        IRvar sub_array_addr = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("%array.addr"));
+        IRitem sub_array_var = handleNewArray(asize, idx + 1);
+        IRvar vari3 = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%tmp"));
+
+        curBlock.addIns(new loadIns(vari3, variaddr));
+        curBlock.addIns(new getelementptr(sub_array_addr, var, "ptr", vari3));
+        curBlock.addIns(new storeIns(sub_array_var, sub_array_addr));
+        curBlock.setEndIns(new jumpIns(for_step.getLabel()));
+
+        curBlock = for_end;
+        LoopStack_break.removeLast();
+        LoopStack_continue.removeLast();
+
+        
+        return var;
     }
 
     @Override
     public IRhelper visit(NewArrayExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        if (it.array != null) {
+            return it.array.accept(this);
+        } else {
+            ArrayList<IRitem> asize = new ArrayList<>();
+            for (var expr : it.dimsize) {
+                if (expr == null) {
+                    break;
+                }
+                IRitem sz = expr.accept(this).exprVar;
+                asize.add(sz);
+            }
+            
+            return new IRhelper(handleNewArray(asize, 0));
+        }
+         
     }
 
     @Override
     public IRhelper visit(ArrayInitNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        IRvar var = new IRvar(IRLabeler.getIdLabel("%array.init"));
+        curBlock.addIns(new callIns(var, "__mx_allocate_array", new IRLiteral("4"), new IRLiteral(String.valueOf(it.exprs.size()))));
+        // if (it.dep == 1) {
+            for (int i = 0; i < it.exprs.size(); ++i) {
+                IRitem expritem = it.exprs.get(i).accept(this).exprVar;
+                IRvar addr = new IRvar(IRLabeler.getIdLabel("%array.init.tmpaddr"));
+                curBlock.addIns(new getelementptr(addr, var, "ptr", new IRLiteral(String.valueOf(i))));
+                curBlock.addIns(new storeIns(expritem, addr));
+            }
+        // } else {
+        //     for (int i = 0; i < it.exprs.size(); ++i) {
+        //         IRitem expritem = it.exprs.get(i).accept(this).exprVar;
+        //         IRvar addr = new IRvar(IRLabeler.getIdLabel("%array.init.tmpaddr"));
+        //         curBlock.addIns(new getelementptr(addr, var, "ptr", new IRLiteral(String.valueOf(i))));
+        //         curBlock.addIns(new storeIns(expritem, addr));
+        //     }
+        // }
+        return new IRhelper(var);
     }
 
     @Override
     public IRhelper visit(ArrayExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        IRvar array = (IRvar) it.array.accept(this).exprVar;
+        IRitem index = it.index.accept(this).exprVar;
+        IRvar var = null;
+        if (it.info.isArray()) {
+            var = new IRvar(IRLabeler.getIdLabel("%array.get"));
+        } else {
+            var = new IRvar(new IRType(it.info), IRLabeler.getIdLabel("%array.get"));
+        }
+        IRvar addr = new IRvar(IRLabeler.getIdLabel("%array.get.addr"));
+
+        curBlock.addIns(new getelementptr(addr, array, "ptr", index));
+        curBlock.addIns(new loadIns(var, addr));
+
+        return new IRhelper(var, addr);
     }
 
     @Override
@@ -438,10 +574,32 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         return new IRhelper(new IRLiteral(IRType.IRBoolType, String.valueOf(it.value)));
     }
 
+    private IRvar handleStrDef(String str) {
+        IRvar var = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("@.str"));
+        root.gStr.add(new IRStrDef(var.name, str));
+        return var;
+    }
+
+    private IRvar handleStrCat(IRvar lhs, IRvar rhs) {
+        IRvar res = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("%str.concat"));
+        curBlock.addIns(new callIns(res, "__mx_string_concat", lhs, rhs));
+        return res;
+    }
+
+    private IRvar handletoStr(IRitem var) {
+        IRvar res = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("%.toStr"));
+        if (var.type.equals(IRType.IRBoolType)) {
+            curBlock.addIns(new callIns(res, "__mx_bool_to_string", var));
+        } else if (var.type.equals(IRType.IRIntType)) {
+            curBlock.addIns(new callIns(res, "toString", var));
+        } else
+            throw new UnsupportedOperationException("WTF? toStr: " + var.type);
+        return res;
+    }
+
     @Override
     public IRhelper visit(StringExprNode it) {
-        IRvar var = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("@.str"));
-        root.gStr.add(new IRStrDef(var.name, it.value));
+        IRvar var = handleStrDef(it.value);
         return new IRhelper(var);
     }
 
@@ -452,8 +610,14 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
     @Override
     public IRhelper visit(FmtStringExprNode it) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        IRvar fmt = handleStrDef(it.strlist.get(0));
+        for (int i = 0; i < it.exprlist.size(); ++i) {
+            IRitem expr = it.exprlist.get(i).accept(this).exprVar;
+            fmt = handleStrCat(fmt, handletoStr(expr));
+            IRvar tmpstr = handleStrDef(it.strlist.get(i + 1));
+            fmt = handleStrCat(fmt, tmpstr);
+        }
+        return new IRhelper(fmt);
     }
 
     @Override
@@ -485,13 +649,15 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         curBlock = if_then;
         it.thenStmt.accept(this);
-        if (!curBlock.isEnd()) curBlock.setEndIns(new jumpIns(if_end.getLabel()));
+        if (!curBlock.isEnd())
+            curBlock.setEndIns(new jumpIns(if_end.getLabel()));
 
         curBlock = if_else;
         if (it.elseStmt != null) {
             it.elseStmt.accept(this);
         }
-        if (!curBlock.isEnd()) curBlock.setEndIns(new jumpIns(if_end.getLabel()));
+        if (!curBlock.isEnd())
+            curBlock.setEndIns(new jumpIns(if_end.getLabel()));
 
         curBlock = if_end;
         return null;

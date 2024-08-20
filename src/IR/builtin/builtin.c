@@ -1,4 +1,6 @@
+#define bool _Bool
 typedef unsigned int size_t; // 32 bits
+
 
 // C library functions
 int printf(const char *format, ...);
@@ -43,6 +45,26 @@ char *toString(int i) {
   s = (char *)malloc(sizeof(char) * 12);
   sprintf(s, "%d", i);
   return s;
+}
+
+// My Builtin: __mx_allocate(int size)
+void *__mx_allocate(int size) {
+  return malloc(size);
+}
+
+// My Builtin: __mx_allocate_array(int size, int length)
+void *__mx_allocate_array(int size, int length) {
+  int *a = (int*) malloc(size * length + 4);
+  a[0] = length;
+  return a + 1;
+}
+
+// My Builtin: __mx_array_size(void *array)
+int __mx_array_size(void *array) { return ((int *)array)[-1]; }
+
+// My Builtin: __mx_bool_to_string(bool b)
+char *__mx_bool_to_string(bool b) {
+  return b ? "true" : "false";
 }
 
 /*

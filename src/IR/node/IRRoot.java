@@ -27,6 +27,10 @@ public class IRRoot {
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
+        for (var func : builtinfuncs) {
+            str.append(func.toString());
+        }
+        str.append("\n");
         for (var gStrust : gStrust) {
             str.append(gStrust.toString()).append('\n');
         }
@@ -35,9 +39,6 @@ public class IRRoot {
         }
         for (var gStr : gStr) {
             str.append(gStr.toString()).append('\n');
-        }
-        for (var func : builtinfuncs) {
-            str.append(func.toString()).append('\n');
         }
         str.append("\n");
         for (var func : funcs) {

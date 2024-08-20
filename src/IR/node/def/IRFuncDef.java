@@ -40,7 +40,7 @@ public class IRFuncDef {
             if (i != 0) {
                 str.append(", ");
             }
-            str.append(params.get(i).type.toString() +  params.get(i).toString());
+            str.append(params.get(i).type.toString() + " " + params.get(i).toString());
         }
         str.append(") {\n");
         for (IRblock block : blockList) {

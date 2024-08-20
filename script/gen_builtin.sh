@@ -17,7 +17,7 @@ clang-17 -S -emit-llvm --target=riscv32-unknown-elf -O0 -fno-discard-value-names
 
 # 定义要替换的字符串和替换后的字符串的二元组数组
 declare -A replacements=(
-    ["string_length"]="strin.length"
+    ["string_length"]="string.length"
     ["string_substring"]="string.substring"
     ["string_parseInt"]="string.parseInt"
     ["string_ord"]="string.ord"

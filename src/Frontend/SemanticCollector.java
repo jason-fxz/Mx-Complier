@@ -43,7 +43,7 @@ public class SemanticCollector implements ASTVisitor<Void> {
         });
         it.funcDefs.forEach(funcdef -> {
             // Function def in Class, name as @<className>.<funcName>
-            FuncInfo funcInfo = new FuncInfo("@" + it.name + "." + funcdef.name, funcdef.type, funcdef.pos);
+            FuncInfo funcInfo = new FuncInfo(it.name + "." + funcdef.name, funcdef.type, funcdef.pos);
             funcdef.params.forEach(par -> {
                 funcInfo.AddArguement(par.type);
             });
@@ -63,7 +63,7 @@ public class SemanticCollector implements ASTVisitor<Void> {
     @Override
     public Void visit(FuncDefNode it) {
         // Function def in global, name as @<funcName>
-        FuncInfo funcInfo = new FuncInfo("@" + it.name, it.type, it.pos);
+        FuncInfo funcInfo = new FuncInfo(it.name, it.type, it.pos);
         it.params.forEach(par -> {
             funcInfo.AddArguement(par.type);
         });

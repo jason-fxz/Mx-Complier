@@ -104,5 +104,31 @@ for NewExpr:
 
 for NewArray
 
+```
+int a[4][5][6]
 
+var a3 = malloc 4 * 4
+for (int i = 0; i < 4; ++i) {
+   var a2 = malloc 5 * 4
+   for (int j = 0; j < 5; ++j) {
+      var a1 = malloc 6 * 4
+      for (int k = 0; k < 6; ++k) {
+         a1[k] = null;
+      }
+      a2[j] = a1;
+   }
+   a3[i] = a2;
+}
+
+
+int []asize
+ptr array_help(int idx) {
+   if (idx == size) return null;
+   var a = malloc asize[idx]
+   for (int i = 0; i < asize[idx]; ++i) {
+      a[i] = array_help(idx + 1);
+   }
+   return a;
+}
+```
 

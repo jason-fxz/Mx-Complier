@@ -28,7 +28,8 @@ public class IRType {
         } else if (type.equals(BuiltinElements.voidType)) {
             this.typeName = "void";
         } else if (type.isCustom()) {
-            this.typeName = type.GetTypeName();
+            this.typeName = "ptr";
+            // this.typeName = "%class." + type.GetTypeName();
         } else {
             throw new RuntimeException("IRType Construct Unknown type: " + type);
         }

@@ -7,9 +7,9 @@ import Util.position;
 import Util.error.MultipleDefinitionsError;
 
 public class ClassInfo extends BaseInfo {
-    private LinkedHashMap<String, TypeInfo> members;
-    private HashMap<String, Integer> memberId; 
-    private LinkedHashMap<String, FuncInfo> methods;
+    public LinkedHashMap<String, TypeInfo> members;
+    public HashMap<String, Integer> memberId; 
+    public LinkedHashMap<String, FuncInfo> methods;
     public position defpos;
 
     public ClassInfo(String label, position defpos) {
@@ -26,14 +26,16 @@ public class ClassInfo extends BaseInfo {
         members = new LinkedHashMap<>();
         this.methods = new LinkedHashMap<>();
         for (FuncInfo method : methods) {
-            this.AddMethod(method.label, method, new position());
+            String name = method.label;
+            method.label = label + "." + method.label;
+            this.AddMethod(name, method, new position());
         }
     }
 
     
 
     public void AddMember(String name, TypeInfo type, position pos) {
-        if (members.containsKey(name)) {
+        if (members.containsKey(name) || methods.containsKey(name)) {
             throw new MultipleDefinitionsError(name, pos);
         }
         members.put(name, type);
