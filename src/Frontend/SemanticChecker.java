@@ -614,7 +614,7 @@ public class SemanticChecker implements ASTVisitor<Void> {
                 throw new TypeMismatchError("Return type mismatch", it.pos);
             }
         } else {
-            if (it.expr.info.equals(BuiltinElements.thisType)) {
+            if (it.expr.info.typeName.equals("this")) {
                 var curClass = (classScope)curScope.getLastClass();
                 if (!curClass.className.equals(funcScope.retType.typeName)) {
                     throw new TypeMismatchError("Return type mismatch", it.pos);
