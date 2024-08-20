@@ -29,7 +29,8 @@ public class IRStrDef {
                     sb.append("\\22");
                     ++i;
                 } else {
-                    sb.append(c);
+                    sb.append("\\\\");
+                    ++i;
                 }
             } else {
                 sb.append(c);

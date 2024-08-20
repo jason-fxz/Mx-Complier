@@ -106,6 +106,9 @@ public class SemanticChecker implements ASTVisitor<Void> {
                 it.body.stmts.add(new ReturnStmtNode(new position(), null));
             }
         }
+        if (it.type.equals(BuiltinElements.voidType)) {
+            it.body.stmts.add(new ReturnStmtNode(new position(), null));
+        }
         exitScope();
         return null;
     }

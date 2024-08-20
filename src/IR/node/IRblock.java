@@ -46,6 +46,10 @@ public class IRblock {
 
     @Override
     public String toString() {
+        if (endIns == null && insList.size() == 0) {
+            return "";
+        }
+
         StringBuilder str = new StringBuilder();
         str.append(Label + ":\n");
         for (IRIns ins : insList) {

@@ -34,11 +34,11 @@ public class ASTBuilder extends MxParserBaseVisitor<ASTNode> {
     @Override
     public ASTNode visitVarDef(MxParser.VarDefContext ctx) {
         VarsDefNode varsDef = new VarsDefNode(new position(ctx));
-        TypeInfo type = new TypeInfo(ctx.typeName());
+        // TypeInfo type = new TypeInfo(ctx.typeName());
         ctx.varConstruct().forEach(varConstruct -> {
             VarDefNode vardef = new VarDefNode(new position(ctx),
                     varConstruct.Identifier().getText(),
-                    type,
+                    new TypeInfo(ctx.typeName()),
                     null);
             if (varConstruct.expr() != null) {
                 vardef.init = (ExprNode) visit(varConstruct.expr());

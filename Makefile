@@ -4,7 +4,7 @@ build:
 
 .PHONY: run
 run:
-	cd bin && java -cp /ulib/antlr-4.13.1-complete.jar:. Main
+	cd bin && java -cp /ulib/antlr-4.13.1-complete.jar:. Main -emit-llvm
 
 .PHONY: Sema
 Sema: build
@@ -27,4 +27,11 @@ irtest: build genbuiltin
 	java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm -f test.mx -o output.ll\
 	&& ./script/gen_ir.sh
 
-	
+.PHONY: llvmall
+llvmall: build genbuiltin
+	./testcases/codegen/scripts/test_llvm_ir_all.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm' testcases/codegen ./builtin.ll
+
+
+.PHONY: llvm
+llvm: build genbuiltin
+	./testcases/codegen/scripts/test_llvm_ir.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm -debug-ast' $(file) ./builtin.ll

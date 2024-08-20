@@ -17,7 +17,7 @@ public class ConditionExprNode extends ExprNode {
 
     @Override
     public String toString() {
-        return cond.toString() + " ? " + thenExpr.toString() + " : " + elseExpr.toString();
+        return "(" + cond.toString() + " ? " + thenExpr.toString() + " : " + elseExpr.toString() + ")";
     }
 
     @Override

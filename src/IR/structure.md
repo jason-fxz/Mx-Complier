@@ -7,7 +7,7 @@ LLVM IR
 |- IRStructDef (s)
 |- IRglobalVarDef (s)
 |- IRFuncDef (s)
-   |- block (s)
+   |- block (s) label
       |- ins (s)
       |- jump ins
 

@@ -67,7 +67,7 @@ public class Main {
             
             // print AST
             if (ArgP.hasArgument("-debug-ast")) {
-                output.println(ASTRoot.toString());
+                System.err.println(ASTRoot.toString());
             }
             
             // Collector

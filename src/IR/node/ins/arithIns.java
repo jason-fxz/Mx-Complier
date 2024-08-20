@@ -12,8 +12,8 @@ public class arithIns extends IRIns {
         if (!lhs.type.equals(rhs.type)) {
             throw new RuntimeException("ArithIns lhs and rhs type mismatch");
         }
-        if (!lhs.type.equals(IRType.IRIntType)) {
-            throw new RuntimeException("ArithIns lhs and rhs should be IRIntType");
+        if (!lhs.type.equals(IRType.IRIntType) && !lhs.type.equals(IRType.IRBoolType)) {
+            throw new RuntimeException("ArithIns lhs and rhs should be IRIntType or IRBoolType");
         }
         if (!op.equals("add") && !op.equals("sub") && !op.equals("mul") && !op.equals("sdiv") && !op.equals("srem")
                 && !op.equals("shl") && !op.equals("ashr") && !op.equals("and") && !op.equals("or")

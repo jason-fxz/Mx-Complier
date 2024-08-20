@@ -12,8 +12,8 @@ public class icmpIns extends IRIns {
         if (!lhs.type.equals(rhs.type)) {
             throw new RuntimeException("icmpIns lhs and rhs type mismatch");
         }
-        if (!lhs.type.equals(IRType.IRIntType)) {
-            throw new RuntimeException("icmpIns lhs and rhs should be IRIntType");
+        if (!lhs.type.equals(IRType.IRIntType) && !lhs.type.equals(IRType.IRPtrType)) {
+            throw new RuntimeException("icmpIns lhs and rhs should be IRIntType or IRPtrType");
         }
         if (!op.equals("eq") && !op.equals("ne") && !op.equals("slt") && !op.equals("sgt") && !op.equals("sle")
                 && !op.equals("sge")) {

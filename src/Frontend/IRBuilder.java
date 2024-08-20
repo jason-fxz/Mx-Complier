@@ -95,7 +95,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
                 });
             }
         });
-        gInit.entryBlock.setEndIns(new returnIns(new IRLiteral(IRType.IRvoidType, "void")));
+        curBlock.setEndIns(new returnIns(new IRLiteral(IRType.IRvoidType, "void")));
         root.funcs.add(gInit);
         curFunc = null;
         curBlock = null;
@@ -166,9 +166,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
             curFunc.entryBlock.addIns(new storeIns(pvar, paddr));
         });
 
-        for (var stmt : it.body.stmts) {
-            stmt.accept(this);
-        }
+        it.body.accept(this);
         curFunc = null;
         curBlock = null;
         return null;
@@ -228,7 +226,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
             } else {
                 lastcur.setEndIns(new branchIns(lhsvar, land_end.getLabel(), land_rhs.getLabel()));
                 land_end.addIns(new phiIns(res,
-                        new phiItem(new IRLiteral(IRType.IRBoolType, "ture"), lastcur.getLabel()),
+                        new phiItem(new IRLiteral(IRType.IRBoolType, "true"), lastcur.getLabel()),
                         new phiItem(rhsvar, land_rhs.getLabel())));
             }
             curBlock = land_end;
@@ -300,16 +298,16 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
                 helper.exprAddr = rhs.exprAddr;
             } else if (it.op.in("-")) {
                 res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%neg"));
-                curBlock.addIns(new arithIns(res, "sub", new IRLiteral(IRType.IRIntType, "0"), helper.exprVar));
+                curBlock.addIns(new arithIns(res, "sub", new IRLiteral(IRType.IRIntType, "0"), rhs.exprVar));
             } else if (it.op.in("~")) {
                 res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%not"));
-                curBlock.addIns(new arithIns(res, "xor", helper.exprVar, new IRLiteral("-1")));
+                curBlock.addIns(new arithIns(res, "xor", rhs.exprVar, new IRLiteral("-1")));
             } else
                 throw new UnsupportedOperationException("WTF? int LeftSingleExprNode");
         } else if (rhsinfo.equals(BuiltinElements.boolType)) {
             if (it.op.in("!")) {
                 res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%not"));
-                curBlock.addIns(new arithIns(res, "xor", helper.exprVar, new IRLiteral("true")));
+                curBlock.addIns(new arithIns(res, "xor", rhs.exprVar, new IRLiteral("true")));
             } else
                 throw new UnsupportedOperationException("WTF? bool LeftSingleExprNode");
         } else
@@ -323,31 +321,54 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     public IRhelper visit(RightSingleExprNode it) {
         IRhelper lhs = it.lhs.accept(this), helper = new IRhelper();
         var lhsinfo = it.lhs.info;
-        IRvar res = null;
 
         if (lhsinfo.equals(BuiltinElements.intType)) {
             if (it.op.in("++")) {
-                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%Rselfinc"));
-                curBlock.addIns(new arithIns(res, "add", lhs.exprVar, new IRLiteral("1")));
+                IRvar tmp = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%Rselfinc"));
+                curBlock.addIns(new arithIns(tmp, "add", lhs.exprVar, new IRLiteral("1")));
+                curBlock.addIns(new storeIns(tmp, lhs.exprAddr));
+                helper.exprVar = lhs.exprVar;
             } else if (it.op.in("--")) {
-                res = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%Rselfdec"));
-                curBlock.addIns(new arithIns(res, "sub", lhs.exprVar, new IRLiteral("1")));
+                IRvar tmp = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%Rselfdec"));
+                curBlock.addIns(new arithIns(tmp, "sub", lhs.exprVar, new IRLiteral("1")));
+                curBlock.addIns(new storeIns(tmp, lhs.exprAddr));
+                helper.exprVar = lhs.exprVar;
             } else
                 throw new UnsupportedOperationException("WTF? int RightSingleExprNode");
         } else
             throw new UnsupportedOperationException("WTF?? RightSingleExprNode");
-        helper.exprVar = res;
         return helper;
     }
 
     @Override
     public IRhelper visit(ConditionExprNode it) {
-        IRvar cond = (IRvar) it.cond.accept(this).exprVar;
-        IRvar truevar = (IRvar) it.thenExpr.accept(this).exprVar;
-        IRvar falsevar = (IRvar) it.elseExpr.accept(this).exprVar;
-        IRvar res = new IRvar(truevar.type, IRLabeler.getIdLabel("cond"));
-        curBlock.addIns(new selectIns(res, cond, truevar, falsevar));
-        return new IRhelper(res);
+        IRitem cond = it.cond.accept(this).exprVar;
+        IRblock cond_ture = curFunc.newBlock(IRLabeler.getIdLabel("cond.true"));
+        IRblock cond_false = curFunc.newBlock(IRLabeler.getIdLabel("cond.false"));
+        IRblock cond_end = curFunc.newBlock(IRLabeler.getIdLabel("cond.end"));
+
+        curBlock.setEndIns(new branchIns(cond, cond_ture.getLabel(), cond_false.getLabel()));
+
+        curBlock = cond_ture;
+        IRitem truevar = it.thenExpr.accept(this).exprVar;
+        curBlock.setEndIns(new jumpIns(cond_end.getLabel()));
+        String true_label = curBlock.getLabel();
+
+        curBlock = cond_false;
+        IRitem falsevar = it.elseExpr.accept(this).exprVar;
+        curBlock.setEndIns(new jumpIns(cond_end.getLabel()));
+        String false_label = curBlock.getLabel();
+
+        curBlock = cond_end;
+        if (truevar != null) {
+            IRvar res = new IRvar(truevar.type, IRLabeler.getIdLabel("%cond"));
+            curBlock.addIns(new phiIns(res, new phiItem(truevar, true_label),
+                    new phiItem(falsevar, false_label)));
+            return new IRhelper(res);
+        } else {
+            return new IRhelper();
+        }
+    
     }
 
     @Override
@@ -451,10 +472,10 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     }
 
     private IRitem handleNewArray(ArrayList<IRitem> asize, int idx) {
-        if (idx == asize.size()) return new IRLiteral("null");
+        if (idx == asize.size())
+            return new IRLiteral("null");
         IRvar var = new IRvar(IRLabeler.getIdLabel("%new.array"));
         curBlock.addIns(new callIns(var, "__mx_allocate_array", new IRLiteral("4"), asize.get(idx)));
-
 
         // TODO FOR ARRAY INIT
         String looplabel = IRLabeler.getIdLabel("arrayinit.for");
@@ -501,7 +522,6 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         LoopStack_break.removeLast();
         LoopStack_continue.removeLast();
 
-        
         return var;
     }
 
@@ -518,30 +538,32 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
                 IRitem sz = expr.accept(this).exprVar;
                 asize.add(sz);
             }
-            
+
             return new IRhelper(handleNewArray(asize, 0));
         }
-         
+
     }
 
     @Override
     public IRhelper visit(ArrayInitNode it) {
         IRvar var = new IRvar(IRLabeler.getIdLabel("%array.init"));
-        curBlock.addIns(new callIns(var, "__mx_allocate_array", new IRLiteral("4"), new IRLiteral(String.valueOf(it.exprs.size()))));
+        curBlock.addIns(new callIns(var, "__mx_allocate_array", new IRLiteral("4"),
+                new IRLiteral(String.valueOf(it.exprs.size()))));
         // if (it.dep == 1) {
-            for (int i = 0; i < it.exprs.size(); ++i) {
-                IRitem expritem = it.exprs.get(i).accept(this).exprVar;
-                IRvar addr = new IRvar(IRLabeler.getIdLabel("%array.init.tmpaddr"));
-                curBlock.addIns(new getelementptr(addr, var, "ptr", new IRLiteral(String.valueOf(i))));
-                curBlock.addIns(new storeIns(expritem, addr));
-            }
+        for (int i = 0; i < it.exprs.size(); ++i) {
+            IRitem expritem = it.exprs.get(i).accept(this).exprVar;
+            IRvar addr = new IRvar(IRLabeler.getIdLabel("%array.init.tmpaddr"));
+            curBlock.addIns(new getelementptr(addr, var, "ptr", new IRLiteral(String.valueOf(i))));
+            curBlock.addIns(new storeIns(expritem, addr));
+        }
         // } else {
-        //     for (int i = 0; i < it.exprs.size(); ++i) {
-        //         IRitem expritem = it.exprs.get(i).accept(this).exprVar;
-        //         IRvar addr = new IRvar(IRLabeler.getIdLabel("%array.init.tmpaddr"));
-        //         curBlock.addIns(new getelementptr(addr, var, "ptr", new IRLiteral(String.valueOf(i))));
-        //         curBlock.addIns(new storeIns(expritem, addr));
-        //     }
+        // for (int i = 0; i < it.exprs.size(); ++i) {
+        // IRitem expritem = it.exprs.get(i).accept(this).exprVar;
+        // IRvar addr = new IRvar(IRLabeler.getIdLabel("%array.init.tmpaddr"));
+        // curBlock.addIns(new getelementptr(addr, var, "ptr", new
+        // IRLiteral(String.valueOf(i))));
+        // curBlock.addIns(new storeIns(expritem, addr));
+        // }
         // }
         return new IRhelper(var);
     }
