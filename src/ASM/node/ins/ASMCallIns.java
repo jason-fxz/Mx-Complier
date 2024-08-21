@@ -1,5 +1,7 @@
 package ASM.node.ins;
 
+import ASM.ASMVisitor;
+
 // call label 
 public class ASMCallIns extends ASMIns {
     private String label;
@@ -11,6 +13,11 @@ public class ASMCallIns extends ASMIns {
     @Override
     public String toString() {
         return String.format("%-8s", "call") + label;
+    }
+
+    @Override
+    public <T> T accept(ASMVisitor<T> visitor) {
+        return visitor.visit(this);
     }
     
 }

@@ -1,5 +1,6 @@
 package ASM.node.ins;
 
+import ASM.ASMVisitor;
 import ASM.item.ASMReg;
 
 
@@ -20,5 +21,12 @@ public class ASMBinaryIns extends ASMIns {
     public String toString() {
         return String.format("%-8s", this.op) + this.rd + ", " + this.rs1 + ", " + this.rs2;
     }
+
+    @Override
+    public <T> T accept(ASMVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
+    
     
 }

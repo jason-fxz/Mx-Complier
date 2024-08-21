@@ -9,8 +9,8 @@ A Compiler of Mx, See [Compiler-Design-Implementation](https://github.com/ACMCla
     - [x] Build an AST
     - [x] Semantic Check
 - [ ] Codegen
-    - [ ] Translate AST to LLVM IR 🔥
-    - [ ] Translate IR to RISC-V Assembly
+    - [x] Translate AST to LLVM IR 
+    - [ ] Translate IR to RISC-V Assembly 🔥
 - [ ] Optimization
     - [ ] Mem2reg
     - [ ] Register Allocation

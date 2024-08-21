@@ -1,5 +1,6 @@
 package ASM.node.ins;
 
+import ASM.ASMVisitor;
 import ASM.item.ASMReg;
 
 // beqz rs, label
@@ -16,5 +17,10 @@ public class ASMBeqzIns extends ASMIns {
     @Override
     public String toString() {
         return String.format("%-8s", "beqz") + rs + ", " + label;
+    }
+
+    @Override
+    public <T> T accept(ASMVisitor<T> visitor) {
+        return visitor.visit(this);
     }
 }
