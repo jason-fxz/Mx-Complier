@@ -1,5 +1,6 @@
 package IR.node.ins;
 
+import IR.IRvisitor;
 import IR.item.*;
 import IR.type.IRType;
 
@@ -32,5 +33,10 @@ public class icmpIns extends IRIns {
     public String toString() {
         return result.toString() + " = icmp " + op + " " + lhs.type.toString() + " " + lhs.toString() + ", "
                 + rhs.toString();
+    }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
     }
 }

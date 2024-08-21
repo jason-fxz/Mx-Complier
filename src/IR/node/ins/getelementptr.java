@@ -1,5 +1,6 @@
 package IR.node.ins;
 
+import IR.IRvisitor;
 import IR.item.IRitem;
 import IR.item.IRvar;
 import java.util.ArrayList;
@@ -28,5 +29,10 @@ public class getelementptr extends IRIns {
             str += ", " + ind.type.toString() + " " + ind.toString(); 
         }
         return str;
+    }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
     }
 }

@@ -1,9 +1,10 @@
 package IR.node.def;
 
+import IR.IRvisitor;
 import IR.item.IRvar;
 import IR.type.IRType;
 
-public class IRglobalVarDef {
+public class IRglobalVarDef extends IRDefNode {
     IRvar var;
 
     public IRglobalVarDef(IRvar var) {
@@ -24,4 +25,11 @@ public class IRglobalVarDef {
         }
         return str;
     }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
+    
 }

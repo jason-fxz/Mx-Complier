@@ -1,11 +1,12 @@
 package IR.node.def;
 
+import IR.IRvisitor;
 import IR.item.IRvar;
 import IR.node.IRblock;
 import IR.type.IRType;
 import java.util.ArrayList;
 
-public class IRFuncDef {
+public class IRFuncDef extends IRDefNode {
     String name;
     IRType returnType;
     ArrayList<IRvar> params;
@@ -50,5 +51,12 @@ public class IRFuncDef {
         str.append("}\n");   
         return str.toString();
     }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
+    
 
 }

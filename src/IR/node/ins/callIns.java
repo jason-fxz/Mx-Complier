@@ -1,5 +1,6 @@
 package IR.node.ins;
 
+import IR.IRvisitor;
 import IR.item.IRitem;
 import IR.item.IRvar;
 import java.util.ArrayList;
@@ -55,6 +56,11 @@ public class callIns extends IRIns {
         str += ")";
         return str;
 
+    }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
     }
 
 }

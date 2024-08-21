@@ -2,12 +2,13 @@ package IR.node;
 
 import java.util.ArrayList;
 
+import IR.IRvisitor;
 import IR.node.ins.IRIns;
 import IR.node.ins.branchIns;
 import IR.node.ins.jumpIns;
 import IR.node.ins.returnIns;
 
-public class IRblock {
+public class IRblock extends IRNode {
     String Label;
     ArrayList<IRIns> insList;
     IRIns endIns;
@@ -58,5 +59,11 @@ public class IRblock {
         str.append("  " + endIns.toString() + "\n");
         return str.toString();
     }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+    
     
 }

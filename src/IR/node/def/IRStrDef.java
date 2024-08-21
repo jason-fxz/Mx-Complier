@@ -1,16 +1,14 @@
 package IR.node.def;
 
-public class IRStrDef {
+import IR.IRvisitor;
+
+public class IRStrDef extends IRDefNode {
     String name;
     String value;
 
     public IRStrDef(String name, String str) {
         this.name = name;
         this.value = str;
-
-        // // replace escape characters
-        // this.value = this.value.replace("\n", "\\0A");
-        // this.value = this.value.replace("\"", "\\22");
     }
 
 
@@ -39,6 +37,12 @@ public class IRStrDef {
         }
         ++len;
         return name + " = private unnamed_addr constant [" + (len) + " x i8] c\"" + sb.toString() + "\\00\"";
+    }
+
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
     }
 
 }

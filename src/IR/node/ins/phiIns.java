@@ -1,5 +1,6 @@
 package IR.node.ins;
 
+import IR.IRvisitor;
 import IR.item.IRitem;
 import IR.item.IRvar;
 
@@ -41,6 +42,11 @@ public class phiIns extends IRIns {
             str = str.substring(0, str.length() - 2);
         }
         return str;
+    }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
     }
 }
 

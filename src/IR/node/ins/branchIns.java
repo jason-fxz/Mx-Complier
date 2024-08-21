@@ -1,5 +1,6 @@
 package IR.node.ins;
 
+import IR.IRvisitor;
 import IR.item.IRitem;
 import IR.type.IRType;
 
@@ -21,5 +22,10 @@ public class branchIns extends IRIns {
     @Override
     public String toString() {
         return "br i1 " + cond.toString() + ", label %" + trueLabel + ", label %" + falseLabel;
+    }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
     }
 }

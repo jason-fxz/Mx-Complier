@@ -1,8 +1,9 @@
 package IR.node.def;
 
+import IR.IRvisitor;
 import IR.type.IRStructType;
 
-public class IRStructDef {
+public class IRStructDef extends IRDefNode {
     IRStructType structType;
 
     public IRStructDef(IRStructType structType) {
@@ -13,5 +14,11 @@ public class IRStructDef {
     public String toString() {
         return "%" + structType.gettypeName() + " = type " + structType.toString();
     }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
+    }
     
+
 }

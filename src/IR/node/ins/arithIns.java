@@ -1,5 +1,6 @@
 package IR.node.ins;
 
+import IR.IRvisitor;
 import IR.item.*;
 import IR.type.IRType;
 
@@ -31,5 +32,10 @@ public class arithIns extends IRIns {
     public String toString() {
         return result.toString() + " = " + op + " " + lhs.type.toString() + " " + lhs.toString() + ", "
                 + rhs.toString();
+    }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
     }
 }

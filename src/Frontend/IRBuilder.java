@@ -477,7 +477,6 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         IRvar var = new IRvar(IRLabeler.getIdLabel("%new.array"));
         curBlock.addIns(new callIns(var, "__mx_allocate_array", new IRLiteral("4"), asize.get(idx)));
 
-        // TODO FOR ARRAY INIT
         String looplabel = IRLabeler.getIdLabel("arrayinit.for");
         LoopStack_break.add(looplabel + ".end");
         LoopStack_continue.add(looplabel + ".step");

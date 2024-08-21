@@ -2,13 +2,14 @@ package IR.node;
 
 import java.util.ArrayList;
 
+import IR.IRvisitor;
 import IR.node.def.IRFuncDec;
 import IR.node.def.IRFuncDef;
 import IR.node.def.IRStrDef;
 import IR.node.def.IRStructDef;
 import IR.node.def.IRglobalVarDef;
 
-public class IRRoot {
+public class IRRoot extends IRNode {
     public ArrayList<IRglobalVarDef> gVars;
     public ArrayList<IRStrDef> gStr;
     public ArrayList<IRStructDef> gStrust;
@@ -45,6 +46,11 @@ public class IRRoot {
             str.append(func.toString()).append('\n');
         }
         return str.toString();
+    }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
     }
 
 

@@ -2,6 +2,7 @@ package IR.node.ins;
 
 import IR.item.IRvar;
 import IR.type.IRType;
+import IR.IRvisitor;
 import IR.item.IRitem;
 
 public class selectIns extends IRIns {
@@ -30,5 +31,10 @@ public class selectIns extends IRIns {
     public String toString() {
         return result.toString() + " = select i1 " + cond.toString() + ", " + value1.type.toString() + " "
                 + value1.toString() + ", " + value2.type.toString() +  " " + value2.toString();
+    }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
     }
 }

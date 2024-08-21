@@ -1,5 +1,6 @@
 package IR.node.ins;
 
+import IR.IRvisitor;
 import IR.item.IRvar;
 
 public class loadIns extends IRIns {
@@ -14,6 +15,11 @@ public class loadIns extends IRIns {
     @Override
     public String toString() {
         return result.toString() + " = load " + result.type.toString() + ", ptr " + pointer.toString();
+    }
+
+    @Override
+    public <T> T accecpt(IRvisitor<T> visitor) {
+        return visitor.visit(this);
     }
     
 }
