@@ -6,10 +6,10 @@ import IR.item.IRvar;
 import java.util.ArrayList;
 
 public class getelementptr extends IRIns {
-    IRvar result;
-    IRitem pointer;
-    String type;
-    ArrayList<IRitem> indices;
+    public IRvar result;
+    public IRitem pointer;
+    public String type;
+    public ArrayList<IRitem> indices;
 
 
     public getelementptr(IRvar result, IRitem pointer, String type, IRitem ... indices) {

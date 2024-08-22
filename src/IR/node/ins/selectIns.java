@@ -6,10 +6,10 @@ import IR.IRvisitor;
 import IR.item.IRitem;
 
 public class selectIns extends IRIns {
-    IRvar result;
-    IRitem cond;
-    IRitem value1;
-    IRitem value2;
+    public IRvar result;
+    public IRitem cond;
+    public IRitem value1;
+    public IRitem value2;
 
     public selectIns(IRvar result, IRitem cond, IRitem value1, IRitem value2) {
         if (!value1.type.equals(value2.type)) {

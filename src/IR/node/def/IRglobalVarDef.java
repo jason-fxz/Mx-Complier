@@ -10,6 +10,14 @@ public class IRglobalVarDef extends IRDefNode {
     public IRglobalVarDef(IRvar var) {
         this.var = var;
     }
+
+    public String getVarName() {
+        return var.toString().substring(1);
+    }
+
+    public String getTypeName() {
+        return var.type.toString();
+    }
     
     @Override
     public String toString() {

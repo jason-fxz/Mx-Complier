@@ -20,6 +20,10 @@ public class IRStructType extends IRType {
         members.add(member);
     }
 
+    public int size() {
+        return members.size();
+    }
+
     @Override
     public String toString() {
         String str = "{ ";

@@ -4,8 +4,8 @@ import IR.IRvisitor;
 import IR.item.IRvar;
 
 public class loadIns extends IRIns {
-    IRvar result;
-    IRvar pointer;
+    public IRvar result;
+    public IRvar pointer;
 
     public loadIns(IRvar result, IRvar pointer) {
         this.result = result;

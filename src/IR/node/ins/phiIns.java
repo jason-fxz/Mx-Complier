@@ -8,7 +8,7 @@ import java.util.ArrayList;
 
 
 public class phiIns extends IRIns {
-    IRvar result;
+    public IRvar result;
     static public class phiItem {
         public IRitem value;
         public String label;
@@ -17,7 +17,7 @@ public class phiIns extends IRIns {
             this.label = label;
         }
     }
-    ArrayList<phiItem> values;
+    public ArrayList<phiItem> values;
 
     public phiIns(IRvar result, ArrayList<phiItem> values) {
         this.result = result;

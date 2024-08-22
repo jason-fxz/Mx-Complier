@@ -24,6 +24,10 @@ public class ASMBlock extends ASMNode {
         insList = new ArrayList<ASMIns>();
     }
 
+    public void addIns(ASMIns ins) {
+        insList.add(ins);
+    }
+
     @Override
     public <T> T accept(ASMVisitor<T> visitor) {
         return visitor.visit(this);

@@ -3,10 +3,14 @@ package IR.node.ins;
 import IR.IRvisitor;
 
 public class jumpIns extends IRIns {
-    String label;
+    public String label;
 
     public jumpIns(String label) {
         this.label = label;
+    }
+
+    public String getLabel() {
+        return label;
     }
 
     @Override

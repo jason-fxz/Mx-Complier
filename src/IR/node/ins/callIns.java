@@ -6,9 +6,9 @@ import IR.item.IRvar;
 import java.util.ArrayList;
 
 public class callIns extends IRIns {
-    IRvar result = null;
-    String func;
-    ArrayList<IRitem> args;
+    public IRvar result = null;
+    public String func;
+    public ArrayList<IRitem> args;
 
     public callIns(IRvar result, String func, IRitem ... args) {
         this.result = result;

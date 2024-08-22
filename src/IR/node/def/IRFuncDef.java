@@ -7,9 +7,9 @@ import IR.type.IRType;
 import java.util.ArrayList;
 
 public class IRFuncDef extends IRDefNode {
-    String name;
-    IRType returnType;
-    ArrayList<IRvar> params;
+    public String name;
+    public IRType returnType;
+    public ArrayList<IRvar> params;
     public IRblock entryBlock;
     public ArrayList<IRblock> blockList;
 
@@ -57,6 +57,18 @@ public class IRFuncDef extends IRDefNode {
         return visitor.visit(this);
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public int StackVarCount()  {
+        int count = 0, mxcall = 0;
+        for (IRblock block : blockList) {
+            count += block.StackVarCount();
+            mxcall = Math.max(mxcall, block.maxCallparams());
+        }
+        return count + mxcall - 8;
+    }
     
 
 }

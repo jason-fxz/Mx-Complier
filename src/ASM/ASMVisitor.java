@@ -10,7 +10,7 @@ public interface ASMVisitor<T> {
 
     T visit(ASMBeqzIns asmBeqzIns);
 
-    T visit(ASMBinaryIns asmBinaryIns);
+    T visit(ASMArithIns asmBinaryIns);
 
     T visit(ASMBlock asmBlock);
 
@@ -29,5 +29,13 @@ public interface ASMVisitor<T> {
     T visit(ASMReturnIns asmReturnIns);
 
     T visit(ASMStoreIns asmStoreIns);
+
+    T visit(ASMRoot asmRoot);
+
+    T visit(ASMglobalVarDef asMglobalVarDef);
+
+    T visit(ASMglobalStrDef asMglobalStrDef);
+
+    T visit(ASMArithiIns asmArithiIns);
     
 }

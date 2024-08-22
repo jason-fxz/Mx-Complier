@@ -4,7 +4,7 @@ import IR.IRvisitor;
 import IR.type.IRStructType;
 
 public class IRStructDef extends IRDefNode {
-    IRStructType structType;
+    public IRStructType structType;
 
     public IRStructDef(IRStructType structType) {
         this.structType = structType;

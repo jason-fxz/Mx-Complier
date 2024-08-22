@@ -1,30 +1,27 @@
-package IR.node.def;
+package ASM.node.global;
 
-import IR.IRvisitor;
+import ASM.ASMVisitor;
+import ASM.node.ASMNode;
 
-public class IRStrDef extends IRDefNode {
-    public String name;
-    public String value;
-
-    public IRStrDef(String name, String str) {
-        this.name = name;
-        this.value = str;
-    }
-
+public class ASMglobalStrDef extends ASMNode {
+    private String name;
+    private String value;
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append(name + ":\n    " + String.format("%-8s", ".asciz"));
+        sb.append("\"");
         int len = 0;
         for (int i = 0; i < value.length(); ++i) {
             char c = value.charAt(i);
             if (i + 1 < value.length() && c == '\\') {
                 char next = value.charAt(i + 1);
                 if (next == 'n') {
-                    sb.append("\\0A");
+                    sb.append("\\n");
                     ++i;
                 } else if (next == '\"') {
-                    sb.append("\\22");
+                    sb.append("\\\"");
                     ++i;
                 } else {
                     sb.append("\\\\");
@@ -36,13 +33,21 @@ public class IRStrDef extends IRDefNode {
             ++len;
         }
         ++len;
-        return name + " = private unnamed_addr constant [" + (len) + " x i8] c\"" + sb.toString() + "\\00\"";
+        sb.append("\\000");
+        sb.append("\"");
+        return sb.toString();
+
     }
 
+    public ASMglobalStrDef(String name, String value) {
+        this.name = name;
+        this.value = value;
+    }
 
     @Override
-    public <T> T accecpt(IRvisitor<T> visitor) {
+    public <T> T accept(ASMVisitor<T> visitor) {
         return visitor.visit(this);
     }
 
+    
 }

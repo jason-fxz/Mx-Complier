@@ -5,9 +5,9 @@ import IR.item.IRitem;
 import IR.type.IRType;
 
 public class branchIns extends IRIns {
-    IRitem cond;
-    String trueLabel;
-    String falseLabel;
+    public IRitem cond;
+    public String trueLabel;
+    public String falseLabel;
 
 
     public branchIns(IRitem cond, String trueLabel, String falseLabel) {

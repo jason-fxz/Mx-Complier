@@ -5,21 +5,22 @@ import ASM.item.ASMReg;
 
 
 // op rd, rs1, rs2
-// Binary operation 
-public class ASMBinaryIns extends ASMIns {
+// Arith operation 
+public class ASMArithiIns extends ASMIns {
     private String op;
-    private ASMReg rd, rs1, rs2;
+    private ASMReg rd, rs1;
+    private int imm;
 
-    public ASMBinaryIns(String op, ASMReg rd, ASMReg rs1, ASMReg rs2) {
+    public ASMArithiIns(String op, ASMReg rd, ASMReg rs1, int imm) {
         this.op = op;
         this.rd = rd;
         this.rs1 = rs1;
-        this.rs2 = rs2;
+        this.imm = imm;
     }
 
     @Override
     public String toString() {
-        return String.format("%-8s", this.op) + this.rd + ", " + this.rs1 + ", " + this.rs2;
+        return String.format("%-8s", this.op) + this.rd + ", " + this.rs1 + ", " + this.imm;
     }
 
     @Override

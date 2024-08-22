@@ -123,7 +123,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         });
         sizeof.put(it.name, it.classInfo.memberId.size() * 4);
 
-        root.gStrust.add(new IRStructDef(classType));
+        root.gStrusts.add(new IRStructDef(classType));
 
         for (var func : it.funcDefs) {
             func.accept(this);
@@ -159,10 +159,9 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         it.params.forEach(p -> {
             IRvar pvar = new IRvar(p, false);
-            IRvar paddr = new IRvar(p, false);
+            IRvar paddr = new IRvar(pvar.name + ".addr");
             funcDef.addParam(pvar);
-            paddr.name += ".addr";
-            curFunc.entryBlock.addIns(new allocaIns(paddr));
+            curFunc.entryBlock.addIns(new allocaIns(paddr, pvar.type));
             curFunc.entryBlock.addIns(new storeIns(pvar, paddr));
         });
 
@@ -173,15 +172,15 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     }
 
     private IRvar handleTmpVarDef(IRType type) {
-        IRvar var = new IRvar(type, IRLabeler.getIdLabel("%tmp"));
-        curFunc.entryBlock.addIns(new allocaIns(var));
+        IRvar var = new IRvar(IRLabeler.getIdLabel("%tmp"));
+        curFunc.entryBlock.addIns(new allocaIns(var, type));
         return var;
     }
 
     @Override
     public IRhelper visit(VarDefNode it) {
-        IRvar var = new IRvar(new IRType(it.type), it.type.label);
-        curFunc.entryBlock.addIns(new allocaIns(var)); // set the alloca instruction
+        IRvar var = new IRvar(it.type.label);
+        curFunc.entryBlock.addIns(new allocaIns(var, new IRType(it.type))); // set the alloca instruction
         if (it.init != null) {
             IRhelper t = it.init.accept(this); // calc the init expr
             curBlock.addIns(new storeIns(t.exprVar, var)); // store the result to the variable
@@ -597,7 +596,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
     private IRvar handleStrDef(String str) {
         IRvar var = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("@.str"));
-        root.gStr.add(new IRStrDef(var.name, str));
+        root.gStrs.add(new IRStrDef(var.name, str));
         return var;
     }
 

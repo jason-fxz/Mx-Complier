@@ -3,15 +3,12 @@ package IR.node;
 import java.util.ArrayList;
 
 import IR.IRvisitor;
-import IR.node.ins.IRIns;
-import IR.node.ins.branchIns;
-import IR.node.ins.jumpIns;
-import IR.node.ins.returnIns;
+import IR.node.ins.*;
 
 public class IRblock extends IRNode {
-    String Label;
-    ArrayList<IRIns> insList;
-    IRIns endIns;
+    public String Label;
+    public ArrayList<IRIns> insList;
+    public IRIns endIns;
     
     public IRblock(String Label) {
         this.Label = Label;
@@ -65,5 +62,26 @@ public class IRblock extends IRNode {
         return visitor.visit(this);
     }
     
+    public int StackVarCount() {
+        int count = 0;
+        for (var ins : insList) {
+            if (ins instanceof allocaIns) count += 2;
+            else if (ins instanceof arithIns) count += 1;
+            else if (ins instanceof callIns && ((callIns)ins).result != null) count += 1; 
+            else if (ins instanceof getelementptr) count += 1;
+            else if (ins instanceof icmpIns) count += 1;
+            else if (ins instanceof loadIns) count += 1;
+            else if (ins instanceof phiIns) count += 1;
+            else if (ins instanceof selectIns) count += 1;
+        }
+        return count;
+    }
     
+    public int maxCallparams() {
+        int res = 0;
+        for (var ins : insList) {
+            if (ins instanceof callIns) res = Math.max(res, ((callIns)ins).args.size());
+        }
+        return res;
+    }
 }

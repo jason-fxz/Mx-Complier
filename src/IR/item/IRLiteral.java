@@ -24,6 +24,18 @@ public class IRLiteral extends IRitem {
         }
     }
 
+    public int getInt() {
+        if (value.equals("true")) {
+            return 1;
+        } else if (value.equals("false")) {
+            return 0;
+        } else if (value.equals("null")) {
+            return 0;
+        } else if (value.equals("void")) {
+            return 0;
+        } else return Integer.parseInt(value);
+    }
+
     @Override
     public String toString() {
         return value;

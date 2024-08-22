@@ -11,8 +11,8 @@ import IR.node.def.IRglobalVarDef;
 
 public class IRRoot extends IRNode {
     public ArrayList<IRglobalVarDef> gVars;
-    public ArrayList<IRStrDef> gStr;
-    public ArrayList<IRStructDef> gStrust;
+    public ArrayList<IRStrDef> gStrs;
+    public ArrayList<IRStructDef> gStrusts;
     public ArrayList<IRFuncDef> funcs;
     public ArrayList<IRFuncDec> builtinfuncs;
 
@@ -20,8 +20,8 @@ public class IRRoot extends IRNode {
     public IRRoot() {
         gVars = new ArrayList<>();
         funcs = new ArrayList<>();
-        gStrust = new ArrayList<>();
-        gStr = new ArrayList<>();
+        gStrusts = new ArrayList<>();
+        gStrs = new ArrayList<>();
         builtinfuncs = new ArrayList<>();
     }
 
@@ -32,13 +32,13 @@ public class IRRoot extends IRNode {
             str.append(func.toString());
         }
         str.append("\n");
-        for (var gStrust : gStrust) {
+        for (var gStrust : gStrusts) {
             str.append(gStrust.toString()).append('\n');
         }
         for (var gVar : gVars) {
             str.append(gVar.toString()).append('\n');
         }
-        for (var gStr : gStr) {
+        for (var gStr : gStrs) {
             str.append(gStr.toString()).append('\n');
         }
         str.append("\n");

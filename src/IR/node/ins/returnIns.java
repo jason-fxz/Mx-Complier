@@ -5,7 +5,7 @@ import IR.item.IRitem;
 import IR.type.IRType;
 
 public class returnIns extends IRIns {
-    IRitem value;
+    public IRitem value;
     public returnIns(IRitem value) {
         this.value = value;
     }

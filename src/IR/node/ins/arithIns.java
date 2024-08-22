@@ -5,9 +5,9 @@ import IR.item.*;
 import IR.type.IRType;
 
 public class arithIns extends IRIns {
-    IRvar result;
-    String op;
-    IRitem lhs, rhs;
+    public IRvar result;
+    public String op;
+    public IRitem lhs, rhs;
 
     public arithIns(IRvar result, String op, IRitem lhs, IRitem rhs) {
         if (!lhs.type.equals(rhs.type)) {

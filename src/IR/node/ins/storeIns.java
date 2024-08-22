@@ -6,8 +6,8 @@ import IR.item.IRvar;
 
 // store <ty> <value>, ptr <pointer>
 public class storeIns extends IRIns {
-    IRitem value;
-    IRvar pointer;
+    public IRitem value;
+    public IRvar pointer;
 
     public storeIns(IRitem value, IRvar pointer) {
         this.value = value;
