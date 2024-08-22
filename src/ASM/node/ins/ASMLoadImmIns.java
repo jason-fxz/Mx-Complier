@@ -2,7 +2,6 @@ package ASM.node.ins;
 
 import ASM.ASMVisitor;
 import ASM.item.ASMReg;
-import IR.node.ins.returnIns;
 
 // li rd, imm
 // Load a immediate value

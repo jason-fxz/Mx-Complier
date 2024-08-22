@@ -6,44 +6,44 @@ import IR.node.ins.*;
 
 public interface IRvisitor<T> {
 
-    T visit(jumpIns jumpIns);
+    T visit(jumpIns it);
 
-    T visit(IRblock iRblock);
+    T visit(IRblock it);
 
-    T visit(allocaIns allocaIns);
+    T visit(allocaIns it);
 
-    T visit(arithIns arithIns);
+    T visit(arithIns it);
 
-    T visit(branchIns branchIns);
+    T visit(branchIns it);
 
-    T visit(callIns callIns);
+    T visit(callIns it);
 
 
-    T visit(icmpIns icmpIns);
+    T visit(icmpIns it);
 
-    T visit(loadIns loadIns);
+    T visit(loadIns it);
 
-    T visit(getelementptr getelementptr);
+    T visit(getelementptrIns it);
 
-    T visit(IRRoot irRoot);
+    T visit(IRRoot it);
 
-    T visit(phiIns phiIns);
+    T visit(phiIns it);
 
-    T visit(selectIns selectIns);
+    T visit(selectIns it);
 
-    T visit(returnIns returnIns);
+    T visit(returnIns it);
 
-    T visit(storeIns storeIns);
+    T visit(storeIns it);
 
-    T visit(IRFuncDec irFuncDec);
+    T visit(IRFuncDec it);
 
-    T visit(IRFuncDef irFuncDef);
+    T visit(IRFuncDef it);
 
-    T visit(IRglobalVarDef iRglobalVarDef);
+    T visit(IRglobalVarDef it);
 
-    T visit(IRStrDef irStrDef);
+    T visit(IRStrDef it);
 
-    T visit(IRStructDef irStructDef);
+    T visit(IRStructDef it);
 
 
     

@@ -36,5 +36,12 @@ public class IRvar extends IRitem {
         return name;
     }
     
+    public boolean isGlobal() {
+        return name.startsWith("@");
+    }
+
+    public boolean isLocal() {
+        return name.startsWith("%");
+    }
 
 }

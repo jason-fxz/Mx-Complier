@@ -5,14 +5,14 @@ import IR.item.IRitem;
 import IR.item.IRvar;
 import java.util.ArrayList;
 
-public class getelementptr extends IRIns {
+public class getelementptrIns extends IRIns {
     public IRvar result;
     public IRitem pointer;
     public String type;
     public ArrayList<IRitem> indices;
 
 
-    public getelementptr(IRvar result, IRitem pointer, String type, IRitem ... indices) {
+    public getelementptrIns(IRvar result, IRitem pointer, String type, IRitem ... indices) {
         this.result = result;
         this.pointer = pointer;
         this.type = type;

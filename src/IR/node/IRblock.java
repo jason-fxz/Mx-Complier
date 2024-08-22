@@ -42,6 +42,10 @@ public class IRblock extends IRNode {
         return Label;
     }
 
+    public boolean empty() {
+        return insList.size() == 0 && endIns == null;
+    }
+
     @Override
     public String toString() {
         if (endIns == null && insList.size() == 0) {
@@ -68,7 +72,7 @@ public class IRblock extends IRNode {
             if (ins instanceof allocaIns) count += 2;
             else if (ins instanceof arithIns) count += 1;
             else if (ins instanceof callIns && ((callIns)ins).result != null) count += 1; 
-            else if (ins instanceof getelementptr) count += 1;
+            else if (ins instanceof getelementptrIns) count += 1;
             else if (ins instanceof icmpIns) count += 1;
             else if (ins instanceof loadIns) count += 1;
             else if (ins instanceof phiIns) count += 1;

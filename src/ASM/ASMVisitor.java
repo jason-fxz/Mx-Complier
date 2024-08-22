@@ -37,5 +37,7 @@ public interface ASMVisitor<T> {
     T visit(ASMglobalStrDef asMglobalStrDef);
 
     T visit(ASMArithiIns asmArithiIns);
+
+    T visit(ASMUnaryIns asmUnaryIns);
     
 }

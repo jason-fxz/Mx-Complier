@@ -152,7 +152,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
             for (int i = 0; i < curClassMembers.size(); ++i) {
                 IRvar tmpvar = curClassMembers.get(i);
-                funcDef.entryBlock.addIns(new getelementptr(tmpvar, new IRvar("%this"), "%class." + curClassName,
+                funcDef.entryBlock.addIns(new getelementptrIns(tmpvar, new IRvar("%this"), "%class." + curClassName,
                         new IRLiteral("0"), new IRLiteral(String.valueOf(i))));
             }
         }
@@ -430,7 +430,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
             IRvar varaddr = new IRvar(IRLabeler.getIdLabel("%" + it.member + ".addr"));
 
             int elementId = Integer.parseInt(it.info.label);
-            curBlock.addIns(new getelementptr(varaddr, obj.exprVar, "%class." + it.object.info.typeName,
+            curBlock.addIns(new getelementptrIns(varaddr, obj.exprVar, "%class." + it.object.info.typeName,
                     new IRLiteral("0"), new IRLiteral(String.valueOf(elementId))));
             curBlock.addIns(new loadIns(tmpvar, varaddr));
             helper.exprVar = tmpvar;
@@ -512,7 +512,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         IRvar vari3 = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%tmp"));
 
         curBlock.addIns(new loadIns(vari3, variaddr));
-        curBlock.addIns(new getelementptr(sub_array_addr, var, "ptr", vari3));
+        curBlock.addIns(new getelementptrIns(sub_array_addr, var, "ptr", vari3));
         curBlock.addIns(new storeIns(sub_array_var, sub_array_addr));
         curBlock.setEndIns(new jumpIns(for_step.getLabel()));
 
@@ -551,7 +551,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         for (int i = 0; i < it.exprs.size(); ++i) {
             IRitem expritem = it.exprs.get(i).accept(this).exprVar;
             IRvar addr = new IRvar(IRLabeler.getIdLabel("%array.init.tmpaddr"));
-            curBlock.addIns(new getelementptr(addr, var, "ptr", new IRLiteral(String.valueOf(i))));
+            curBlock.addIns(new getelementptrIns(addr, var, "ptr", new IRLiteral(String.valueOf(i))));
             curBlock.addIns(new storeIns(expritem, addr));
         }
         // } else {
@@ -578,7 +578,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         }
         IRvar addr = new IRvar(IRLabeler.getIdLabel("%array.get.addr"));
 
-        curBlock.addIns(new getelementptr(addr, array, "ptr", index));
+        curBlock.addIns(new getelementptrIns(addr, array, "ptr", index));
         curBlock.addIns(new loadIns(var, addr));
 
         return new IRhelper(var, addr);

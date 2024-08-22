@@ -1,19 +1,29 @@
 package ASM.node.ins;
 
 import ASM.ASMVisitor;
+import ASM.item.ASMReg;
 
 // j offset
-// jump to the label
+// jump to the label / rs
 public class ASMJumpIns extends ASMIns {
     private String label;
+    private ASMReg rs;
 
     public ASMJumpIns(String label) {
         this.label = label;
     }
 
+    public ASMJumpIns(ASMReg rs) {
+        this.rs = rs;
+    }
+
     @Override
     public String toString() {
-        return String.format("%-8s", "j") + label;
+        if (rs != null) {
+            return String.format("%-8s", "jr") + rs;
+        } else {
+            return String.format("%-8s", "j") + label;
+        }
     }
 
     @Override
