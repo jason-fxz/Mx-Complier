@@ -1,10 +1,10 @@
 .PHONY: build
-build:
-	./script/compile.sh
+build: 
+	./script/compile.sh && ./script/gen_builtin.sh
 
 .PHONY: run
-run:
-	cd bin && java -cp /ulib/antlr-4.13.1-complete.jar:. Main -emit-llvm
+run: 
+	java -cp /ulib/antlr-4.13.1-complete.jar:bin Main -S && cat builtin.s
 
 .PHONY: Sema
 Sema: build

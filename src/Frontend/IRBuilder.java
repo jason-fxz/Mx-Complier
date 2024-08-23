@@ -149,6 +149,10 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         if (curClassName != null) {
             funcDef.addParam(new IRvar(IRType.IRPtrType, "%this"));
+            IRvar pvar = new IRvar("%this");
+            IRvar paddr = new IRvar("%this.addr");
+            curFunc.entryBlock.addIns(new allocaIns(paddr, IRType.IRPtrType));
+            curFunc.entryBlock.addIns(new storeIns(pvar, paddr));
 
             for (int i = 0; i < curClassMembers.size(); ++i) {
                 IRvar tmpvar = curClassMembers.get(i);
@@ -206,15 +210,15 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         if (it.op.in("&&", "||")) {
             // Short-circuit evaluation
-            IRvar lhsvar = (IRvar) it.lhs.accept(this).exprVar;
+            IRitem lhsvar = it.lhs.accept(this).exprVar;
             IRblock l_rhs = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".rhs"));
-            IRblock l_end = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".rhs"));
+            IRblock l_end = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".end"));
 
             res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
 
             IRblock lastcur = curBlock; // land.lhs done
             curBlock = l_rhs;
-            IRvar rhsvar = (IRvar) it.rhs.accept(this).exprVar;
+            IRitem rhsvar = it.rhs.accept(this).exprVar;
             curBlock.setEndIns(new jumpIns(l_end.getLabel()));
 
             if (it.op.equals("&&")) {
@@ -388,11 +392,14 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         if (it.info.isFunc) {
             IRhelper helper = new IRhelper(it.info.label);
             if (it.info.label.contains(".")) {
-                helper.funthis = new IRvar("%this");
+                IRvar var = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("%this"));
+                curBlock.addIns(new loadIns(var, new IRvar("%this.addr")));
+                helper.funthis = var;
             }
             return helper;
         } else if (it.info.label.equals("%this")) {
-            IRvar var = new IRvar(IRType.IRPtrType, "%this");
+            IRvar var = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("%this"));
+            curBlock.addIns(new loadIns(var, new IRvar("%this.addr")));
             return new IRhelper(var);
         } else {
             // if (it.info.label.startsWith("!this!")) {

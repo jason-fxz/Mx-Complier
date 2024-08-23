@@ -334,10 +334,10 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
     @Override
     public ASMHelper visit(selectIns it) {
         handleLoadIRitem(ASMReg.t1, it.cond);
-        handleLoadIRitem(ASMReg.t2, it.value1);
+        handleLoadIRitem(ASMReg.t2, it.value2);
         String tmpLabel = getLabel("L.select." + branchLabelCnt++);
         curBlock.addIns(new ASMBeqzIns(ASMReg.t1, tmpLabel));
-        handleLoadIRitem(ASMReg.t2, it.value2);
+        handleLoadIRitem(ASMReg.t2, it.value1);
 
         ASMBlock tmpblock = new ASMBlock(tmpLabel);
         curFunc.addBlock(tmpblock);

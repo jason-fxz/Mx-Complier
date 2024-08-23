@@ -28,7 +28,7 @@ for atomExpr:
       %var.addr = alloca
       store %var, ptr var.addr
    - localvar:  %var is addr
-   - this:      %this is ptr addr, use this as normal ptr function params         
+   - this:      %this is a ptr, %this.addr is addr (same as func param)        
    - class var:
       %this.var is  addr
 - func:

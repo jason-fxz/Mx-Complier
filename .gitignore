@@ -24,3 +24,5 @@ test.mx
 *.ll
 *.s
 *.out
+test.in
+test.out
