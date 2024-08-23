@@ -12,9 +12,9 @@ public class ASMBlock extends ASMNode {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(Label + ":\n");
+        sb.append(this.addComment(Label + ":"));
         for (ASMIns ins : insList) {
-            sb.append("    " + ins.toString() + "\n");
+            sb.append(ins.addComment("    " + ins.toString()));
         }
         return sb.toString();
     }

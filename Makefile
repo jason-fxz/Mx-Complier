@@ -35,3 +35,11 @@ llvmall: build genbuiltin
 .PHONY: llvm
 llvm: build genbuiltin
 	./testcases/codegen/scripts/test_llvm_ir.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm -debug-ast' $(file) ./builtin.ll
+
+.PHONY: asmall
+asmall: build genbuiltin
+	./testcases/codegen/scripts/test_asm_all.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -S' testcases/codegen ./builtin.s
+
+.PHONY: asm
+asm: build genbuiltin
+	./testcases/codegen/scripts/test_asm.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -S' $(file) ./builtin.s

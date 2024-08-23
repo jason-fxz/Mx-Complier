@@ -1,13 +1,14 @@
 package ASM.node.ins;
 
 import ASM.ASMVisitor;
+import ASM.item.ASMReg;
 
 // mv rd, rs
 public class ASMMoveIns extends ASMIns {
-    private String rd;
-    private String rs;
+    private ASMReg rd;
+    private ASMReg rs;
 
-    public ASMMoveIns(String rd, String rs) {
+    public ASMMoveIns(ASMReg rd, ASMReg rs) {
         this.rd = rd;
         this.rs = rs;
     }

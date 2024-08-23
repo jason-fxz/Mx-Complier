@@ -16,6 +16,8 @@ public class ASMFuncDefNode extends ASMNode {
     public int stackSize = 0;
     public int stackVarAddrMax = 0; // above is used for function params
     public HashMap<String, Integer> stackAddrBaseOns0;
+    public HashMap<String, Integer> paramsId;
+    // public boolean isGlobal = true;
 
     public ASMFuncDefNode(String name, int paramCnt) {
         this.name = name;
@@ -23,6 +25,8 @@ public class ASMFuncDefNode extends ASMNode {
         blocks = new ArrayList<ASMBlock>();
         stackAddrBaseOns0 = new HashMap<>();
         stackSize = 8;
+        paramsId = new HashMap<>();
+        
     }
 
     public void addBlock(ASMBlock block) {
@@ -33,10 +37,12 @@ public class ASMFuncDefNode extends ASMNode {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(".globl " + name + ":\n");
+        sb.append(String.format("%-38s   # -- Begin function %s\n", "    .globl " + name, name));
+
         for (ASMBlock block : blocks) {
             sb.append(block.toString());
         }
+        sb.append("                                          # -- End function " + name + "\n");
         return sb.toString();
         
     }

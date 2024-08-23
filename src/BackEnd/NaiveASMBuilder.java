@@ -29,7 +29,11 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
         return curFunc.getName() + "." + label;
     }
 
-    NaiveASMBuilder() {
+    public ASMRoot getRoot() {
+        return root;
+    }
+
+    public NaiveASMBuilder() {
         curFunc = null;
         curBlock = null;
         structSize = new HashMap<>();
@@ -38,31 +42,68 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
     // Load IRitem to reg
     private void handleLoadIRitem(ASMReg rd, IRitem item) {
         if (item instanceof IRLiteral) {
-            curBlock.addIns(new ASMLoadImmIns(rd, ((IRLiteral)item).getInt()));
+            curBlock.addIns((ASMIns)new ASMLoadImmIns(rd, ((IRLiteral)item).getInt()).Note(rd + "<-" + ((IRLiteral)item)));
         } else {
             IRvar var = (IRvar)item;
-            int offset = curFunc.stackAddrBaseOns0.get(var.name);
-            if (-2048 <= offset && offset <= 2047)
-                curBlock.addIns(new ASMLoadIns(rd, new ASMAddr(ASMReg.s0, offset)));
-            else {
-                curBlock.addIns(new ASMLoadImmIns(ASMReg.t0, offset));
-                curBlock.addIns(new ASMArithIns("add", rd, ASMReg.s0, ASMReg.t0));
-                curBlock.addIns(new ASMLoadIns(rd, new ASMAddr(rd, 0)));
+            var paramId = curFunc.paramsId.get(var.name);
+            if (var.isGlobal()) {
+                curBlock.addIns((ASMIns)new ASMLoadAddrIns(rd, var.name.substring(1)).Note(rd + "<-" + var));
+            } else if (paramId != null) {
+                if (paramId < 8) {
+                    curBlock.addIns((ASMIns)new ASMMoveIns(rd, ASMReg.x(10 + paramId)).Note(rd + "<-" + var + "(param " + paramId + ")"));
+                } else {
+                    curBlock.addIns((ASMIns)new ASMLoadIns(rd, new ASMAddr(ASMReg.s0, (paramId - 8) * 4)).Note(rd + "<-" + var + "(param " + paramId + ")"));
+                }
+            } else {
+                int offset = curFunc.stackAddrBaseOns0.get(var.name);
+                if (-2048 <= offset && offset <= 2047)
+                    curBlock.addIns((ASMIns)new ASMLoadIns(rd, new ASMAddr(ASMReg.s0, offset)).Note(rd + "<-" + var));
+                else {
+                    curBlock.addIns(new ASMLoadImmIns(ASMReg.t0, offset));
+                    curBlock.addIns(new ASMArithIns("add", rd, ASMReg.s0, ASMReg.t0));
+                    curBlock.addIns((ASMIns)new ASMLoadIns(rd, new ASMAddr(rd, 0)).Note(rd + "<-" + var));
+                }
+            }
+        }
+    }
+
+    private void handleLoadIRitem(ASMReg rd, IRitem item, String comment) {
+        if (item instanceof IRLiteral) {
+            curBlock.addIns((ASMIns)new ASMLoadImmIns(rd, ((IRLiteral)item).getInt()).Note(comment));
+        } else {
+            IRvar var = (IRvar)item;
+            var paramId = curFunc.paramsId.get(var.name);
+            if (var.isGlobal()) {
+                curBlock.addIns((ASMIns)new ASMLoadAddrIns(rd, var.name.substring(1)).Note(comment));
+            } else if (paramId != null) {
+                if (paramId < 8) {
+                    curBlock.addIns((ASMIns)new ASMMoveIns(rd, ASMReg.x(10 + paramId)).Note(comment));
+                } else {
+                    curBlock.addIns((ASMIns)new ASMLoadIns(rd, new ASMAddr(ASMReg.s0, (paramId - 8) * 4)).Note(comment));
+                }
+            } else {
+                int offset = curFunc.stackAddrBaseOns0.get(var.name);
+                if (-2048 <= offset && offset <= 2047)
+                    curBlock.addIns((ASMIns)new ASMLoadIns(rd, new ASMAddr(ASMReg.s0, offset)).Note(comment));
+                else {
+                    curBlock.addIns(new ASMLoadImmIns(ASMReg.t0, offset));
+                    curBlock.addIns(new ASMArithIns("add", rd, ASMReg.s0, ASMReg.t0));
+                    curBlock.addIns((ASMIns)new ASMLoadIns(rd, new ASMAddr(rd, 0)).Note(comment));
+                }
             }
         }
     }
 
     // store reg to IRvar
-    private void handleStoreIRvar(ASMReg rs, IRvar var) {
+    private void handleStoreIRvar(ASMReg rs, IRvar var, String comment) {
         int offset = curFunc.stackAddrBaseOns0.get(var.name);
         if (-2048 <= offset && offset <= 2047) {
-            curBlock.addIns(new ASMStoreIns(rs, new ASMAddr(ASMReg.s0, offset)));
+            curBlock.addIns((ASMIns)new ASMStoreIns(rs, new ASMAddr(ASMReg.s0, offset)).Note(comment));
         } else {
-            curBlock.addIns(new ASMLoadImmIns(ASMReg.t0, offset));
-            curBlock.addIns(new ASMArithIns("add", ASMReg.t0, ASMReg.s0, ASMReg.t0));
-            curBlock.addIns(new ASMStoreIns(rs, new ASMAddr(ASMReg.t0, 0)));
+            curBlock.addIns((ASMIns)new ASMLoadImmIns(ASMReg.t0, offset).Note(comment));
+            curBlock.addIns((ASMIns)new ASMArithIns("add", ASMReg.t0, ASMReg.s0, ASMReg.t0).Note(comment));
+            curBlock.addIns((ASMIns)new ASMStoreIns(rs, new ASMAddr(ASMReg.t0, 0)).Note(comment));
         }
-
     } 
 
     private void getStackSpace(IRIns ins) {
@@ -104,12 +145,12 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
     }
 
     // Addi, imm 12bits signed integer -2048 ~ 2047
-    private void handleAddi(ASMReg rd, ASMReg rs, int imm) {
+    private void handleAddi(ASMReg rd, ASMReg rs, int imm, String comment) {
         if (-2048 <= imm && imm <= 2047) {
-            curBlock.addIns(new ASMArithiIns("addi", rd, rs, imm));
+            curBlock.addIns((ASMIns)new ASMArithiIns("addi", rd, rs, imm).Note(comment));
         } else {
-            curBlock.addIns(new ASMLoadImmIns(ASMReg.t0, imm));
-            curBlock.addIns(new ASMArithIns("add", rd, rs, ASMReg.t0));
+            curBlock.addIns((ASMIns)new ASMLoadImmIns(ASMReg.t0, imm).Note(comment));
+            curBlock.addIns((ASMIns)new ASMArithIns("add", rd, rs, ASMReg.t0).Note(comment));
         }
     }
 
@@ -129,8 +170,8 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
     @Override
     public ASMHelper visit(allocaIns it) {
         int offset = curFunc.stackAddrBaseOns0.get(it.result.name);
-        handleAddi(ASMReg.t1, ASMReg.s0, offset + 4); // t1 = addr
-        handleStoreIRvar(ASMReg.t1, it.result);
+        handleAddi(ASMReg.t1, ASMReg.s0, offset + 4, it.toString()); // t1 = addr
+        handleStoreIRvar(ASMReg.t1, it.result, it.toString());
         return null;
     }
 
@@ -153,7 +194,7 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
         handleLoadIRitem(ASMReg.t1, it.lhs);
         handleLoadIRitem(ASMReg.t2, it.rhs);
         curBlock.addIns(new ASMArithIns(op, ASMReg.t1, ASMReg.t1, ASMReg.t2));
-        handleStoreIRvar(ASMReg.t1, it.result);
+        handleStoreIRvar(ASMReg.t1, it.result, it.toString());
         return null;
     }
 
@@ -161,7 +202,7 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
     public ASMHelper visit(branchIns it) {
         String tureLabel = getLabel(it.trueLabel);
         String falseLabel = getLabel(it.falseLabel);
-        String tmpLabel = getLabel(".branch." + branchLabelCnt++);
+        String tmpLabel = getLabel("L.branch." + branchLabelCnt++);
         
         handleLoadIRitem(ASMReg.t1, it.cond);
         curBlock.addIns(new ASMBeqzIns(ASMReg.t1, tmpLabel));
@@ -189,7 +230,7 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
         }
         curBlock.addIns(new ASMCallIns(it.func));
         if (it.result != null) {
-            handleStoreIRvar(ASMReg.a0, it.result);
+            handleStoreIRvar(ASMReg.a0, it.result, it.toString());
         }
         return null;
     }
@@ -221,19 +262,19 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
             }
             default -> throw new UnsupportedOperationException("Unknown icmpIns op");
         }
-        handleStoreIRvar(ASMReg.t1, it.result);
+        handleStoreIRvar(ASMReg.t1, it.result, ">>> " + it.toString());
         return null;
     }
 
     @Override
     public ASMHelper visit(loadIns it) {
         if (it.pointer.isGlobal()) {
-            curBlock.addIns(new ASMLoadIns(ASMReg.t1, it.pointer.name.substring(1)));
-            handleStoreIRvar(ASMReg.t1, it.result);
+            curBlock.addIns((ASMIns)new ASMLoadIns(ASMReg.t1, it.pointer.name.substring(1)).Note("load ptr(global)"));
+            handleStoreIRvar(ASMReg.t1, it.result, ">>> " + it.toString());
         } else {
             handleLoadIRitem(ASMReg.t1, it.pointer);
-            curBlock.addIns(new ASMLoadIns(ASMReg.t1, new ASMAddr(ASMReg.t1, 0)));
-            handleStoreIRvar(ASMReg.t1, it.result);
+            curBlock.addIns((ASMIns)new ASMLoadIns(ASMReg.t1, new ASMAddr(ASMReg.t1, 0)).Note("load ptr"));
+            handleStoreIRvar(ASMReg.t1, it.result, ">>> " + it.toString());
         }
         return null;
     }
@@ -259,7 +300,7 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
             curBlock.addIns(new ASMArithiIns("slli", ASMReg.t2, ASMReg.t2, 2)); // *4
             curBlock.addIns(new ASMArithIns("add", ASMReg.t1, ASMReg.t1, ASMReg.t2));
         }
-        handleStoreIRvar(ASMReg.t1, it.result);
+        handleStoreIRvar(ASMReg.t1, it.result, it.toString());
         return null;
     }
 
@@ -276,7 +317,7 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
             root.globalVars.add(new ASMglobalVarDef(gVar.getVarName(), structSize.get(gVar.getTypeName())));
         }
         for (var gStr : it.gStrs) {
-            root.globalStrs.add(new ASMglobalStrDef(gStr.name, gStr.value));
+            root.globalStrs.add(new ASMglobalStrDef(gStr.name.substring(1), gStr.value));
         }
         for (var func : it.funcs) {
             func.accecpt(this);
@@ -291,23 +332,34 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
     }
 
     @Override
-    public ASMHelper visit(selectIns selectIns) {
-        throw new UnsupportedOperationException("Should Not visit selectIns");
+    public ASMHelper visit(selectIns it) {
+        handleLoadIRitem(ASMReg.t1, it.cond);
+        handleLoadIRitem(ASMReg.t2, it.value1);
+        String tmpLabel = getLabel("L.select." + branchLabelCnt++);
+        curBlock.addIns(new ASMBeqzIns(ASMReg.t1, tmpLabel));
+        handleLoadIRitem(ASMReg.t2, it.value2);
+
+        ASMBlock tmpblock = new ASMBlock(tmpLabel);
+        curFunc.addBlock(tmpblock);
+        curBlock = tmpblock;
+        handleStoreIRvar(ASMReg.t2, it.result, it.toString());
+        return null;
     }
 
     @Override
     public ASMHelper visit(returnIns it) {
         if (!it.value.type.equals((IRType.IRvoidType))) {
             if (it.value instanceof IRLiteral) {
-                curBlock.addIns(new ASMLoadImmIns(ASMReg.a0, ((IRLiteral)it.value).getInt()));
+                curBlock.addIns((ASMIns)new ASMLoadImmIns(ASMReg.a0, ((IRLiteral)it.value).getInt()).Note("return value(const)"));
             } else {
-                handleLoadIRitem(ASMReg.a0, (IRvar)it.value);
+                handleLoadIRitem(ASMReg.a0, (IRvar)it.value, "return value");
             }
         }
         
-        curBlock.addIns(new ASMLoadIns(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4))); // sw ra,stackSize-4(sp)
-        curBlock.addIns(new ASMStoreIns(ASMReg.s0, new ASMAddr(ASMReg.sp, curFunc.stackSize - 8))); // sw s0,stackSize-8(sp)
-        handleAddi(ASMReg.sp, ASMReg.sp, curFunc.stackSize); // addi sp,sp,stackSize
+        curBlock.addIns((ASMIns)new ASMLoadIns(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4)).Note("UnSave ra")); // sw ra,stackSize-4(sp)
+        // FUCKKKKKKKKKKK !!
+        curBlock.addIns((ASMIns)new ASMLoadIns(ASMReg.s0, new ASMAddr(ASMReg.sp, curFunc.stackSize - 8)).Note("UnSave s0")); // sw s0,stackSize-8(sp)
+        handleAddi(ASMReg.sp, ASMReg.sp, curFunc.stackSize, "return stackSize"); // addi sp,sp,stackSize
         curBlock.addIns(new ASMReturnIns());
         return null;
     }
@@ -316,11 +368,11 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
     public ASMHelper visit(storeIns it) {
         if (it.pointer.isGlobal()) {
             handleLoadIRitem(ASMReg.t1, it.value);
-            curBlock.addIns(new ASMStoreIns(ASMReg.t1, it.pointer.name.substring(1), ASMReg.t2));
+            curBlock.addIns((ASMIns)new ASMStoreIns(ASMReg.t1, it.pointer.name.substring(1), ASMReg.t2).Note(it.toString()));
         } else {
             handleLoadIRitem(ASMReg.t1, it.value);
             handleLoadIRitem(ASMReg.t2, it.pointer);
-            curBlock.addIns(new ASMStoreIns(ASMReg.t1, new ASMAddr(ASMReg.t2, 0)));
+            curBlock.addIns((ASMIns)new ASMStoreIns(ASMReg.t1, new ASMAddr(ASMReg.t2, 0)).Note(it.toString()));
         }
         return null;
     }
@@ -332,7 +384,8 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
 
     @Override
     public ASMHelper visit(IRFuncDef func) {
-        curFunc = new ASMFuncDefNode(func.getName(), func.params.size());
+        curFunc = new ASMFuncDefNode(func.getName().substring(1), func.params.size());
+
         root.funcs.add(curFunc);
         int countMaxCallParams = 0;
         for (var blk : func.blockList) {
@@ -344,19 +397,26 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
                 }
             }
         }
-        curFunc.stackSize += (countMaxCallParams - 7) * 4;
+        curFunc.stackSize += Math.max(0, countMaxCallParams - 7) * 4;
         curFunc.stackSize = (curFunc.stackSize + 15) / 16 * 16;
+        curFunc.stackSize += 16;
+        if (curFunc.stackSize % 16 != 0) {
+            throw new RuntimeException("stackSize % 16 != 0");
+        }
 
         for (var block : func.blockList) {
             if (block.empty()) continue;
             curBlock = new ASMBlock(getLabel(block.getLabel()));
             curFunc.addBlock(curBlock);
             if (block.Label.equals("entry")) {
-                handleAddi(ASMReg.sp, ASMReg.sp, -curFunc.stackSize); // addi sp,sp,-stackSize
-                curBlock.addIns(new ASMStoreIns(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4))); // sw ra,stackSize-4(sp)
-                curBlock.addIns(new ASMStoreIns(ASMReg.s0, new ASMAddr(ASMReg.sp, curFunc.stackSize - 8))); // sw s0,stackSize-8(sp)
-                handleAddi(ASMReg.s0, ASMReg.sp, curFunc.stackSize); // addi s0,sp,stackSize
-                // TODO : save get params
+                handleAddi(ASMReg.sp, ASMReg.sp, -curFunc.stackSize, "fetch stackSize"); // addi sp,sp,-stackSize
+                curBlock.addIns((ASMIns)new ASMStoreIns(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4)).Note("Save ra")); // sw ra,stackSize-4(sp)
+                curBlock.addIns((ASMIns)new ASMStoreIns(ASMReg.s0, new ASMAddr(ASMReg.sp, curFunc.stackSize - 8)).Note("Save s0")); // sw s0,stackSize-8(sp)
+                handleAddi(ASMReg.s0, ASMReg.sp, curFunc.stackSize, "record stackSpace"); // addi s0,sp,stackSize
+
+                for (int i = 0; i < curFunc.paramCnt; ++i) {
+                    curFunc.paramsId.put(func.params.get(i).name, i); 
+                }
             } 
 
             for (var ins : block.insList) {

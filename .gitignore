@@ -22,4 +22,4 @@ test.mx
 
 # llvm ir
 *.ll
-
+*.s

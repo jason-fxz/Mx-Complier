@@ -207,28 +207,31 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         if (it.op.in("&&", "||")) {
             // Short-circuit evaluation
             IRvar lhsvar = (IRvar) it.lhs.accept(this).exprVar;
-            IRblock land_rhs = curFunc.newBlock(IRLabeler.getIdLabel("land.rhs"));
-            IRblock land_end = curFunc.newBlock(IRLabeler.getIdLabel("land.end"));
+            IRblock l_rhs = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".rhs"));
+            IRblock l_end = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".rhs"));
 
             res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
 
             IRblock lastcur = curBlock; // land.lhs done
-            curBlock = land_rhs;
+            curBlock = l_rhs;
             IRvar rhsvar = (IRvar) it.rhs.accept(this).exprVar;
-            curBlock.setEndIns(new jumpIns(land_end.getLabel()));
+            curBlock.setEndIns(new jumpIns(l_end.getLabel()));
 
             if (it.op.equals("&&")) {
-                lastcur.setEndIns(new branchIns(lhsvar, land_rhs.getLabel(), land_end.getLabel()));
-                land_end.addIns(new phiIns(res,
-                        new phiItem(new IRLiteral(IRType.IRBoolType, "false"), lastcur.getLabel()),
-                        new phiItem(rhsvar, land_rhs.getLabel())));
+                lastcur.setEndIns(new branchIns(lhsvar, l_rhs.getLabel(), l_end.getLabel()));
+                l_end.addIns(new selectIns(res, lhsvar, rhsvar, new IRLiteral(IRType.IRBoolType, "false")));
+                
+                // l_end.addIns(new phiIns(res,
+                //         new phiItem(new IRLiteral(IRType.IRBoolType, "false"), lastcur.getLabel()),
+                //         new phiItem(rhsvar, l_rhs.getLabel())));
             } else {
-                lastcur.setEndIns(new branchIns(lhsvar, land_end.getLabel(), land_rhs.getLabel()));
-                land_end.addIns(new phiIns(res,
-                        new phiItem(new IRLiteral(IRType.IRBoolType, "true"), lastcur.getLabel()),
-                        new phiItem(rhsvar, land_rhs.getLabel())));
+                lastcur.setEndIns(new branchIns(lhsvar, l_end.getLabel(), l_rhs.getLabel()));
+                l_end.addIns(new selectIns(res, lhsvar, new IRLiteral(IRType.IRBoolType, "true"), rhsvar));
+                // l_end.addIns(new phiIns(res,
+                //         new phiItem(new IRLiteral(IRType.IRBoolType, "true"), lastcur.getLabel()),
+                //         new phiItem(rhsvar, l_rhs.getLabel())));
             }
-            curBlock = land_end;
+            curBlock = l_end;
 
         } else {
             IRitem lhsvar = it.lhs.accept(this).exprVar;
@@ -361,8 +364,9 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         curBlock = cond_end;
         if (truevar != null) {
             IRvar res = new IRvar(truevar.type, IRLabeler.getIdLabel("%cond"));
-            curBlock.addIns(new phiIns(res, new phiItem(truevar, true_label),
-                    new phiItem(falsevar, false_label)));
+            curBlock.addIns(new selectIns(res, cond, truevar, falsevar));
+            // curBlock.addIns(new phiIns(res, new phiItem(truevar, true_label),
+            //         new phiItem(falsevar, false_label)));
             return new IRhelper(res);
         } else {
             return new IRhelper();

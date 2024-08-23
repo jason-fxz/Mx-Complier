@@ -7,7 +7,7 @@ input_file=$(find src -name "builtin.c")
 echo $input_file
 tmp_file="builtin.tmp.ll"
 output_file="builtin.ll"
-
+asm_file="builtin.s"
 
 # 生成 LLVM IR
 echo "gen LLVM IR..."
@@ -38,3 +38,8 @@ echo "$content" > "$output_file"
 rm "$tmp_file"
 
 echo "replace ok, save to $output_file"
+
+# 生成汇编代码
+
+echo "gen asm..."
+llc-17 -march=riscv32 -filetype=asm $output_file -o $asm_file
