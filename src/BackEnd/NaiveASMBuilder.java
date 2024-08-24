@@ -39,6 +39,28 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
         structSize = new HashMap<>();
     }
 
+    private void handleload(ASMReg rd, ASMAddr addr, String comment) {
+        int offset = addr.getOffset();
+        if (-2048 <= offset && offset <= 2047)
+            curBlock.addIns((ASMIns)new ASMLoadIns(rd, addr).Note(comment));
+        else {
+            curBlock.addIns(new ASMLoadImmIns(ASMReg.t0, offset));
+            curBlock.addIns(new ASMArithIns("add", rd, addr.getBase(), ASMReg.t0));
+            curBlock.addIns((ASMIns)new ASMLoadIns(rd, new ASMAddr(rd, 0)).Note(comment));
+        }
+    }
+
+    private void handlestore(ASMReg rs, ASMAddr addr, String comment) {
+        int offset = addr.getOffset();
+        if (-2048 <= offset && offset <= 2047) {
+            curBlock.addIns((ASMIns)new ASMStoreIns(rs, addr).Note(comment));
+        } else {
+            curBlock.addIns((ASMIns)new ASMLoadImmIns(ASMReg.t0, offset).Note("\\"));
+            curBlock.addIns((ASMIns)new ASMArithIns("add", ASMReg.t0, addr.getBase(), ASMReg.t0).Note("\\"));
+            curBlock.addIns((ASMIns)new ASMStoreIns(rs, new ASMAddr(ASMReg.t0, 0)).Note(comment));
+        }
+    }
+
     // Load IRitem to reg
     private void handleLoadIRitem(ASMReg rd, IRitem item) {
         if (item instanceof IRLiteral) {
@@ -355,10 +377,12 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
                 handleLoadIRitem(ASMReg.a0, (IRvar)it.value, "return value");
             }
         }
-        
-        curBlock.addIns((ASMIns)new ASMLoadIns(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4)).Note("UnSave ra")); // sw ra,stackSize-4(sp)
-        // FUCKKKKKKKKKKK !!
-        curBlock.addIns((ASMIns)new ASMLoadIns(ASMReg.s0, new ASMAddr(ASMReg.sp, curFunc.stackSize - 8)).Note("UnSave s0")); // sw s0,stackSize-8(sp)
+        handleload(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4), "UnSave ra"); // sw ra,stackSize-4(sp)
+        handleload(ASMReg.s0, new ASMAddr(ASMReg.sp, curFunc.stackSize - 8), "UnSave s0"); // sw s0,stackSize-8(sp)
+
+        // curBlock.addIns((ASMIns)new ASMLoadIns(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4)).Note("UnSave ra")); // sw ra,stackSize-4(sp)
+        // // FUCKKKKKKKKKKK !!
+        // curBlock.addIns((ASMIns)new ASMLoadIns(ASMReg.s0, new ASMAddr(ASMReg.sp, curFunc.stackSize - 8)).Note("UnSave s0")); // sw s0,stackSize-8(sp)
         handleAddi(ASMReg.sp, ASMReg.sp, curFunc.stackSize, "return stackSize"); // addi sp,sp,stackSize
         curBlock.addIns(new ASMReturnIns());
         return null;
@@ -410,8 +434,10 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
             curFunc.addBlock(curBlock);
             if (block.Label.equals("entry")) {
                 handleAddi(ASMReg.sp, ASMReg.sp, -curFunc.stackSize, "fetch stackSize"); // addi sp,sp,-stackSize
-                curBlock.addIns((ASMIns)new ASMStoreIns(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4)).Note("Save ra")); // sw ra,stackSize-4(sp)
-                curBlock.addIns((ASMIns)new ASMStoreIns(ASMReg.s0, new ASMAddr(ASMReg.sp, curFunc.stackSize - 8)).Note("Save s0")); // sw s0,stackSize-8(sp)
+                handlestore(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4), "Save ra"); // sw ra,stackSize-4(sp)
+                handlestore(ASMReg.s0, new ASMAddr(ASMReg.sp, curFunc.stackSize - 8), "Save s0"); // sw s0,stackSize-8(sp)
+                // curBlock.addIns((ASMIns)new ASMStoreIns(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4)).Note("Save ra")); // sw ra,stackSize-4(sp)
+                // curBlock.addIns((ASMIns)new ASMStoreIns(ASMReg.s0, new ASMAddr(ASMReg.sp, curFunc.stackSize - 8)).Note("Save s0")); // sw s0,stackSize-8(sp)
                 handleAddi(ASMReg.s0, ASMReg.sp, curFunc.stackSize, "record stackSpace"); // addi s0,sp,stackSize
 
                 for (int i = 0; i < curFunc.paramCnt; ++i) {

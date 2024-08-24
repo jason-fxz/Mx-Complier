@@ -14,4 +14,12 @@ public class ASMAddr {
         return offset + "(" + base + ")";
     }
 
+    public ASMReg getBase() {
+        return base;
+    }
+
+    public int getOffset() {
+        return offset;
+    }
+
 }
