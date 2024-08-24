@@ -12,8 +12,7 @@ public class BlockStmtNode extends StmtNode {
         super(pos);
     }
 
-    @Override
-    public String toString() {
+    public String toString0() {
         indentDepth++;
         String str = "{\n";
         for (StmtNode stmt : stmts) {
@@ -23,6 +22,19 @@ public class BlockStmtNode extends StmtNode {
         str += super.toString() + "}";
         return str;
     }
+
+    @Override
+    public String toString() {
+        String str = super.toString() + "{\n";
+        indentDepth++;
+        for (StmtNode stmt : stmts) {
+            str += stmt.toString() + "\n";
+        }
+        indentDepth--;
+        str += super.toString() + "}";
+        return str;
+    }
+
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {

@@ -16,7 +16,25 @@ public class IRblock extends IRNode {
         endIns = null;
     }
 
+    // public void unsafeaddIns(IRIns ins) {
+    //     insList.add(ins);
+    // }
+
+    // public void ignaddIns(IRIns ins) {
+    //     if (endIns != null) {
+    //         return ;
+    //     }
+    //     if (ins instanceof returnIns || ins instanceof branchIns || ins instanceof jumpIns) {
+    //         throw new RuntimeException("endIns should be the last instruction in a block"); 
+    //     }
+    //     insList.add(ins);
+    // }
+
     public void addIns(IRIns ins) {
+        if (endIns != null) {
+            return ;
+            // throw new RuntimeException("endIns have been set");
+        }
         if (ins instanceof returnIns || ins instanceof branchIns || ins instanceof jumpIns) {
             throw new RuntimeException("endIns should be the last instruction in a block"); 
         }

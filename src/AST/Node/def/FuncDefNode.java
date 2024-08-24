@@ -30,7 +30,7 @@ public class FuncDefNode extends DefNode {
         if (str.endsWith(", ")) {
             str = str.substring(0, str.length() - 2);
         }
-        str += ") " + body.toString();
+        str += ") " + body.toString0();
         return str;
     }
 

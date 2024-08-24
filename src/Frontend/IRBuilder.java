@@ -85,7 +85,15 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         sizeof.put("int", 4);
         sizeof.put("bool", 4);
 
-        // First Collect all the global variable
+        // First Collect all the global variable & Class Define
+        it.Defs.forEach(sd -> {
+            if (sd instanceof ClassDefNode) {
+                var iit = (ClassDefNode) sd;
+                sizeof.put(iit.name, iit.classInfo.memberId.size() * 4);
+            }
+        });
+        
+        
         curFunc = gInit;
         curBlock = gInit.entryBlock;
         it.Defs.forEach(sd -> {
@@ -121,7 +129,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
                 curClassMembers.add(new IRvar("%this.m." + name));
             }
         });
-        sizeof.put(it.name, it.classInfo.memberId.size() * 4);
+        
 
         root.gStrusts.add(new IRStructDef(classType));
 
@@ -169,9 +177,15 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
             curFunc.entryBlock.addIns(new storeIns(pvar, paddr));
         });
 
+        curBlock = curFunc.newBlock("entry.start");
+        
         it.body.accept(this);
+        
+        curFunc.entryBlock.setEndIns(new jumpIns("entry.start"));
         curFunc = null;
         curBlock = null;
+
+
         return null;
     }
 
@@ -210,7 +224,8 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         if (it.op.in("&&", "||")) {
             // Short-circuit evaluation
-            IRitem lhsvar = it.lhs.accept(this).exprVar;
+            IRitem lhsvar = it.lhs.accept(this).exprVar; // visit lhs
+
             IRblock l_rhs = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".rhs"));
             IRblock l_end = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".end"));
 
@@ -218,7 +233,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
             IRblock lastcur = curBlock; // land.lhs done
             curBlock = l_rhs;
-            IRitem rhsvar = it.rhs.accept(this).exprVar;
+            IRitem rhsvar = it.rhs.accept(this).exprVar; // visit rhs
             curBlock.setEndIns(new jumpIns(l_end.getLabel()));
 
             if (it.op.equals("&&")) {
@@ -675,7 +690,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         IRblock if_else = curFunc.newBlock(iflabel + ".else");
         IRblock if_end = curFunc.newBlock(iflabel + ".end");
 
-        IRvar cond = (IRvar) it.condition.accept(this).exprVar;
+        IRitem cond = it.condition.accept(this).exprVar;
         curBlock.setEndIns(new branchIns(cond, if_then.getLabel(), if_else.getLabel()));
 
         curBlock = if_then;
@@ -712,7 +727,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         curBlock = for_cond;
         if (it.cond != null) {
-            IRvar cond = (IRvar) it.cond.accept(this).exprVar;
+            IRitem cond = it.cond.accept(this).exprVar;
             curBlock.setEndIns(new branchIns(cond, for_body.getLabel(), for_end.getLabel()));
         } else {
             curBlock.setEndIns(new jumpIns(for_body.getLabel()));
@@ -722,11 +737,11 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         if (it.step != null) {
             it.step.accept(this);
         }
-        curBlock.setEndIns(new jumpIns(for_cond.getLabel()));
+        if (!curBlock.isEnd()) curBlock.setEndIns(new jumpIns(for_cond.getLabel()));
 
         curBlock = for_body;
         it.body.accept(this);
-        curBlock.setEndIns(new jumpIns(for_step.getLabel()));
+        if (!curBlock.isEnd()) curBlock.setEndIns(new jumpIns(for_step.getLabel()));
 
         curBlock = for_end;
         LoopStack_break.removeLast();
@@ -753,7 +768,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         curBlock = while_body;
         it.body.accept(this);
-        curBlock.setEndIns(new jumpIns(while_cond.getLabel()));
+        if (!curBlock.isEnd()) curBlock.setEndIns(new jumpIns(while_cond.getLabel()));
 
         curBlock = while_end;
         LoopStack_break.removeLast();
@@ -766,9 +781,9 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     public IRhelper visit(ReturnStmtNode it) {
         if (it.expr != null) {
             IRhelper helper = it.expr.accept(this);
-            curBlock.setEndIns(new returnIns(helper.exprVar));
+            if (!curBlock.isEnd()) curBlock.setEndIns(new returnIns(helper.exprVar));
         } else {
-            curBlock.setEndIns(new returnIns(new IRLiteral("void")));
+            if (!curBlock.isEnd()) curBlock.setEndIns(new returnIns(new IRLiteral("void")));
         }
 
         return null;
@@ -776,13 +791,13 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
     @Override
     public IRhelper visit(BreakStmtNode it) {
-        curBlock.setEndIns(new jumpIns(LoopStack_break.getLast()));
+        if (!curBlock.isEnd()) curBlock.setEndIns(new jumpIns(LoopStack_break.getLast()));
         return null;
     }
 
     @Override
     public IRhelper visit(ContinueStmtNode it) {
-        curBlock.setEndIns(new jumpIns(LoopStack_continue.getLast()));
+        if (!curBlock.isEnd()) curBlock.setEndIns(new jumpIns(LoopStack_continue.getLast()));
         return null;
     }
 

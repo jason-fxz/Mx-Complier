@@ -20,7 +20,7 @@ public class NewArrayExprNode extends ExprNode {
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
-        str.append("new " + name);
+        str.append("(new " + name);
         for (int i = 0; i < dimsize.size(); ++i) {
             if (dimsize.get(i) == null) {
                 str.append("[]");
@@ -28,6 +28,7 @@ public class NewArrayExprNode extends ExprNode {
                 str.append("[" + dimsize.get(i).toString() + "]");
             }
         }
+        str.append(")");
         if (array != null) {
             str.append(array.toString());
         }

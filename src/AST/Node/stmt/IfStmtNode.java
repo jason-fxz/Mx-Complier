@@ -20,7 +20,7 @@ public class IfStmtNode extends StmtNode {
     public String toString() {
         String str = "if (" + condition.toString() + ")";
         if (thenStmt instanceof BlockStmtNode) {
-            str += " " + thenStmt.toString();
+            str += " " + ((BlockStmtNode)thenStmt).toString0();
         } else {
             indentDepth++;
             str += "\n" + thenStmt.toString();
@@ -33,7 +33,7 @@ public class IfStmtNode extends StmtNode {
                 str += "\n" + super.toString() + "else";
             }
             if (elseStmt instanceof BlockStmtNode) {
-                str += " " + elseStmt.toString();
+                str += " " + ((BlockStmtNode)elseStmt).toString0();
             } else if (elseStmt instanceof IfStmtNode) {
                 String elseStr = elseStmt.toString();
                 str += " " + elseStr.substring(indentDepth * 2);

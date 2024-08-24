@@ -25,7 +25,7 @@ public class WhileStmtNode extends StmtNode {
         if (body instanceof EmptyStmtNode) {
             str += ";";
         } else if (body instanceof BlockStmtNode) {
-            str += " " + body.toString();
+            str += " " + ((BlockStmtNode)body).toString0();
         } else {
             indentDepth++;
             str += "\n" + body.toString();

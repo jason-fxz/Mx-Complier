@@ -40,7 +40,7 @@ public class ForStmtNode extends StmtNode {
         str += ") ";
         if (!(body instanceof EmptyStmtNode)) {
             if (body instanceof BlockStmtNode) {
-                str += body.toString();
+                str += ((BlockStmtNode)body).toString0();
             } else {
                 indentDepth++;
                 str += "\n" + body.toString();
