@@ -85,7 +85,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         sizeof.put("int", 4);
         sizeof.put("bool", 4);
 
-        // First Collect all the global variable & Class Define
+        // First Collect all Class Define
         it.Defs.forEach(sd -> {
             if (sd instanceof ClassDefNode) {
                 var iit = (ClassDefNode) sd;
@@ -93,9 +93,9 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
             }
         });
         
-        
+        // Then handle the global variable
         curFunc = gInit;
-        curBlock = gInit.entryBlock;
+        curBlock = gInit.newBlock("entry.start");
         it.Defs.forEach(sd -> {
             if (sd instanceof VarsDefNode) {
                 ((VarsDefNode) sd).varDefs.forEach(vd -> {
@@ -105,6 +105,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         });
         curBlock.setEndIns(new returnIns(new IRLiteral(IRType.IRvoidType, "void")));
         root.funcs.add(gInit);
+        gInit.entryBlock.setEndIns(new jumpIns("entry.start"));
         curFunc = null;
         curBlock = null;
 
@@ -180,7 +181,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         curBlock = curFunc.newBlock("entry.start");
         
         it.body.accept(this);
-        
+
         curFunc.entryBlock.setEndIns(new jumpIns("entry.start"));
         curFunc = null;
         curBlock = null;
@@ -500,6 +501,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         if (idx == asize.size())
             return new IRLiteral("null");
         IRvar var = new IRvar(IRLabeler.getIdLabel("%new.array"));
+        // call __mx_allocate_array
         curBlock.addIns(new callIns(var, "__mx_allocate_array", new IRLiteral("4"), asize.get(idx)));
 
         String looplabel = IRLabeler.getIdLabel("arrayinit.for");

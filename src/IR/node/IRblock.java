@@ -32,8 +32,8 @@ public class IRblock extends IRNode {
 
     public void addIns(IRIns ins) {
         if (endIns != null) {
-            return ;
-            // throw new RuntimeException("endIns have been set");
+            // return ;
+            throw new RuntimeException("endIns have been set");
         }
         if (ins instanceof returnIns || ins instanceof branchIns || ins instanceof jumpIns) {
             throw new RuntimeException("endIns should be the last instruction in a block"); 
