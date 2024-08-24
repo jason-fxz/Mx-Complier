@@ -640,8 +640,10 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
             curBlock.addIns(new callIns(res, "__mx_bool_to_string", var));
         } else if (var.type.equals(IRType.IRIntType)) {
             curBlock.addIns(new callIns(res, "toString", var));
-        } else
-            throw new UnsupportedOperationException("WTF? toStr: " + var.type);
+        } else {
+            return (IRvar)var;
+        }
+            // throw new UnsupportedOperationException("WTF? toStr: " + var.type);
         return res;
     }
 
