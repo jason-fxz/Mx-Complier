@@ -23,6 +23,8 @@ test.mx
 # llvm ir
 *.ll
 *.s
+!src/builtin/*.s
+!src/builtin/*.ll
 *.out
 test.in
 test.out
