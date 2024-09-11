@@ -1,6 +1,7 @@
 package IR.node;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import IR.IRvisitor;
 import IR.node.ins.*;
@@ -9,6 +10,25 @@ public class IRblock extends IRNode {
     public String Label;
     public ArrayList<IRIns> insList;
     public IRIns endIns;
+    private HashSet<IRblock> prevBlocks = new HashSet<>();
+    private HashSet<IRblock> nextBlocks = new HashSet<>();
+
+    public HashSet<IRblock> getPrevBlocks() {
+        return prevBlocks;
+    }
+
+    public HashSet<IRblock> getNextBlocks() {
+        return nextBlocks;
+    }
+
+    public void addPrevBlock(IRblock block) {
+        prevBlocks.add(block);
+    }
+
+    public void addNextBlock(IRblock block) {
+        nextBlocks.add(block);
+    }
+
     
     public IRblock(String Label) {
         this.Label = Label;
@@ -54,6 +74,7 @@ public class IRblock extends IRNode {
         } else {
             throw new RuntimeException("endIns should be the Jump instruction in a block");
         }
+        // Add next blocks
     }
 
     public String getLabel() {
@@ -84,26 +105,26 @@ public class IRblock extends IRNode {
         return visitor.visit(this);
     }
     
-    public int StackVarCount() {
-        int count = 0;
-        for (var ins : insList) {
-            if (ins instanceof allocaIns) count += 2;
-            else if (ins instanceof arithIns) count += 1;
-            else if (ins instanceof callIns && ((callIns)ins).result != null) count += 1; 
-            else if (ins instanceof getelementptrIns) count += 1;
-            else if (ins instanceof icmpIns) count += 1;
-            else if (ins instanceof loadIns) count += 1;
-            else if (ins instanceof phiIns) count += 1;
-            else if (ins instanceof selectIns) count += 1;
-        }
-        return count;
-    }
+    // public int StackVarCount() {
+    //     int count = 0;
+    //     for (var ins : insList) {
+    //         if (ins instanceof allocaIns) count += 2;
+    //         else if (ins instanceof arithIns) count += 1;
+    //         else if (ins instanceof callIns && ((callIns)ins).result != null) count += 1; 
+    //         else if (ins instanceof getelementptrIns) count += 1;
+    //         else if (ins instanceof icmpIns) count += 1;
+    //         else if (ins instanceof loadIns) count += 1;
+    //         else if (ins instanceof phiIns) count += 1;
+    //         else if (ins instanceof selectIns) count += 1;
+    //     }
+    //     return count;
+    // }
     
-    public int maxCallparams() {
-        int res = 0;
-        for (var ins : insList) {
-            if (ins instanceof callIns) res = Math.max(res, ((callIns)ins).args.size());
-        }
-        return res;
-    }
+    // public int maxCallparams() {
+    //     int res = 0;
+    //     for (var ins : insList) {
+    //         if (ins instanceof callIns) res = Math.max(res, ((callIns)ins).args.size());
+    //     }
+    //     return res;
+    // }
 }

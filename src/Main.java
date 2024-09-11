@@ -6,7 +6,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
 import AST.Node.RootNode;
-import BackEnd.NaiveASMBuilder;
+import Backend.NaiveASMBuilder;
 import Frontend.ASTBuilder;
 import Frontend.IRBuilder;
 import Frontend.SemanticChecker;

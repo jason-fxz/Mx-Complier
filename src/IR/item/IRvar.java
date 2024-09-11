@@ -35,6 +35,19 @@ public class IRvar extends IRitem {
     public String toString() {
         return name;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IRvar) {
+            return name.equals(((IRvar) obj).name);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
     
     public boolean isGlobal() {
         return name.startsWith("@");
