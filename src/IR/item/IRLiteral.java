@@ -40,4 +40,12 @@ public class IRLiteral extends IRitem {
     public String toString() {
         return value;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IRLiteral) {
+            return value.equals(((IRLiteral) obj).value);
+        }
+        return false;
+    }
 }

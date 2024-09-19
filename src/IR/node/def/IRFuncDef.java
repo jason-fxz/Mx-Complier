@@ -3,17 +3,19 @@ package IR.node.def;
 import IR.IRvisitor;
 import IR.item.IRvar;
 import IR.node.IRblock;
+import IR.node.ins.allocaIns;
 import IR.type.IRType;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+
 
 public class IRFuncDef extends IRDefNode {
     public String name;
     public IRType returnType;
     public ArrayList<IRvar> params;
     public IRblock entryBlock;
-    public LinkedHashMap<String, IRblock> blockList;
+    public LinkedHashMap<String, IRblock> blocks;
 
 
     public IRFuncDef(String name, IRType returnType) {
@@ -21,8 +23,8 @@ public class IRFuncDef extends IRDefNode {
         this.returnType = returnType;
         this.params = new ArrayList<>();
         this.entryBlock = new IRblock("entry");
-        this.blockList = new LinkedHashMap<>();
-        this.blockList.put("entry", this.entryBlock);
+        this.blocks = new LinkedHashMap<>();
+        this.blocks.put("entry", this.entryBlock);
     }
 
     public void addParam(IRvar param) {
@@ -31,7 +33,7 @@ public class IRFuncDef extends IRDefNode {
 
     public IRblock newBlock(String label) {
         IRblock block = new IRblock(label);
-        blockList.put(label, block);
+        blocks.put(label, block);
         return block;
     }
 
@@ -46,7 +48,7 @@ public class IRFuncDef extends IRDefNode {
             str.append(params.get(i).type.toString() + " " + params.get(i).toString());
         }
         str.append(") {\n");
-        for (var entry : blockList.entrySet()) {
+        for (var entry : blocks.entrySet()) {
             str.append(entry.getValue().toString());
             str.append("\n");
         }
@@ -61,6 +63,16 @@ public class IRFuncDef extends IRDefNode {
 
     public String getName() {
         return name;
+    }
+
+    public ArrayList<IRvar> getAllocas() {
+        ArrayList<IRvar> result = new ArrayList<>();
+        for (var ins : entryBlock.insList) {
+            if (ins instanceof allocaIns) {
+                result.add(((allocaIns) ins).result);
+            }
+        }
+        return result;
     }
 
     // public int StackVarCount()  {

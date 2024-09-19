@@ -1,5 +1,7 @@
 package IR.node.ins;
 
+import java.util.Map;
+
 import IR.IRvisitor;
 import IR.item.IRitem;
 import IR.type.IRType;
@@ -27,5 +29,19 @@ public class branchIns extends IRIns {
     @Override
     public <T> T accecpt(IRvisitor<T> visitor) {
         return visitor.visit(this);
+    }
+
+    @Override
+    public void replaceUse(IRitem old, IRitem nw) {
+        if (cond.equals(old)) {
+            cond = nw;
+        }
+    }
+
+    @Override
+    public void replaceUse(Map<IRitem, IRitem> map) {
+        if (map.containsKey(cond)) {
+            cond = map.get(cond);
+        }
     }
 }

@@ -2,6 +2,9 @@ package IR.node.ins;
 
 import IR.item.IRvar;
 import IR.type.IRType;
+
+import java.util.Map;
+
 import IR.IRvisitor;
 import IR.item.IRitem;
 
@@ -36,5 +39,31 @@ public class selectIns extends IRIns {
     @Override
     public <T> T accecpt(IRvisitor<T> visitor) {
         return visitor.visit(this);
+    }
+
+    @Override
+    public void replaceUse(IRitem old, IRitem nw) {
+        if (cond.equals(old)) {
+            cond = nw;
+        }
+        if (value1.equals(old)) {
+            value1 = nw;
+        }
+        if (value2.equals(old)) {
+            value2 = nw;
+        }
+    }
+
+    @Override
+    public void replaceUse(Map<IRitem, IRitem> map) {
+        if (map.containsKey(cond)) {
+            cond = map.get(cond);
+        }
+        if (map.containsKey(value1)) {
+            value1 = map.get(value1);
+        }
+        if (map.containsKey(value2)) {
+            value2 = map.get(value2);
+        }
     }
 }

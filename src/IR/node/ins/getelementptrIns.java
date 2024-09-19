@@ -4,6 +4,7 @@ import IR.IRvisitor;
 import IR.item.IRitem;
 import IR.item.IRvar;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class getelementptrIns extends IRIns {
     public IRvar result;
@@ -34,5 +35,30 @@ public class getelementptrIns extends IRIns {
     @Override
     public <T> T accecpt(IRvisitor<T> visitor) {
         return visitor.visit(this);
+    }
+
+    @Override
+    public void replaceUse(IRitem old, IRitem nw) {
+        if (pointer.equals(old)) {
+            pointer = nw;
+        }
+        for (int i = 0; i < indices.size(); i++) {
+            if (indices.get(i).equals(old)) {
+                indices.set(i, nw);
+            }
+        }
+    }
+
+    @Override
+    public void replaceUse(Map<IRitem, IRitem> map) {
+        if (map.containsKey(pointer)) {
+            pointer = map.get(pointer);
+        }
+        for (int i = 0; i < indices.size(); i++) {
+            if (map.containsKey(indices.get(i))) {
+                indices.set(i, map.get(indices.get(i)));
+            }
+        }
+
     }
 }

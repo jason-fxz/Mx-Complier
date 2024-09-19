@@ -4,6 +4,7 @@ import IR.IRvisitor;
 import IR.item.IRitem;
 import IR.item.IRvar;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class callIns extends IRIns {
     public IRvar result = null;
@@ -63,4 +64,21 @@ public class callIns extends IRIns {
         return visitor.visit(this);
     }
 
+    @Override
+    public void replaceUse(IRitem old, IRitem nw) {
+        for (int i = 0; i < args.size(); i++) {
+            if (args.get(i).equals(old)) {
+                args.set(i, nw);
+            }
+        }
+    }
+
+    @Override
+    public void replaceUse(Map<IRitem, IRitem> map) {
+        for (int i = 0; i < args.size(); i++) {
+            if (map.containsKey(args.get(i))) {
+                args.set(i, map.get(args.get(i)));
+            }
+        }
+    }
 }

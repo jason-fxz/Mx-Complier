@@ -1,5 +1,7 @@
 package IR.node.ins;
 
+import java.util.Map;
+
 import IR.IRvisitor;
 import IR.item.*;
 import IR.type.IRType;
@@ -39,4 +41,25 @@ public class icmpIns extends IRIns {
     public <T> T accecpt(IRvisitor<T> visitor) {
         return visitor.visit(this);
     }
+
+    @Override
+    public void replaceUse(IRitem old, IRitem nw) {
+        if (lhs.equals(old)) {
+            lhs = nw;
+        }
+        if (rhs.equals(old)) {
+            rhs = nw;
+        }
+    }
+
+    @Override
+    public void replaceUse(Map<IRitem, IRitem> map) {
+        if (map.containsKey(lhs)) {
+            lhs = map.get(lhs);
+        }
+        if (map.containsKey(rhs)) {
+            rhs = map.get(rhs);
+        }
+    }
+
 }

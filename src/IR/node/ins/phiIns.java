@@ -5,6 +5,7 @@ import IR.item.IRitem;
 import IR.item.IRvar;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 
 public class phiIns extends IRIns {
@@ -18,6 +19,7 @@ public class phiIns extends IRIns {
         }
     }
     public ArrayList<phiItem> values;
+    public IRvar var; // Used in Mem2Reg
 
     public phiIns(IRvar result, ArrayList<phiItem> values) {
         this.result = result;
@@ -30,6 +32,10 @@ public class phiIns extends IRIns {
         for (var it : items) {
             values.add(it);
         }
+    }
+
+    public void addValue(IRitem value, String label) {
+        values.add(new phiItem(value, label));
     }
 
     @Override
@@ -47,6 +53,24 @@ public class phiIns extends IRIns {
     @Override
     public <T> T accecpt(IRvisitor<T> visitor) {
         return visitor.visit(this);
+    }
+
+    @Override
+    public void replaceUse(IRitem old, IRitem nw) {
+        for (var val : values) {
+            if (val.value.equals(old)) {
+                val.value = nw;
+            }
+        }
+    }
+
+    @Override
+    public void replaceUse(Map<IRitem, IRitem> map) {
+        for (var val : values) {
+            if (map.containsKey(val.value)) {
+                val.value = map.get(val.value);
+            }
+        }
     }
 }
 

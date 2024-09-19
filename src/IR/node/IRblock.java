@@ -8,8 +8,11 @@ import IR.node.ins.*;
 
 public class IRblock extends IRNode {
     public String Label;
+    public ArrayList<phiIns> phiList;
     public ArrayList<IRIns> insList;
     public IRIns endIns;
+    public int index;
+    
     private HashSet<IRblock> prevBlocks = new HashSet<>();
     private HashSet<IRblock> nextBlocks = new HashSet<>();
 

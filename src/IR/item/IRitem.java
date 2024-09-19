@@ -14,5 +14,8 @@ abstract public class IRitem {
     @Override
     public abstract String toString();
 
+    @Override
+    public abstract boolean equals(Object obj);
+
 
 }

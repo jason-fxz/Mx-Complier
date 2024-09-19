@@ -1,6 +1,9 @@
 package IR.node.ins;
 
+import java.util.Map;
+
 import IR.IRvisitor;
+import IR.item.IRitem;
 import IR.item.IRvar;
 
 public class loadIns extends IRIns {
@@ -20,6 +23,20 @@ public class loadIns extends IRIns {
     @Override
     public <T> T accecpt(IRvisitor<T> visitor) {
         return visitor.visit(this);
+    }
+
+    @Override
+    public void replaceUse(IRitem old, IRitem nw) {
+        if (pointer.equals(old)) {
+            pointer = (IRvar) nw;
+        }
+    }
+
+    @Override
+    public void replaceUse(Map<IRitem, IRitem> map) {
+        if (map.containsKey(pointer)) {
+            pointer = (IRvar) map.get(pointer);
+        }
     }
     
 }

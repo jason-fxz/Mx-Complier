@@ -412,7 +412,7 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
 
         root.funcs.add(curFunc);
         int countMaxCallParams = 0;
-        for (var blk : func.blockList.values()) {
+        for (var blk : func.blocks.values()) {
             for (var ins : blk.insList) {
                 getStackSpace(ins);
                 if (ins instanceof callIns) {
@@ -428,7 +428,7 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
             throw new RuntimeException("stackSize % 16 != 0");
         }
 
-        for (var block : func.blockList.values()) {
+        for (var block : func.blocks.values()) {
             if (block.empty()) continue;
             curBlock = new ASMBlock(getLabel(block.getLabel()));
             curFunc.addBlock(curBlock);
