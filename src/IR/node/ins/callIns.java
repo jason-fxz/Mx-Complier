@@ -4,6 +4,7 @@ import IR.IRvisitor;
 import IR.item.IRitem;
 import IR.item.IRvar;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class callIns extends IRIns {
@@ -80,5 +81,21 @@ public class callIns extends IRIns {
                 args.set(i, map.get(args.get(i)));
             }
         }
+    }
+
+    @Override
+    public List<IRvar> getUses() {
+        List<IRvar> res = new ArrayList<>();
+        for (var arg : args) {
+            if (arg instanceof IRvar) {
+                res.add((IRvar) arg);
+            }
+        }
+        return res;
+    }
+
+    @Override
+    public IRvar getDef() {
+        return result;
     }
 }

@@ -1,5 +1,7 @@
 package IR.node.ins;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import IR.IRvisitor;
@@ -35,5 +37,15 @@ public class allocaIns extends IRIns {
 
     @Override
     public void replaceUse(Map<IRitem, IRitem> map) {
+    }
+
+    @Override
+    public List<IRvar> getUses() {
+        return new ArrayList<>();
+    }
+
+    @Override
+    public IRvar getDef() {
+        return result;
     }
 }

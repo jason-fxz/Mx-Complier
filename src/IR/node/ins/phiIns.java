@@ -1,10 +1,12 @@
 package IR.node.ins;
 
 import IR.IRvisitor;
+import IR.item.IRLiteral;
 import IR.item.IRitem;
 import IR.item.IRvar;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 
@@ -42,7 +44,12 @@ public class phiIns extends IRIns {
     public String toString() {
         String str = result.toString() + " = phi " + result.type.toString() + " ";
         for (var val : values) {
-            str += "[ " + val.value.toString() + ", %" + val.label + " ], ";
+            if (val.value == null) {
+                IRLiteral emptyvar = new IRLiteral(result.type);
+                str += "[ " + emptyvar.toString() + ", %" + val.label + " ], ";
+            } else {
+                str += "[ " + val.value.toString() + ", %" + val.label + " ], ";
+            }
         }
         if (str.endsWith(", ")) {
             str = str.substring(0, str.length() - 2);
@@ -71,6 +78,22 @@ public class phiIns extends IRIns {
                 val.value = map.get(val.value);
             }
         }
+    }
+
+    @Override
+    public List<IRvar> getUses() {
+        List<IRvar> res = new ArrayList<>();
+        for (var val : values) {
+            if (val.value instanceof IRvar) {
+                res.add((IRvar) val.value);
+            }
+        }
+        return res;
+    }
+
+    @Override
+    public IRvar getDef() {
+        return result;
     }
 }
 

@@ -3,6 +3,8 @@ package IR.node.ins;
 import IR.item.IRvar;
 import IR.type.IRType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import IR.IRvisitor;
@@ -65,5 +67,25 @@ public class selectIns extends IRIns {
         if (map.containsKey(value2)) {
             value2 = map.get(value2);
         }
+    }
+
+    @Override
+    public List<IRvar> getUses() {
+        List<IRvar> res = new ArrayList<>();
+        if (cond instanceof IRvar) {
+            res.add((IRvar) cond);
+        }
+        if (value1 instanceof IRvar) {
+            res.add((IRvar) value1);
+        }
+        if (value2 instanceof IRvar) {
+            res.add((IRvar) value2);
+        }
+        return res;
+    }
+
+    @Override
+    public IRvar getDef() {
+        return result;
     }
 }

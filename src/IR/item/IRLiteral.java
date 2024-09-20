@@ -10,6 +10,19 @@ public class IRLiteral extends IRitem {
         this.value = value;
     }
 
+    public IRLiteral(IRType type) {
+        super(type);
+        if (type.equals(IRType.IRBoolType)) {
+            value = "false";
+        } else if (type.equals(IRType.IRIntType)) {
+            value = "0";
+        } else if (type.equals(IRType.IRPtrType)) {
+            value = "null";
+        } else if (type.equals(IRType.IRvoidType)) {
+            value = "";
+        }
+    }
+
     public IRLiteral(String value) {
         super();
         this.value = value;

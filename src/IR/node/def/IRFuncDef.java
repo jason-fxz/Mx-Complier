@@ -69,7 +69,9 @@ public class IRFuncDef extends IRDefNode {
         ArrayList<IRvar> result = new ArrayList<>();
         for (var ins : entryBlock.insList) {
             if (ins instanceof allocaIns) {
-                result.add(((allocaIns) ins).result);
+                var allocins = (allocaIns) ins;
+                IRvar var = new IRvar(allocins.type, allocins.result.name);
+                result.add(var);
             }
         }
         return result;

@@ -4,6 +4,7 @@ import IR.IRvisitor;
 import IR.item.IRitem;
 import IR.item.IRvar;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class getelementptrIns extends IRIns {
@@ -60,5 +61,24 @@ public class getelementptrIns extends IRIns {
             }
         }
 
+    }
+
+    @Override
+    public List<IRvar> getUses() {
+        List<IRvar> res = new ArrayList<>();
+        if (pointer instanceof IRvar) {
+            res.add((IRvar)pointer);
+        }
+        for (var ind : indices) {
+            if (ind instanceof IRvar) {
+                res.add((IRvar)ind);
+            }
+        }
+        return res;
+    }
+
+    @Override
+    public IRvar getDef() {
+        return result;
     }
 }

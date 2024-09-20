@@ -2,8 +2,10 @@ package IR.node.ins;
 
 import IR.IRvisitor;
 import IR.item.IRitem;
+import IR.item.IRvar;
 import IR.node.IRNode;
 
+import java.util.List;
 import java.util.Map;
 
 public abstract class IRIns extends IRNode {
@@ -12,6 +14,10 @@ public abstract class IRIns extends IRNode {
     public abstract void replaceUse(IRitem old, IRitem nw);
 
     public abstract void replaceUse(Map<IRitem, IRitem> map);
+
+    public abstract List<IRvar> getUses();
+
+    public abstract IRvar getDef();
 
     @Override
     public abstract String toString();

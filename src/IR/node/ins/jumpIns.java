@@ -1,9 +1,12 @@
 package IR.node.ins;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import IR.IRvisitor;
 import IR.item.IRitem;
+import IR.item.IRvar;
 
 public class jumpIns extends IRIns {
     public String label;
@@ -32,6 +35,16 @@ public class jumpIns extends IRIns {
 
     @Override
     public void replaceUse(Map<IRitem, IRitem> map) {
+    }
+
+    @Override
+    public List<IRvar> getUses() {
+        return new ArrayList<>();
+    }
+
+    @Override
+    public IRvar getDef() {
+        return null;
     }
 
 }

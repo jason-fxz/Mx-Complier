@@ -15,6 +15,7 @@ import Grammar.MxLexer;
 import Grammar.MxParser;
 import Grammar.MxParser.ProgramContext;
 import IR.node.IRRoot;
+import Optimize.Mem2Reg;
 import Util.error.error;
 import Util.scope.globalScope;
 import Util.ArgumentParser;
@@ -84,6 +85,16 @@ public class Main {
             IRBuilder irBuilder = new IRBuilder();
             irBuilder.visit(ASTRoot);
             IRRoot irRoot = irBuilder.getRoot();
+            
+
+            if (ArgP.hasArgument("-debug-ir")) {
+                System.err.println(irRoot.toString());
+            }
+
+            // Mem2Reg
+            Mem2Reg mem2Reg = new Mem2Reg();
+            mem2Reg.visit(irRoot);
+
 
             // print IR
             if (ArgP.hasArgument("-emit-llvm")) {
@@ -104,6 +115,8 @@ public class Main {
                 output.println(asmBuilder.getRoot());
                 System.exit(0);
             }
+
+
             
 
         } catch (error err) {

@@ -1,5 +1,7 @@
 package IR.node.ins;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import IR.IRvisitor;
@@ -37,6 +39,18 @@ public class loadIns extends IRIns {
         if (map.containsKey(pointer)) {
             pointer = (IRvar) map.get(pointer);
         }
+    }
+
+    @Override
+    public List<IRvar> getUses() {
+        List<IRvar> res = new ArrayList<>();
+        res.add(pointer);
+        return res;
+    }
+
+    @Override
+    public IRvar getDef() {
+        return result;
     }
     
 }

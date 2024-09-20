@@ -1,16 +1,18 @@
 package IR.node.ins;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import IR.IRvisitor;
 import IR.item.IRitem;
+import IR.item.IRvar;
 import IR.type.IRType;
 
 public class branchIns extends IRIns {
     public IRitem cond;
     public String trueLabel;
     public String falseLabel;
-
 
     public branchIns(IRitem cond, String trueLabel, String falseLabel) {
         if (!cond.type.equals(IRType.IRBoolType)) {
@@ -43,5 +45,19 @@ public class branchIns extends IRIns {
         if (map.containsKey(cond)) {
             cond = map.get(cond);
         }
+    }
+
+    @Override
+    public List<IRvar> getUses() {
+        List<IRvar> res = new ArrayList<>();
+        if (cond instanceof IRvar) {
+            res.add((IRvar) cond);
+        }
+        return res;
+    }
+
+    @Override
+    public IRvar getDef() {
+        return null;
     }
 }

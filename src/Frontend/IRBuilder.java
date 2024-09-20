@@ -186,13 +186,19 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         curFunc = null;
         curBlock = null;
 
-
+        // Tidy Up : clean empty blocks
+        for (var entry : funcDef.blocks.entrySet()) {
+            if (entry.getValue().empty()) {
+                funcDef.blocks.remove(entry.getKey());
+            }
+        }
         return null;
     }
 
     private IRvar handleTmpVarDef(IRType type) {
         IRvar var = new IRvar(IRLabeler.getIdLabel("%tmp"));
         curFunc.entryBlock.addIns(new allocaIns(var, type));
+        curFunc.entryBlock.addIns(new storeIns(new IRLiteral(type), var));
         return var;
     }
 
@@ -203,6 +209,8 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         if (it.init != null) {
             IRhelper t = it.init.accept(this); // calc the init expr
             curBlock.addIns(new storeIns(t.exprVar, var)); // store the result to the variable
+        } else {
+            curBlock.addIns(new storeIns(new IRLiteral(new IRType(it.type)), var));
         }
         return null;
     }

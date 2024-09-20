@@ -8,11 +8,11 @@ run:
 
 .PHONY: Sema
 Sema: build
-	./testcases/sema/scripts/test.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -S' $(file)
+	./testcases/sema/scripts/test.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm' $(file)
 
 .PHONY: Semall
 Semall: build
-	time -p ./testcases/sema/scripts/test_all.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -S' testcases/sema/
+	time -p ./testcases/sema/scripts/test_all.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm' testcases/sema/
 
 .PHONY: clean
 clean:

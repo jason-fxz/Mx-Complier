@@ -1,5 +1,7 @@
 package IR.node.ins;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import IR.IRvisitor;
@@ -60,6 +62,23 @@ public class icmpIns extends IRIns {
         if (map.containsKey(rhs)) {
             rhs = map.get(rhs);
         }
+    }
+
+    @Override
+    public List<IRvar> getUses() {
+        List<IRvar> res = new ArrayList<>();
+        if (lhs instanceof IRvar) {
+            res.add((IRvar) lhs);
+        }
+        if (rhs instanceof IRvar) {
+            res.add((IRvar) rhs);
+        }
+        return res;
+    }
+
+    @Override
+    public IRvar getDef() {
+        return result;
     }
 
 }

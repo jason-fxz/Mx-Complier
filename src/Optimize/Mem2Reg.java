@@ -13,7 +13,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
 
-import Frontend.IRBuilder;
 import IR.item.IRitem;
 import IR.item.IRvar;
 import IR.node.IRRoot;
@@ -24,7 +23,9 @@ import IR.node.ins.allocaIns;
 import IR.node.ins.branchIns;
 import IR.node.ins.jumpIns;
 import IR.node.ins.loadIns;
+import IR.node.ins.phiIns;
 import IR.node.ins.storeIns;
+import Util.IRLabeler;
 
 public class Mem2Reg {
     public IRFuncDef curFunc;
@@ -125,7 +126,9 @@ public class Mem2Reg {
             changed = false;
             for (var block : ord) {
                 BitSet newDomSet = new BitSet(tot);
-                newDomSet.set(0, tot);
+                if (!block.Label.equals("entry")) {
+                    newDomSet.set(0, tot);
+                } 
                 for (IRblock pred : block.getPrevBlocks()) {
                     newDomSet.and(domSets.get(pred));
                 }
@@ -168,6 +171,8 @@ public class Mem2Reg {
             domChildren.put(block, new HashSet<>());
 
         for (IRblock block : blockList) {
+            if (block.Label.equals("entry"))
+                continue;
             IRblock idom = null;
             BitSet domSet = domSets.get(block);
             if (domSet.cardinality() == 0)
@@ -176,6 +181,9 @@ public class Mem2Reg {
                 if (domSets.get(blockList.get(i)).cardinality() == domSet.cardinality() - 1) {
                     idom = blockList.get(i);
                 }
+            }
+            if (idom == null) {
+                throw new RuntimeException("idom == null");
             }
             domParent.put(block, idom);
             domChildren.get(idom).add(block);
@@ -221,6 +229,14 @@ public class Mem2Reg {
     }
 
     private void insertPhi() {
+        for (IRvar var : allocVar) {
+            for (IRblock block : phiPosition.get(var)) {
+                IRvar phiVar = new IRvar(var.type, IRLabeler.getIdLabel(var.toString()));
+                phiIns phi = new phiIns(phiVar);
+                phi.var = var;
+                block.phiList.add(phi);
+            }
+        }
 
     }
 
@@ -235,14 +251,15 @@ public class Mem2Reg {
 
 
 
-    void replaceVar(IRblock block, Set<IRblock> visited, Stack<Map<IRvar, Pair<IRblock, IRitem>>> curVarValue) {
+    void replaceVar(IRblock block, Set<IRblock> visited, Stack<Map<IRvar, Pair<IRblock, IRitem>>> curVarValue, IRblock preBlock) {
         for (var phi : block.phiList) {
             var cur = findVarValue(phi.var, curVarValue);
-            if (cur == null) {
-                throw new RuntimeException("replaceVar: phi.var not found");
-            }
-            phi.addValue(cur.second, cur.first.Label);
             curVarValue.peek().put(phi.var, new Pair<>(block, phi.result));
+            if (cur == null) {
+                phi.addValue(null, preBlock.Label);
+            } else {
+                phi.addValue(cur.second, preBlock.Label);
+            }
         }
 
         if (visited.contains(block)) {
@@ -254,12 +271,18 @@ public class Mem2Reg {
                 IRvar ptr = ((loadIns) ins).pointer;
                 if (isAlloc(ptr)) {
                     var cur = findVarValue(ptr, curVarValue);
+                    ins.removed = true;
                     if (cur == null) {
+                        // continue;
                         throw new RuntimeException("replaceVar: load.ptr not found");
                     } 
-                    // remove ins
-                    ins.removed = true;     
-                    replaceMap.put(((loadIns)ins).result, cur.second);
+                    IRitem tmpOld = ((loadIns) ins).result;
+                    IRitem tmpNew = cur.second;
+                    if (replaceMap.containsKey(tmpNew)) {
+                        replaceMap.put(tmpOld, replaceMap.get(tmpNew));
+                    } else {
+                        replaceMap.put(tmpOld, tmpNew);
+                    }
                 }
             } else if (ins instanceof storeIns) {
                 IRvar ptr = ((storeIns) ins).pointer;
@@ -267,22 +290,24 @@ public class Mem2Reg {
                     curVarValue.peek().put(ptr, new Pair<IRblock, IRitem>(block, ((storeIns) ins).value));
                     ins.removed = true;
                 }
+            } else if (ins instanceof allocaIns) {
+                ins.removed = true;
             }
         }
 
         if (block.endIns instanceof jumpIns) {
             IRblock nextBlock = curFunc.blocks.get(((jumpIns) block.endIns).label);
-            replaceVar(nextBlock, visited, curVarValue);
+            replaceVar(nextBlock, visited, curVarValue, block);
         } else if (block.endIns instanceof branchIns) {
             IRblock trueBlock = curFunc.blocks.get(((branchIns) block.endIns).trueLabel);
             IRblock falseBlock = curFunc.blocks.get(((branchIns) block.endIns).falseLabel);
 
             curVarValue.push(new HashMap<>());
-            replaceVar(trueBlock, visited, curVarValue);
+            replaceVar(trueBlock, visited, curVarValue, block);
             curVarValue.pop();
 
             curVarValue.push(new HashMap<>());
-            replaceVar(falseBlock, visited, curVarValue);
+            replaceVar(falseBlock, visited, curVarValue, block);
             curVarValue.pop();
         }
     }
@@ -290,13 +315,36 @@ public class Mem2Reg {
     void tidyUp() {
         for (var block : blockList) {
             block.insList.removeIf(ins -> ins.removed);
+            block.phiList.forEach(phi -> {
+                block.insList.add(0, phi);
+            });
+            
             block.insList.forEach(ins -> ins.replaceUse(replaceMap));
+            block.endIns.replaceUse(replaceMap);
         }
     }
 
-    void visit(IRFuncDef funcDef) {
-        curFunc = funcDef;
+    void removeUnuseReg() {
+        Set<IRvar> used = new HashSet<>();
 
+        for (var block : blockList) {
+            for (var ins : block.insList) {
+                ins.getUses().forEach(var -> used.add(var));
+            }
+            block.endIns.getUses().forEach(var -> used.add(var));
+        }
+
+        for (var block : blockList) {
+            block.insList.removeIf(ins -> ins.getDef() != null && !used.contains(ins.getDef()));
+        }        
+    }
+
+    void visitFunc(IRFuncDef funcDef) {
+        allocVar = new HashSet<>();
+        replaceMap = new HashMap<>();
+
+        curFunc = funcDef;
+        
         // init block index
         blockList = new ArrayList<>(funcDef.blocks.values());
         for (int i = 0; i < blockList.size(); i++) {
@@ -305,19 +353,23 @@ public class Mem2Reg {
 
         computeDominance(funcDef.blocks);
         computeDominanceFrontier(funcDef.blocks);
-        buildDomTree();
+        // TODO broken here on llvm test t57.mx
+        // buildDomTree();
 
         phiInsertPositions(funcDef);
         insertPhi();
 
-        replaceVar(funcDef.entryBlock, new HashSet<>(), new Stack<>());
+        Stack<Map<IRvar, Pair<IRblock, IRitem>>> valueStack = new Stack<>();
+        valueStack.push(new HashMap<>());
+
+        replaceVar(funcDef.entryBlock, new HashSet<>(), valueStack, null);
         tidyUp();
 
     }
 
-    void visit(IRRoot root) {
+    public void visit(IRRoot root) { 
         for (var funcDef : root.funcs) {
-            visit(funcDef);
+            visitFunc(funcDef);
         }
     }
 

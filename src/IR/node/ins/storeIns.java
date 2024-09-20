@@ -1,5 +1,7 @@
 package IR.node.ins;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import IR.IRvisitor;
@@ -44,6 +46,21 @@ public class storeIns extends IRIns {
         if (map.containsKey(pointer)) {
             pointer = (IRvar) map.get(pointer);
         }
+    }
+
+    @Override
+    public List<IRvar> getUses() {
+        List<IRvar> res = new ArrayList<>();
+        if (value instanceof IRvar) {
+            res.add((IRvar) value);
+        }
+        res.add(pointer);
+        return res;
+    }
+
+    @Override
+    public IRvar getDef() {
+        return null;
     }
 
 }

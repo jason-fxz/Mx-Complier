@@ -1,9 +1,12 @@
 package IR.node.ins;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import IR.IRvisitor;
 import IR.item.IRitem;
+import IR.item.IRvar;
 import IR.type.IRType;
 
 public class returnIns extends IRIns {
@@ -35,6 +38,20 @@ public class returnIns extends IRIns {
         if (map.containsKey(value)) {
             value = map.get(value);
         }
+    }
+
+    @Override
+    public List<IRvar> getUses() {
+        List<IRvar> res = new ArrayList<>();
+        if (value instanceof IRvar) {
+            res.add((IRvar) value);
+        }
+        return res;
+    }
+
+    @Override
+    public IRvar getDef() {
+        return null;
     }
     
     
