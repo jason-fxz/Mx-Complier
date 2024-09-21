@@ -16,8 +16,12 @@ import IR.node.ins.phiIns.phiItem;
 import IR.type.*;
 import Util.BuiltinElements;
 import Util.IRLabeler;
+
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+
+import org.abego.treelayout.internal.util.java.util.IteratorUtil;
 
 public class IRBuilder implements ASTVisitor<IRhelper> {
     private IRblock curBlock;
@@ -186,13 +190,40 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         curFunc = null;
         curBlock = null;
 
-        // Tidy Up : clean empty blocks
-        for (var entry : funcDef.blocks.entrySet()) {
-            if (entry.getValue().empty()) {
-                funcDef.blocks.remove(entry.getKey());
+        tidyUp(funcDef);
+        
+        
+        return null;
+    }
+    
+    // Tidy Up : clean empty blocks & clean unreachable blocks
+    private void tidyUp(IRFuncDef funcDef) {
+        HashSet<IRblock> visited = new HashSet<>();
+        dfs(funcDef.entryBlock, funcDef, visited);
+        
+        var iterator = funcDef.blocks.entrySet().iterator();
+        while (iterator.hasNext()) {
+            var entry = iterator.next();
+            if (entry.getValue().empty() || !visited.contains(entry.getValue())) {
+                iterator.remove();
             }
         }
-        return null;
+    }
+
+    private void dfs(IRblock cur, IRFuncDef func, HashSet<IRblock> visited) {
+        if (visited.contains(cur)) {
+            return;
+        }
+        visited.add(cur);
+        if (cur.endIns instanceof jumpIns) {
+            IRblock next = func.blocks.get(((jumpIns) cur.endIns).label);
+            dfs(next, func, visited);
+        } else if (cur.endIns instanceof branchIns) {
+            IRblock then = func.blocks.get(((branchIns) cur.endIns).trueLabel);
+            IRblock els = func.blocks.get(((branchIns) cur.endIns).falseLabel);
+            dfs(then, func, visited);
+            dfs(els, func, visited);
+        }
     }
 
     private IRvar handleTmpVarDef(IRType type) {

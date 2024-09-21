@@ -353,8 +353,7 @@ public class Mem2Reg {
 
         computeDominance(funcDef.blocks);
         computeDominanceFrontier(funcDef.blocks);
-        // TODO broken here on llvm test t57.mx
-        // buildDomTree();
+        buildDomTree();
 
         phiInsertPositions(funcDef);
         insertPhi();
