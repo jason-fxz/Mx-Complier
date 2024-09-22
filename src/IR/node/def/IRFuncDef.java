@@ -6,6 +6,7 @@ import IR.node.IRblock;
 import IR.node.ins.allocaIns;
 import IR.type.IRType;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 
@@ -16,6 +17,9 @@ public class IRFuncDef extends IRDefNode {
     public ArrayList<IRvar> params;
     public IRblock entryBlock;
     public LinkedHashMap<String, IRblock> blocks;
+
+    public HashMap<IRvar, Integer> spilledVar;
+    public HashMap<IRvar, Integer> regOfVar;
 
 
     public IRFuncDef(String name, IRType returnType) {

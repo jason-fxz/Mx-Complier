@@ -92,8 +92,8 @@ public class Main {
             }
 
             // Mem2Reg
-            Mem2Reg mem2Reg = new Mem2Reg();
-            mem2Reg.visit(irRoot);
+            new Mem2Reg(irRoot).run();;
+
 
 
             // print IR

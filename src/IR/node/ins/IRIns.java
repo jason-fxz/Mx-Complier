@@ -5,11 +5,15 @@ import IR.item.IRitem;
 import IR.item.IRvar;
 import IR.node.IRNode;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 public abstract class IRIns extends IRNode {
     public boolean removed = false;
+
+    public HashSet<IRvar> liveIn = new HashSet<>();
+    public HashSet<IRvar> liveOut = new HashSet<>();
     
     public abstract void replaceUse(IRitem old, IRitem nw);
 
