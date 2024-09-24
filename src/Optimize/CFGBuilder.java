@@ -18,7 +18,6 @@ import IR.node.ins.branchIns;
 import IR.node.ins.jumpIns;
 
 public class CFGBuilder {
-    public IRRoot irRoot;
     private IRFuncDef curFunc;
 
     public List<IRblock> blockList;
@@ -28,11 +27,8 @@ public class CFGBuilder {
     public Map<IRblock, Set<IRblock>> domFrontiers;
     public Map<IRblock, Set<IRblock>> domChildren;
     public Map<IRblock, IRblock> domParent; // IDom
-    
-    
-    public CFGBuilder(IRRoot irRoot) {
-        this.irRoot = irRoot;
-    }
+
+    public CFGBuilder() { }
 
     // DFS to get reverse post order
     private List<IRblock> getReversePostOrder(LinkedHashMap<String, IRblock> blocks) {
@@ -104,7 +100,7 @@ public class CFGBuilder {
                 BitSet newDomSet = new BitSet(tot);
                 if (!block.Label.equals("entry")) {
                     newDomSet.set(0, tot);
-                } 
+                }
                 for (IRblock pred : block.getPrevBlocks()) {
                     newDomSet.and(domSets.get(pred));
                 }
@@ -166,19 +162,17 @@ public class CFGBuilder {
         }
     }
 
-    public void build() {
-        for (var func : irRoot.funcs) {
-            curFunc = func;
+    public void build(IRFuncDef func) {
+        curFunc = func;
 
-            blockList = new ArrayList<>(curFunc.blocks.values());
-            for (int i = 0; i < blockList.size(); i++) {
-                blockList.get(i).index = i;
-            }
-
-            computeDominance(curFunc.blocks);
-            computeDominanceFrontier(curFunc.blocks);
-            buildDomTree();
+        blockList = new ArrayList<>(curFunc.blocks.values());
+        for (int i = 0; i < blockList.size(); i++) {
+            blockList.get(i).index = i;
         }
+
+        computeDominance(curFunc.blocks);
+        computeDominanceFrontier(curFunc.blocks);
+        buildDomTree();
     }
 
 }

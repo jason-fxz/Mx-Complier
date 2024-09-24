@@ -44,7 +44,7 @@ public class Mem2Reg {
     public Mem2Reg(IRRoot root) {
         curFunc = null;
         this.root = root;
-        CFG = new CFGBuilder(root);
+        CFG = new CFGBuilder();
     }
 
     void addAlloc(IRvar ptr) {
@@ -214,7 +214,7 @@ public class Mem2Reg {
 
         curFunc = funcDef;
         
-        CFG.build();
+        CFG.build(funcDef);
 
         phiInsertPositions(funcDef);
         insertPhi();

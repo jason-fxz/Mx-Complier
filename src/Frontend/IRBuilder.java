@@ -34,6 +34,8 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     private ArrayList<String> LoopStack_continue;
     private HashMap<String, Integer> sizeof;
 
+    private int loopDepth = 0;
+
     public IRBuilder() {
         curBlock = null;
         curFunc = null;
@@ -226,8 +228,8 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         }
     }
 
-    private IRvar handleTmpVarDef(IRType type) {
-        IRvar var = new IRvar(IRLabeler.getIdLabel("%tmp"));
+    private IRvar handleTmpVarAlloc(IRType type, String name) {
+        IRvar var = new IRvar(IRLabeler.getIdLabel(name));
         curFunc.entryBlock.addIns(new allocaIns(var, type));
         curFunc.entryBlock.addIns(new storeIns(new IRLiteral(type), var));
         return var;
@@ -264,31 +266,27 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         if (it.op.in("&&", "||")) {
             // Short-circuit evaluation
+            IRvar resptr = handleTmpVarAlloc(IRType.IRBoolType, "%" + opstr + ".ptr");
+            res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
+
             IRitem lhsvar = it.lhs.accept(this).exprVar; // visit lhs
+            curBlock.addIns(new storeIns(lhsvar, resptr));
 
             IRblock l_rhs = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".rhs"));
             IRblock l_end = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".end"));
 
-            res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
-
             IRblock lastcur = curBlock; // land.lhs done
             curBlock = l_rhs;
             IRitem rhsvar = it.rhs.accept(this).exprVar; // visit rhs
+            curBlock.addIns(new storeIns(rhsvar, resptr));
             curBlock.setEndIns(new jumpIns(l_end.getLabel()));
 
             if (it.op.equals("&&")) {
                 lastcur.setEndIns(new branchIns(lhsvar, l_rhs.getLabel(), l_end.getLabel()));
-                l_end.addIns(new selectIns(res, lhsvar, rhsvar, new IRLiteral(IRType.IRBoolType, "false")));
-                
-                // l_end.addIns(new phiIns(res,
-                //         new phiItem(new IRLiteral(IRType.IRBoolType, "false"), lastcur.getLabel()),
-                //         new phiItem(rhsvar, l_rhs.getLabel())));
+                l_end.addIns(new loadIns(res, resptr));
             } else {
                 lastcur.setEndIns(new branchIns(lhsvar, l_end.getLabel(), l_rhs.getLabel()));
-                l_end.addIns(new selectIns(res, lhsvar, new IRLiteral(IRType.IRBoolType, "true"), rhsvar));
-                // l_end.addIns(new phiIns(res,
-                //         new phiItem(new IRLiteral(IRType.IRBoolType, "true"), lastcur.getLabel()),
-                //         new phiItem(rhsvar, l_rhs.getLabel())));
+                l_end.addIns(new loadIns(res, resptr));
             }
             curBlock = l_end;
 
@@ -410,22 +408,30 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         curBlock.setEndIns(new branchIns(cond, cond_ture.getLabel(), cond_false.getLabel()));
 
+        IRvar resptr = null;
+        if (!it.thenExpr.info.isVoid) {
+            resptr = handleTmpVarAlloc(new IRType(it.thenExpr.info), "%cond.ptr");
+        }
+
         curBlock = cond_ture;
         IRitem truevar = it.thenExpr.accept(this).exprVar;
+        if (resptr != null) {
+            curBlock.addIns(new storeIns(truevar, resptr));
+        }
         curBlock.setEndIns(new jumpIns(cond_end.getLabel()));
-        String true_label = curBlock.getLabel();
 
         curBlock = cond_false;
         IRitem falsevar = it.elseExpr.accept(this).exprVar;
+        if (resptr != null) {
+            curBlock.addIns(new storeIns(falsevar, resptr));
+        }
         curBlock.setEndIns(new jumpIns(cond_end.getLabel()));
-        String false_label = curBlock.getLabel();
 
         curBlock = cond_end;
-        if (truevar != null) {
+        if (resptr != null) {
             IRvar res = new IRvar(truevar.type, IRLabeler.getIdLabel("%cond"));
-            curBlock.addIns(new selectIns(res, cond, truevar, falsevar));
-            // curBlock.addIns(new phiIns(res, new phiItem(truevar, true_label),
-            //         new phiItem(falsevar, false_label)));
+            curBlock.addIns(new loadIns(res, resptr));
+
             return new IRhelper(res);
         } else {
             return new IRhelper();
@@ -553,7 +559,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         IRblock for_end = curFunc.newBlock(looplabel + ".end");
 
         // init: i = 0
-        IRvar variaddr = handleTmpVarDef(IRType.IRIntType);
+        IRvar variaddr = handleTmpVarAlloc(IRType.IRIntType, "%tmp");
         curBlock.addIns(new storeIns(new IRLiteral("0"), variaddr));
         curBlock.setEndIns(new jumpIns(for_cond.getLabel()));
 

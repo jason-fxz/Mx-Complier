@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import IR.IRvisitor;
+import IR.item.IRvar;
 import IR.node.ins.*;
 
 public class IRblock extends IRNode {
@@ -13,6 +14,8 @@ public class IRblock extends IRNode {
     public IRIns endIns;
     public int index;
     
+    public int loopDepth = 0;
+
     private HashSet<IRblock> prevBlocks = new HashSet<>();
     private HashSet<IRblock> nextBlocks = new HashSet<>();
 

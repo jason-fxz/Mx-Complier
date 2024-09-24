@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 import IR.item.IRvar;
 import IR.node.IRRoot;
+import IR.node.IRblock;
 import IR.node.def.IRFuncDef;
 import IR.node.ins.IRIns;
 import Optimize.CFGBuilder;
@@ -20,10 +23,12 @@ public class SSAalloctor {
     Map<IRvar, Integer> usageCount = new HashMap<>();
 
     static final int MAX_ALLOC_REG = 20;
+    Set<Integer> inUse = new HashSet<>();
+    Set<Integer> freeReg = new HashSet<>();
 
     public SSAalloctor(IRRoot irRoot) {
         this.irRoot = irRoot;
-        CFG = new CFGBuilder(irRoot);
+        CFG = new CFGBuilder();
     }
 
     public void run() {
@@ -34,6 +39,10 @@ public class SSAalloctor {
         }
 
         // coloring
+        for (var func : irRoot.funcs) {
+            curFunc = func;
+            SSAColor();
+        }
     }
 
     private void Spillvars(ArrayList<IRvar> vars) {
@@ -84,10 +93,60 @@ public class SSAalloctor {
         }
     }
 
+    void SSAColor() {
+        // coloring
+        CFG.build(curFunc);
+        inUse.clear();
+        for (int i = 0; i < MAX_ALLOC_REG; i++) {
+            freeReg.add(i);
+        }
+        pre_order(curFunc.entryBlock);
+
+    }
+
+    // get a free reg from freeReg
+    int getFreeReg() {
+        if (freeReg.size() == 0) {
+            throw new RuntimeException("No free reg");
+        }
+        var iterator = freeReg.iterator();
+        int reg = iterator.next();
+        iterator.remove();
+        inUse.add(reg);
+        return reg;
+    }
+
+    void delReg(Integer reg) {
+        inUse.remove(reg);
+        freeReg.add(reg);
+    }
+
+    void colorIns(IRIns ins) {
+        for (var x : ins.getUses()) {
+            if (!curFunc.spilledVar.containsKey(x) && !ins.liveOut.contains(x)) {
+                delReg(curFunc.regOfVar.get(x));
+            }
+        }
+        var y = ins.getDef();
+        if (y != null && !curFunc.spilledVar.containsKey(y)) {
+            curFunc.regOfVar.put(y, getFreeReg());
+        }
+    }
+
+    void pre_order(IRblock block) {
+        for (var ins : block.phiList)
+            colorIns(ins);
+        for (var ins : block.insList)
+            colorIns(ins);
+        colorIns(block.endIns);
+
+        for (var child : block.getNextBlocks()) {
+            pre_order(child);
+        }
+    }
+
+
+
     
-
-
-
-
 
 }

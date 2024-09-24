@@ -91,8 +91,9 @@ public class Main {
                 System.err.println(irRoot.toString());
             }
 
+            // make llvmall  172.56s user 28.80s system 112% cpu 2:59.38 total
             // Mem2Reg
-            new Mem2Reg(irRoot).run();;
+            new Mem2Reg(irRoot).run();
 
 
 
