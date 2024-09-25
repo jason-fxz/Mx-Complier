@@ -26,10 +26,21 @@ public class SSALiveness {
 
     public void run() {
         for (var func : irRoot.funcs) {
+            curFunc = func;
             init(func);
             ssaLiveness();
         }
         
+    }
+
+    void getUseOfVar(IRIns ins) {
+        ins.getUses().forEach(var -> {
+            if (!useOfVar.containsKey(var)) {
+                useOfVar.put(var, new ArrayList<>());
+            }
+            useOfVar.get(var).add(ins);
+        });
+
     }
 
     void init(IRFuncDef func) {
@@ -38,16 +49,21 @@ public class SSALiveness {
         useOfVar.clear();
         for (var block : func.blocks.values()) {
             for (int i = 0; i < block.insList.size(); i++) {
-                if (i > 0)
+                if (i > 0){
                     prevIns.put(block.insList.get(i), block.insList.get(i - 1));
+                }
                 blockOfIns.put(block.insList.get(i), block);
-                var ins = block.insList.get(i);
-                block.insList.get(i).getUses().forEach(var -> {
-                    if (!useOfVar.containsKey(var)) {
-                        useOfVar.put(var, new ArrayList<>());
-                    }
-                    useOfVar.get(var).add(ins);
-                });
+                getUseOfVar(block.insList.get(i));
+            }
+            if (block.insList.size() > 0) {
+                prevIns.put(block.endIns, block.insList.getLast());
+            }
+            blockOfIns.put(block.endIns, block);
+            getUseOfVar(block.endIns);
+
+            for (var phi : block.phiList) {
+                blockOfIns.put(phi, block);
+                getUseOfVar(phi);
             }
         }
     }
@@ -60,8 +76,13 @@ public class SSALiveness {
                 if (ins instanceof phiIns) {
                     phiIns phi = (phiIns) ins;
                     int idx = 0;
-                    while (!phi.values.get(idx).value.equals(var))
-                        ++idx;
+                    while (!phi.values.get(idx).value.equals(var)) ++idx;
+                    
+                    IRblock cur = blockOfIns.get(phi);
+                    cur.phiList.forEach(p -> {
+                        p.liveIn.add(var);
+                    });
+
                     IRblock pre = curFunc.blocks.get(phi.values.get(idx).label);
                     scanBlock(pre, var);
                 } else {
@@ -90,6 +111,9 @@ public class SSALiveness {
                     phi.liveOut.add(var);
                 });
             } else {
+                block.phiList.forEach(phi -> {
+                    phi.liveIn.add(var);
+                });
                 for (var pre : block.getPrevBlocks()) {
                     scanBlock(pre, var);
                 }
@@ -111,7 +135,7 @@ public class SSALiveness {
         if (visited.contains(block))
             return;
         visited.add(block);
-        var ins = block.insList.getLast();
+        var ins = block.endIns;
         scanlivesOut(ins, var);
     }
 

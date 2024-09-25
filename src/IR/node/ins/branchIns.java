@@ -23,6 +23,15 @@ public class branchIns extends IRIns {
         this.falseLabel = falseLabel;
     }
 
+    public void replaceLabel(String old, String nw) {
+        if (trueLabel.equals(old)) {
+            trueLabel = nw;
+        }
+        if (falseLabel.equals(old)) {
+            falseLabel = nw;
+        }
+    }
+
     @Override
     public String toString() {
         return "br i1 " + cond.toString() + ", label %" + trueLabel + ", label %" + falseLabel;

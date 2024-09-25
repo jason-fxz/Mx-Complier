@@ -19,6 +19,12 @@ public class jumpIns extends IRIns {
         return label;
     }
 
+    public void replaceLabel(String old, String nw) {
+        if (label.equals(old)) {
+            label = nw;
+        }
+    }
+
     @Override
     public String toString() {
         return "br label %" + label;

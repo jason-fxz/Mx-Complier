@@ -44,7 +44,7 @@ public class loadIns extends IRIns {
     @Override
     public List<IRvar> getUses() {
         List<IRvar> res = new ArrayList<>();
-        res.add(pointer);
+        if (pointer.isLocal()) res.add(pointer);
         return res;
     }
 

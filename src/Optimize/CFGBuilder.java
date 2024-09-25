@@ -90,7 +90,6 @@ public class CFGBuilder {
     }
 
     private void computeDominance(LinkedHashMap<String, IRblock> blocks) {
-        initializeDomSets(blocks);
         var ord = getReversePostOrder(blocks);
         boolean changed = true;
         int tot = blocks.size();
@@ -165,14 +164,16 @@ public class CFGBuilder {
     public void build(IRFuncDef func) {
         curFunc = func;
 
-        blockList = new ArrayList<>(curFunc.blocks.values());
+        blockList = new ArrayList<>(func.blocks.values());
         for (int i = 0; i < blockList.size(); i++) {
             blockList.get(i).index = i;
         }
-
-        computeDominance(curFunc.blocks);
-        computeDominanceFrontier(curFunc.blocks);
+        initializeDomSets(func.blocks);
+        computeDominance(func.blocks);
+        computeDominanceFrontier(func.blocks);
         buildDomTree();
     }
+
+
 
 }

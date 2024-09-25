@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.HashSet;
 
 import IR.item.IRvar;
@@ -24,7 +25,8 @@ public class SSAalloctor {
 
     static final int MAX_ALLOC_REG = 20;
     Set<Integer> inUse = new HashSet<>();
-    Set<Integer> freeReg = new HashSet<>();
+    // Set<Integer> freeReg = new HashSet<>();
+    Stack<Integer> freeReg = new Stack<>();
 
     public SSAalloctor(IRRoot irRoot) {
         this.irRoot = irRoot;
@@ -68,10 +70,9 @@ public class SSAalloctor {
     private void countInsUsage(IRIns ins) {
         ins.getUses().forEach(var -> {
             usageCount.put(var, usageCount.getOrDefault(var, 0) + 1);
-            if (defuseOfVar.containsKey(var))
-                defuseOfVar.get(var).add(ins);
-            else
-                defuseOfVar.put(var, List.of(ins));
+            if (!defuseOfVar.containsKey(var))
+                defuseOfVar.put(var, new ArrayList<>());
+            defuseOfVar.get(var).add(ins);
         });
     }
 
@@ -96,27 +97,33 @@ public class SSAalloctor {
     void SSAColor() {
         // coloring
         CFG.build(curFunc);
-        inUse.clear();
-        for (int i = 0; i < MAX_ALLOC_REG; i++) {
-            freeReg.add(i);
+        
+        curFunc.regOfVar = new HashMap<>();
+        // handle function params
+        for (var x : curFunc.entryBlock.getLiveIn()) {
+            curFunc.regOfVar.put(x, getFreeReg());
         }
-        pre_order(curFunc.entryBlock);
+        preOrderDFS(curFunc.entryBlock);
 
     }
+
+    
 
     // get a free reg from freeReg
     int getFreeReg() {
         if (freeReg.size() == 0) {
             throw new RuntimeException("No free reg");
         }
-        var iterator = freeReg.iterator();
-        int reg = iterator.next();
-        iterator.remove();
+        var reg = freeReg.pop();
         inUse.add(reg);
         return reg;
     }
 
     void delReg(Integer reg) {
+        if (reg == null) {
+            // throw new RuntimeException("delReg : reg == null");
+            return;
+        }
         inUse.remove(reg);
         freeReg.add(reg);
     }
@@ -133,20 +140,28 @@ public class SSAalloctor {
         }
     }
 
-    void pre_order(IRblock block) {
+    void preOrderDFS(IRblock block) {
+        inUse.clear();
+        freeReg.clear();
+        for (var x : block.getLiveIn()) {
+            inUse.add(curFunc.regOfVar.get(x));
+        }
+        for (int i = 0; i < MAX_ALLOC_REG; i++) {
+            if (!inUse.contains(i)) freeReg.add(i);
+        }
+
+
         for (var ins : block.phiList)
             colorIns(ins);
         for (var ins : block.insList)
             colorIns(ins);
         colorIns(block.endIns);
 
-        for (var child : block.getNextBlocks()) {
-            pre_order(child);
+        for (var child : CFG.domChildren.get(block)) {
+            preOrderDFS(child);
         }
     }
 
 
-
-    
 
 }

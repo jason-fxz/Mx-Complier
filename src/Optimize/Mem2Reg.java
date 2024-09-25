@@ -180,10 +180,10 @@ public class Mem2Reg {
     void tidyUp() {
         for (var block : CFG.blockList) {
             block.insList.removeIf(ins -> ins.removed);
-            block.phiList.forEach(phi -> {
-                block.insList.add(0, phi);
-            });
-            
+            // block.phiList.forEach(phi -> {
+            //     block.insList.add(0, phi);
+            // });
+            block.phiList.forEach(ins -> ins.replaceUse(replaceMap));
             block.insList.forEach(ins -> ins.replaceUse(replaceMap));
             block.endIns.replaceUse(replaceMap);
         }
@@ -208,6 +208,51 @@ public class Mem2Reg {
         }        
     }
 
+    void insertBlockOnCriticalEdges() {
+        List<Pair<IRblock, IRblock>> criticalEdges = findCirticalEdges();
+
+        for (var edge : criticalEdges) {
+            IRblock newBlock = new IRblock(IRLabeler.getIdLabel(".CTE"));
+
+            IRblock pred = edge.first;
+            IRblock succ = edge.second;
+
+            if (pred.endIns instanceof jumpIns) {
+                ((jumpIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
+            } else if (pred.endIns instanceof branchIns) {
+                ((branchIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
+            } else throw new RuntimeException("insertBlockOnCriticalEdges: pred.endIns not jumpIns or branchIns");
+
+            newBlock.setEndIns(new jumpIns(succ.Label));
+
+            pred.getNextBlocks().remove(succ);
+            pred.addNextBlock(newBlock);
+            newBlock.addPrevBlock(pred);
+
+            succ.getPrevBlocks().remove(pred);
+            succ.addPrevBlock(newBlock);
+            newBlock.addNextBlock(succ);
+
+            curFunc.blocks.put(newBlock.Label, newBlock);
+        }
+
+    }
+
+    List<Pair<IRblock, IRblock>> findCirticalEdges() {
+        List<Pair<IRblock, IRblock>> criticalEdges = new ArrayList<>();
+
+        for (var block : CFG.blockList) {
+            if (block.getNextBlocks().size() > 1) {
+                for (var nextBlock : block.getNextBlocks()) {
+                    if (nextBlock.getPrevBlocks().size() > 1) {
+                        criticalEdges.add(new Pair<>(block, nextBlock));
+                    }
+                }
+            }
+        }
+        return criticalEdges;
+    }
+
     void visitFunc(IRFuncDef funcDef) {
         allocVar = new HashSet<>();
         replaceMap = new HashMap<>();
@@ -215,6 +260,12 @@ public class Mem2Reg {
         curFunc = funcDef;
         
         CFG.build(funcDef);
+        insertBlockOnCriticalEdges();
+        CFG.build(funcDef);
+
+        if (!findCirticalEdges().isEmpty()) {
+            throw new RuntimeException("visitFunc: critical edges not removed");
+        }
 
         phiInsertPositions(funcDef);
         insertPhi();

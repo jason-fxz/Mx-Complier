@@ -54,7 +54,7 @@ public class storeIns extends IRIns {
         if (value instanceof IRvar) {
             res.add((IRvar) value);
         }
-        res.add(pointer);
+        if (pointer.isLocal()) res.add(pointer);
         return res;
     }
 

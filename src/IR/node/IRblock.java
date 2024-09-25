@@ -27,6 +27,20 @@ public class IRblock extends IRNode {
         return nextBlocks;
     }
 
+    public HashSet<IRvar> getLiveIn() {
+        if (phiList.size() != 0) {
+            return phiList.get(0).liveIn;
+        } else if (insList.size() != 0) {
+            return insList.get(0).liveIn;
+        } else {
+            return endIns.liveIn;
+        }
+    }
+
+    public HashSet<IRvar> getLiveOut() {
+        return endIns.liveOut;
+    }
+
     public void addPrevBlock(IRblock block) {
         prevBlocks.add(block);
     }
@@ -99,6 +113,9 @@ public class IRblock extends IRNode {
 
         StringBuilder str = new StringBuilder();
         str.append(Label + ":\n");
+        for (phiIns phi : phiList) {
+            str.append("  " + phi.toString() + "\n");
+        }
         for (IRIns ins : insList) {
             str.append("  " + ins.toString() + "\n");
         }

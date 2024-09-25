@@ -6,6 +6,8 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
 import AST.Node.RootNode;
+import Allocator.SSALiveness;
+import Allocator.SSAalloctor;
 import Backend.NaiveASMBuilder;
 import Frontend.ASTBuilder;
 import Frontend.IRBuilder;
@@ -90,11 +92,16 @@ public class Main {
             if (ArgP.hasArgument("-debug-ir")) {
                 System.err.println(irRoot.toString());
             }
-
+            
             // make llvmall  172.56s user 28.80s system 112% cpu 2:59.38 total
             // Mem2Reg
             new Mem2Reg(irRoot).run();
+            
+            output.println(irRoot.toString());
 
+            // Allocator
+            new SSALiveness(irRoot).run();
+            new SSAalloctor(irRoot).run();
 
 
             // print IR
