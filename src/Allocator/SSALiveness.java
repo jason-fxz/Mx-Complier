@@ -76,12 +76,12 @@ public class SSALiveness {
                 if (ins instanceof phiIns) {
                     phiIns phi = (phiIns) ins;
                     int idx = 0;
-                    while (!phi.values.get(idx).value.equals(var)) ++idx;
+                    while (!var.equals(phi.values.get(idx).value)) ++idx;
                     
-                    IRblock cur = blockOfIns.get(phi);
-                    cur.phiList.forEach(p -> {
-                        p.liveIn.add(var);
-                    });
+                    // IRblock cur = blockOfIns.get(phi);
+                    // cur.phiList.forEach(p -> {
+                    //     p.liveIn.add(var);
+                    // });
 
                     IRblock pre = curFunc.blocks.get(phi.values.get(idx).label);
                     scanBlock(pre, var);
@@ -105,12 +105,11 @@ public class SSALiveness {
                     break;
                 }
             }
-            if (hasPhiDef) {
-                // all phiIns happens in the same time
-                block.phiList.forEach(phi -> {
-                    phi.liveOut.add(var);
-                });
-            } else {
+            // all phiIns happens in the same time
+            block.phiList.forEach(phi -> {
+                phi.liveOut.add(var);
+            });
+            if (!hasPhiDef) {
                 block.phiList.forEach(phi -> {
                     phi.liveIn.add(var);
                 });

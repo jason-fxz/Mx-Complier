@@ -34,8 +34,9 @@ public class selectIns extends IRIns {
 
     @Override
     public String toString() {
-        return result.toString() + " = select i1 " + cond.toString() + ", " + value1.type.toString() + " "
-                + value1.toString() + ", " + value2.type.toString() +  " " + value2.toString();
+        throw new RuntimeException("selectIns is now not supported in IR");
+        // return result.toString() + " = select i1 " + cond.toString() + ", " + value1.type.toString() + " "
+        //         + value1.toString() + ", " + value2.type.toString() +  " " + value2.toString();
     }
 
     @Override

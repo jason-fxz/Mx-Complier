@@ -30,7 +30,7 @@ import Util.IRLabeler;
 
 public class Mem2Reg {
     private CFGBuilder CFG;
-    
+
     public IRRoot root;
     public IRFuncDef curFunc;
 
@@ -114,9 +114,8 @@ public class Mem2Reg {
         return null;
     }
 
-
-
-    void replaceVar(IRblock block, Set<IRblock> visited, Stack<Map<IRvar, Pair<IRblock, IRitem>>> curVarValue, IRblock preBlock) {
+    void replaceVar(IRblock block, Set<IRblock> visited, Stack<Map<IRvar, Pair<IRblock, IRitem>>> curVarValue,
+            IRblock preBlock) {
         for (var phi : block.phiList) {
             var cur = findVarValue(phi.var, curVarValue);
             curVarValue.peek().put(phi.var, new Pair<>(block, phi.result));
@@ -130,7 +129,7 @@ public class Mem2Reg {
         if (visited.contains(block)) {
             return;
         }
-        visited.add(block); 
+        visited.add(block);
         for (var ins : block.insList) {
             if (ins instanceof loadIns) {
                 IRvar ptr = ((loadIns) ins).pointer;
@@ -140,7 +139,7 @@ public class Mem2Reg {
                     if (cur == null) {
                         // continue;
                         throw new RuntimeException("replaceVar: load.ptr not found");
-                    } 
+                    }
                     IRitem tmpOld = ((loadIns) ins).result;
                     IRitem tmpNew = cur.second;
                     if (replaceMap.containsKey(tmpNew)) {
@@ -180,9 +179,8 @@ public class Mem2Reg {
     void tidyUp() {
         for (var block : CFG.blockList) {
             block.insList.removeIf(ins -> ins.removed);
-            // block.phiList.forEach(phi -> {
-            //     block.insList.add(0, phi);
-            // });
+            block.phiList.removeIf(ins -> ins.removed);
+
             block.phiList.forEach(ins -> ins.replaceUse(replaceMap));
             block.insList.forEach(ins -> ins.replaceUse(replaceMap));
             block.endIns.replaceUse(replaceMap);
@@ -190,6 +188,74 @@ public class Mem2Reg {
     }
 
     void removeUnuseReg() {
+        Map<IRvar, IRIns> varDef = new HashMap<>();
+        Map<IRvar, Integer> varUseCnt = new HashMap<>();
+
+        for (var x : curFunc.params) {
+            varDef.put(x, null);
+            varUseCnt.put(x, 1); // params just can't be removed
+        }
+
+        for (var block : CFG.blockList) {
+            for (var ins : block.phiList) {
+                if (ins.getDef() != null) {
+                    varDef.put(ins.getDef(), ins);
+                    varUseCnt.put(ins.getDef(), 0);
+                }
+            }
+            for (var ins : block.insList) {
+                if (ins.getDef() != null) {
+                    varDef.put(ins.getDef(), ins);
+                    varUseCnt.put(ins.getDef(), 0);
+                }
+            }
+            if (block.endIns.getDef() != null) {
+                varDef.put(block.endIns.getDef(), block.endIns);
+                varUseCnt.put(block.endIns.getDef(), 0);
+            }
+        }
+
+        for (var block : CFG.blockList) {
+            for (var ins : block.phiList) {
+                ins.getUses().forEach(var -> varUseCnt.put(var, varUseCnt.getOrDefault(var, 0) + 1));
+            }
+            for (var ins : block.insList) {
+                ins.getUses().forEach(var -> varUseCnt.put(var, varUseCnt.getOrDefault(var, 0) + 1));
+            }
+            block.endIns.getUses().forEach(var -> varUseCnt.put(var, varUseCnt.getOrDefault(var, 0) + 1));
+        }
+
+        Queue<IRvar> workList = new ArrayDeque<>();
+
+        for (var var : varUseCnt.keySet()) {
+            if (varDef.containsKey(var) && varUseCnt.get(var) == 0) {
+                workList.add(var);
+            }
+        }
+
+        while (!workList.isEmpty()) {
+            IRvar var = workList.poll();
+            IRIns def = varDef.get(var);
+            if (def instanceof callIns) { // callIns can't be removed
+                ((callIns)def).result = null;
+                continue;
+            }
+            def.removed = true;
+            for (var use : def.getUses()) {
+                varUseCnt.put(use, varUseCnt.get(use) - 1);
+                if (varUseCnt.get(use) == 0) {
+                    workList.add(use);
+                }
+            }
+        }
+
+        for (var block : CFG.blockList) {
+            block.insList.removeIf(ins -> ins.removed);
+            block.phiList.removeIf(ins -> ins.removed);
+        }
+
+        // CHECK
+
         Set<IRvar> used = new HashSet<>();
 
         for (var block : CFG.blockList) {
@@ -203,9 +269,35 @@ public class Mem2Reg {
         }
 
         for (var block : CFG.blockList) {
-            block.phiList.removeIf(ins -> ins.getDef() != null && !used.contains(ins.getDef()));
-            block.insList.removeIf(ins -> !(ins instanceof callIns) && ins.getDef() != null && !used.contains(ins.getDef()));
-        }        
+            block.phiList.forEach(phi -> {
+                assert used.contains(phi.getDef());
+            });
+            block.insList.forEach(ins -> {
+                if (ins.getDef() != null) {
+                    assert used.contains(ins.getDef());
+                }
+            });
+        }
+
+        // Set<IRvar> used = new HashSet<>();
+
+        // for (var block : CFG.blockList) {
+        // for (var ins : block.phiList) {
+        // ins.getUses().forEach(var -> used.add(var));
+        // }
+        // for (var ins : block.insList) {
+        // ins.getUses().forEach(var -> used.add(var));
+        // }
+        // block.endIns.getUses().forEach(var -> used.add(var));
+        // }
+
+        // for (var block : CFG.blockList) {
+        // block.phiList.removeIf(ins -> ins.getDef() != null &&
+        // !used.contains(ins.getDef()));
+        // block.insList
+        // .removeIf(ins -> !(ins instanceof callIns) && ins.getDef() != null &&
+        // !used.contains(ins.getDef()));
+        // }
     }
 
     void insertBlockOnCriticalEdges() {
@@ -221,7 +313,8 @@ public class Mem2Reg {
                 ((jumpIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
             } else if (pred.endIns instanceof branchIns) {
                 ((branchIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
-            } else throw new RuntimeException("insertBlockOnCriticalEdges: pred.endIns not jumpIns or branchIns");
+            } else
+                throw new RuntimeException("insertBlockOnCriticalEdges: pred.endIns not jumpIns or branchIns");
 
             newBlock.setEndIns(new jumpIns(succ.Label));
 
@@ -258,7 +351,7 @@ public class Mem2Reg {
         replaceMap = new HashMap<>();
 
         curFunc = funcDef;
-        
+
         CFG.build(funcDef);
         insertBlockOnCriticalEdges();
         CFG.build(funcDef);

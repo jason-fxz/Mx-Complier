@@ -66,7 +66,7 @@ public class getelementptrIns extends IRIns {
     @Override
     public List<IRvar> getUses() {
         List<IRvar> res = new ArrayList<>();
-        if (pointer instanceof IRvar) {
+        if (pointer instanceof IRvar && ((IRvar)pointer).isLocal()) {
             res.add((IRvar)pointer);
         }
         for (var ind : indices) {

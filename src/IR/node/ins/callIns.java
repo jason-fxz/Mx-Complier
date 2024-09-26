@@ -87,7 +87,7 @@ public class callIns extends IRIns {
     public List<IRvar> getUses() {
         List<IRvar> res = new ArrayList<>();
         for (var arg : args) {
-            if (arg instanceof IRvar) {
+            if (arg instanceof IRvar && ((IRvar) arg).isLocal()) {
                 res.add((IRvar) arg);
             }
         }

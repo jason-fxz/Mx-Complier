@@ -97,7 +97,7 @@ public class Main {
             // Mem2Reg
             new Mem2Reg(irRoot).run();
             
-            output.println(irRoot.toString());
+            // output.println(irRoot.toString());
 
             // Allocator
             new SSALiveness(irRoot).run();

@@ -13,6 +13,7 @@ import IR.node.IRRoot;
 import IR.node.IRblock;
 import IR.node.def.IRFuncDef;
 import IR.node.ins.IRIns;
+import IR.node.ins.phiIns;
 import Optimize.CFGBuilder;
 
 public class SSAalloctor {
@@ -49,8 +50,9 @@ public class SSAalloctor {
 
     private void Spillvars(ArrayList<IRvar> vars) {
         // Sort the vars by usage count
-        vars.sort((a, b) -> usageCount.get(b) - usageCount.get(a));
+        vars.sort((a, b) -> usageCount.get(a) - usageCount.get(b));
         int n = vars.size() - MAX_ALLOC_REG;
+        assert usageCount.get(vars.getFirst()) <= usageCount.get(vars.getLast());
         for (int i = 0; i < n; i++) {
             // spill vars.get(i)
             curFunc.spilledVar.put(vars.get(i), curFunc.spilledVar.size());
@@ -58,12 +60,21 @@ public class SSAalloctor {
 
     }
 
-    private void SpillIns(IRIns ins) {
+    private void SpillIns(IRIns ins, boolean check) {
         ins.liveOut.removeIf(var -> curFunc.spilledVar.containsKey(var));
         ins.liveIn.removeIf(var -> curFunc.spilledVar.containsKey(var));
 
         if (ins.liveOut.size() > MAX_ALLOC_REG) {
+            if (check) {
+                throw new RuntimeException("SpillIns : liveOut.size() > MAX_ALLOC_REG");
+            }
             Spillvars(new ArrayList<>(ins.liveOut));
+        }
+
+        if (check) {
+            if (ins.getDef() != null && !curFunc.spilledVar.containsKey(ins.getDef())) {
+                assert ins.liveOut.contains(ins.getDef());
+            }
         }
     }
 
@@ -77,6 +88,13 @@ public class SSAalloctor {
     }
 
     void SSASpill() {
+        curFunc.spilledVar = new HashMap<>();
+
+        // handle function params (>8 params all spilled)
+        for (int i = 8; i < curFunc.params.size(); i++) {
+            curFunc.spilledVar.put(curFunc.params.get(i), curFunc.spilledVar.size());
+        }
+
         // count the usage of each var & get def use IRvar
         usageCount.clear();
         for (var block : curFunc.blocks.values()) {
@@ -84,13 +102,25 @@ public class SSAalloctor {
             block.insList.forEach(ins -> countInsUsage(ins));
             countInsUsage(block.endIns);
         }
+        // prechecks TODO: to be removed
+        for (var block : curFunc.blocks.values()) {
+            block.phiList.forEach(ins -> {
+                assert ins.liveOut.contains(ins.getDef());
+            });
+        }
+
 
         // check if need to spill
-        curFunc.spilledVar = new HashMap<>();
         for (var block : curFunc.blocks.values()) {
-            block.phiList.forEach(ins -> SpillIns(ins));
-            block.insList.forEach(ins -> SpillIns(ins));
-            SpillIns(block.endIns);
+            block.phiList.forEach(ins -> SpillIns(ins, false));
+            block.insList.forEach(ins -> SpillIns(ins, false));
+            SpillIns(block.endIns, false);
+        }
+        // update the liveIn/liveOut
+        for (var block : curFunc.blocks.values()) {
+            block.phiList.forEach(ins -> SpillIns(ins, true));
+            block.insList.forEach(ins -> SpillIns(ins, true));
+            SpillIns(block.endIns, true);
         }
     }
 
@@ -100,14 +130,15 @@ public class SSAalloctor {
         
         curFunc.regOfVar = new HashMap<>();
         // handle function params
+        int i = 0;
+        assert curFunc.entryBlock.getLiveIn().size() == Math.min(curFunc.params.size(), 8);
+    
         for (var x : curFunc.entryBlock.getLiveIn()) {
-            curFunc.regOfVar.put(x, getFreeReg());
+            curFunc.regOfVar.put(x, i++);
         }
         preOrderDFS(curFunc.entryBlock);
 
     }
-
-    
 
     // get a free reg from freeReg
     int getFreeReg() {
@@ -121,18 +152,21 @@ public class SSAalloctor {
 
     void delReg(Integer reg) {
         if (reg == null) {
-            // throw new RuntimeException("delReg : reg == null");
-            return;
+            throw new RuntimeException("delReg : reg == null");
+            // return;
         }
         inUse.remove(reg);
         freeReg.add(reg);
     }
 
     void colorIns(IRIns ins) {
-        for (var x : ins.getUses()) {
-            if (!curFunc.spilledVar.containsKey(x) && !ins.liveOut.contains(x)) {
-                delReg(curFunc.regOfVar.get(x));
+        if (!(ins instanceof phiIns)) {
+            for (var x : ins.getUses()) {
+                if (!curFunc.spilledVar.containsKey(x) && !ins.liveOut.contains(x)) {
+                    delReg(curFunc.regOfVar.get(x));
+                }
             }
+
         }
         var y = ins.getDef();
         if (y != null && !curFunc.spilledVar.containsKey(y)) {
@@ -144,18 +178,28 @@ public class SSAalloctor {
         inUse.clear();
         freeReg.clear();
         for (var x : block.getLiveIn()) {
-            inUse.add(curFunc.regOfVar.get(x));
+            if (!curFunc.spilledVar.containsKey(x)) {
+                if (!curFunc.regOfVar.containsKey(x)) {
+                    throw new RuntimeException("preOrderDFS : regOfVar not contains x");
+                }
+                inUse.add(curFunc.regOfVar.get(x));
+            }
         }
         for (int i = 0; i < MAX_ALLOC_REG; i++) {
             if (!inUse.contains(i)) freeReg.add(i);
         }
 
 
-        for (var ins : block.phiList)
+        for (var ins : block.phiList){
             colorIns(ins);
-        for (var ins : block.insList)
+        }
+        
+        for (var ins : block.insList) {
             colorIns(ins);
+            assert ins.liveOut.size() == inUse.size();
+        }
         colorIns(block.endIns);
+        assert block.endIns.liveOut.size() == inUse.size();
 
         for (var child : CFG.domChildren.get(block)) {
             preOrderDFS(child);
