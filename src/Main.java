@@ -17,7 +17,6 @@ import Grammar.MxLexer;
 import Grammar.MxParser;
 import Grammar.MxParser.ProgramContext;
 import IR.node.IRRoot;
-import Optimize.Mem2Reg;
 import Util.error.error;
 import Util.scope.globalScope;
 import Util.ArgumentParser;
@@ -93,11 +92,15 @@ public class Main {
                 System.err.println(irRoot.toString());
             }
             
-            // make llvmall  172.56s user 28.80s system 112% cpu 2:59.38 total
             // Mem2Reg
-            new Mem2Reg(irRoot).run();
+            new Optimize.Mem2Reg(irRoot).run();
             
+
             // output.println(irRoot.toString());
+
+            // Dead Code Elimination
+            new Optimize.DCE(irRoot).run();
+            
 
             // Allocator
             new SSALiveness(irRoot).run();

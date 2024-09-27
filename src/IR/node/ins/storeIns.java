@@ -52,7 +52,7 @@ public class storeIns extends IRIns {
     public List<IRvar> getUses() {
         List<IRvar> res = new ArrayList<>();
         if (value instanceof IRvar) {
-            res.add((IRvar) value);
+            if (((IRvar) value).isLocal()) res.add((IRvar) value);
         }
         if (pointer.isLocal()) res.add(pointer);
         return res;

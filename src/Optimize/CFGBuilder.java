@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import IR.node.IRRoot;
 import IR.node.IRblock;
 import IR.node.def.IRFuncDef;
 import IR.node.ins.branchIns;

@@ -84,7 +84,7 @@ public class phiIns extends IRIns {
     public List<IRvar> getUses() {
         List<IRvar> res = new ArrayList<>();
         for (var val : values) {
-            if (val.value instanceof IRvar) {
+            if (val.value instanceof IRvar && ((IRvar) val.value).isLocal()) {
                 res.add((IRvar) val.value);
             }
         }

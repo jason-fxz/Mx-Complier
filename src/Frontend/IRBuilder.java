@@ -12,7 +12,6 @@ import IR.item.IRvar;
 import IR.node.*;
 import IR.node.def.*;
 import IR.node.ins.*;
-import IR.node.ins.phiIns.phiItem;
 import IR.type.*;
 import Util.BuiltinElements;
 import Util.IRLabeler;
@@ -20,8 +19,6 @@ import Util.IRLabeler;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-
-import org.abego.treelayout.internal.util.java.util.IteratorUtil;
 
 public class IRBuilder implements ASTVisitor<IRhelper> {
     private IRblock curBlock;
@@ -34,7 +31,6 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     private ArrayList<String> LoopStack_continue;
     private HashMap<String, Integer> sizeof;
 
-    private int loopDepth = 0;
 
     public IRBuilder() {
         curBlock = null;
