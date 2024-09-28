@@ -6,8 +6,9 @@ import IR.item.IRitem;
 import IR.item.IRvar;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 
 public class phiIns extends IRIns {
@@ -81,8 +82,8 @@ public class phiIns extends IRIns {
     }
 
     @Override
-    public List<IRvar> getUses() {
-        List<IRvar> res = new ArrayList<>();
+    public Set<IRvar> getUses() {
+        Set<IRvar> res = new HashSet<>();
         for (var val : values) {
             if (val.value instanceof IRvar && ((IRvar) val.value).isLocal()) {
                 res.add((IRvar) val.value);

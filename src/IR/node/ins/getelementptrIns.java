@@ -4,8 +4,9 @@ import IR.IRvisitor;
 import IR.item.IRitem;
 import IR.item.IRvar;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class getelementptrIns extends IRIns {
     public IRvar result;
@@ -64,8 +65,8 @@ public class getelementptrIns extends IRIns {
     }
 
     @Override
-    public List<IRvar> getUses() {
-        List<IRvar> res = new ArrayList<>();
+    public Set<IRvar> getUses() {
+        Set<IRvar> res = new HashSet<>();
         if (pointer instanceof IRvar && ((IRvar)pointer).isLocal()) {
             res.add((IRvar)pointer);
         }

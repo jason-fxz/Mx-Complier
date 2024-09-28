@@ -6,8 +6,8 @@ import IR.item.IRvar;
 import IR.node.IRNode;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class IRIns extends IRNode {
     public boolean removed = false;
@@ -19,7 +19,7 @@ public abstract class IRIns extends IRNode {
 
     public abstract void replaceUse(Map<IRitem, IRitem> map);
 
-    public abstract List<IRvar> getUses();
+    public abstract Set<IRvar> getUses();
 
     public abstract IRvar getDef();
 

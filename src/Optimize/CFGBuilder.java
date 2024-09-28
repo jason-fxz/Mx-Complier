@@ -62,6 +62,10 @@ public class CFGBuilder {
         domSets = new HashMap<>();
         domFrontiers = new HashMap<>();
 
+        for (var block : blocks.values()) {
+            block.initPrevNextBlocks();
+        }
+
         int tot = blocks.size();
         for (var curblock : blocks.values()) {
             BitSet domSet = new BitSet(tot);
@@ -158,6 +162,10 @@ public class CFGBuilder {
             domParent.put(block, idom);
             domChildren.get(idom).add(block);
         }
+    }
+
+    public boolean isAncestor(IRblock ance, IRblock child) {
+        return domSets.get(child).get(ance.index);
     }
 
     public void build(IRFuncDef func) {

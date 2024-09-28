@@ -17,6 +17,7 @@ import Grammar.MxLexer;
 import Grammar.MxParser;
 import Grammar.MxParser.ProgramContext;
 import IR.node.IRRoot;
+import Optimize.LoopAnalysis;
 import Util.error.error;
 import Util.scope.globalScope;
 import Util.ArgumentParser;
@@ -96,11 +97,14 @@ public class Main {
             new Optimize.Mem2Reg(irRoot).run();
             
 
-            // output.println(irRoot.toString());
-
+            
             // Dead Code Elimination
             new Optimize.DCE(irRoot).run();
             
+            // Loop Analysis : calculate loop depth
+            new Optimize.LoopAnalysis(irRoot).run();
+            
+            // output.println(irRoot.toString());
 
             // Allocator
             new SSALiveness(irRoot).run();

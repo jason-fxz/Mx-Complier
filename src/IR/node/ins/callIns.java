@@ -4,8 +4,9 @@ import IR.IRvisitor;
 import IR.item.IRitem;
 import IR.item.IRvar;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class callIns extends IRIns {
     public IRvar result = null;
@@ -84,8 +85,8 @@ public class callIns extends IRIns {
     }
 
     @Override
-    public List<IRvar> getUses() {
-        List<IRvar> res = new ArrayList<>();
+    public Set<IRvar> getUses() {
+        Set<IRvar> res = new HashSet<>();
         for (var arg : args) {
             if (arg instanceof IRvar && ((IRvar) arg).isLocal()) {
                 res.add((IRvar) arg);

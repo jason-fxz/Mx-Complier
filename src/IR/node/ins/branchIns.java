@@ -1,8 +1,8 @@
 package IR.node.ins;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import IR.IRvisitor;
 import IR.item.IRitem;
@@ -57,8 +57,8 @@ public class branchIns extends IRIns {
     }
 
     @Override
-    public List<IRvar> getUses() {
-        List<IRvar> res = new ArrayList<>();
+    public Set<IRvar> getUses() {
+        Set<IRvar> res = new HashSet<>();
         if (cond instanceof IRvar) {
             res.add((IRvar) cond);
         }

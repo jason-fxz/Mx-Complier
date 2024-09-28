@@ -1,8 +1,8 @@
 package IR.node.ins;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import IR.IRvisitor;
 import IR.item.IRitem;
@@ -44,8 +44,8 @@ public class jumpIns extends IRIns {
     }
 
     @Override
-    public List<IRvar> getUses() {
-        return new ArrayList<>();
+    public Set<IRvar> getUses() {
+        return new HashSet<>();
     }
 
     @Override

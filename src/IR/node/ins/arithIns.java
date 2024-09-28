@@ -1,8 +1,8 @@
 package IR.node.ins;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import IR.IRvisitor;
 import IR.item.*;
@@ -64,8 +64,8 @@ public class arithIns extends IRIns {
     }
 
     @Override
-    public List<IRvar> getUses() {
-        ArrayList<IRvar> res = new ArrayList<>();
+    public Set<IRvar> getUses() {
+        Set<IRvar> res = new HashSet<>();
         if (lhs instanceof IRvar) {
             res.add((IRvar) lhs);
         }

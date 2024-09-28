@@ -200,6 +200,7 @@ public class Mem2Reg {
                 throw new RuntimeException("insertBlockOnCriticalEdges: pred.endIns not jumpIns or branchIns");
 
             newBlock.setEndIns(new jumpIns(succ.Label));
+            newBlock.initPrevNextBlocks();
 
             pred.getNextBlocks().remove(succ);
             pred.addNextBlock(newBlock);

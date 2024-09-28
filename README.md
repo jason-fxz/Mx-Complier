@@ -13,6 +13,7 @@ A Compiler of Mx, See [Compiler-Design-Implementation](https://github.com/ACMCla
     - [x] Translate IR to RISC-V Assembly 
 - [x] Optimization
     - [x] Mem2reg 
+    - [x] DCE
     - [ ] Register Allocation 🔥
 
 
@@ -38,10 +39,13 @@ A Compiler of Mx, See [Compiler-Design-Implementation](https://github.com/ACMCla
         See `src/Optimize/Mem2Reg.java` for details.
 
     - Register Allocation
-        Use **SSA allocator** to allocate registers. (Since llvm IR is already in SSA form)
+        Use **SSA-RA** to allocate registers. (Since llvm IR is already in SSA form)
 
         liveness -> spill -> color -> coalesce -> eliminate
 
         See `src/Allocator` for details.
 
         ref: [寄存器分配引论 华保健](https://books.google.com.hk/books/about/%E5%AF%84%E5%AD%98%E5%99%A8%E5%88%86%E9%85%8D%E5%BC%95%E8%AE%BA.html?id=bPdOzwEACAAJ&redir_esc=y)
+
+    - DCE (Dead Code Elimination)
+        See `src/Optimize/DCE.java` for details.

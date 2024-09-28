@@ -16,8 +16,13 @@ public class IRblock extends IRNode {
     
     public int loopDepth = 0;
 
-    private HashSet<IRblock> prevBlocks = new HashSet<>();
-    private HashSet<IRblock> nextBlocks = new HashSet<>();
+    private HashSet<IRblock> prevBlocks;
+    private HashSet<IRblock> nextBlocks;
+
+    public void initPrevNextBlocks() {
+        prevBlocks = new HashSet<>();
+        nextBlocks = new HashSet<>();
+    }
 
     public HashSet<IRblock> getPrevBlocks() {
         return prevBlocks;
@@ -110,9 +115,21 @@ public class IRblock extends IRNode {
         if (endIns == null && insList.size() == 0) {
             return "";
         }
-
         StringBuilder str = new StringBuilder();
-        str.append(Label + ":\n");
+        str.append(String.format("%-80s", Label + ":"));
+        // str.append(Label + ":\n");
+        str.append(";  ");
+        if (loopDepth != 0) {
+            str.append("loopDepth: " + loopDepth + ";  ");
+        }
+        if (prevBlocks != null) {
+            str.append("prev: ");
+            for (var block : prevBlocks) {
+                str.append(block.Label + ", ");
+            }
+        }
+        str.append("\n");
+
         for (phiIns phi : phiList) {
             str.append("  " + phi.toString() + "\n");
         }

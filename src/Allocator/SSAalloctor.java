@@ -22,7 +22,7 @@ public class SSAalloctor {
     IRFuncDef curFunc;
 
     HashMap<IRvar, List<IRIns>> defuseOfVar = new HashMap<>();
-    Map<IRvar, Integer> usageCount = new HashMap<>();
+    Map<IRvar, Double> spillCost = new HashMap<>();
 
     static final int MAX_ALLOC_REG = 20;
     Set<Integer> inUse = new HashSet<>();
@@ -50,9 +50,9 @@ public class SSAalloctor {
 
     private void Spillvars(ArrayList<IRvar> vars) {
         // Sort the vars by usage count
-        vars.sort((a, b) -> usageCount.get(a) - usageCount.get(b));
+        vars.sort((a, b) -> Double.compare(spillCost.get(a), spillCost.get(b)));
         int n = vars.size() - MAX_ALLOC_REG;
-        assert usageCount.get(vars.getFirst()) <= usageCount.get(vars.getLast());
+        assert spillCost.get(vars.getFirst()) <= spillCost.get(vars.getLast());
         for (int i = 0; i < n; i++) {
             // spill vars.get(i)
             curFunc.spilledVar.put(vars.get(i), curFunc.spilledVar.size());
@@ -78,9 +78,9 @@ public class SSAalloctor {
         }
     }
 
-    private void countInsUsage(IRIns ins) {
+    private void countInsUsage(IRIns ins, double delta) {
         ins.getUses().forEach(var -> {
-            usageCount.put(var, usageCount.getOrDefault(var, 0) + 1);
+            spillCost.put(var, spillCost.getOrDefault(var, 0.0) + delta);
             if (!defuseOfVar.containsKey(var))
                 defuseOfVar.put(var, new ArrayList<>());
             defuseOfVar.get(var).add(ins);
@@ -96,11 +96,12 @@ public class SSAalloctor {
         }
 
         // count the usage of each var & get def use IRvar
-        usageCount.clear();
+        spillCost.clear();
         for (var block : curFunc.blocks.values()) {
-            block.phiList.forEach(ins -> countInsUsage(ins));
-            block.insList.forEach(ins -> countInsUsage(ins));
-            countInsUsage(block.endIns);
+            double delta = Math.pow(10, block.loopDepth);
+            block.phiList.forEach(ins -> countInsUsage(ins, delta));
+            block.insList.forEach(ins -> countInsUsage(ins, delta));
+            countInsUsage(block.endIns, delta);
         }
         // prechecks TODO: to be removed
         for (var block : curFunc.blocks.values()) {
@@ -131,8 +132,6 @@ public class SSAalloctor {
         curFunc.regOfVar = new HashMap<>();
         // handle function params
         int i = 0;
-        assert curFunc.entryBlock.getLiveIn().size() == Math.min(curFunc.params.size(), 8);
-    
         for (var x : curFunc.entryBlock.getLiveIn()) {
             curFunc.regOfVar.put(x, i++);
         }
@@ -193,6 +192,7 @@ public class SSAalloctor {
         for (var ins : block.phiList){
             colorIns(ins);
         }
+        assert block.phiList.size() == 0 || block.phiList.get(0).liveOut.size() == inUse.size();
         
         for (var ins : block.insList) {
             colorIns(ins);

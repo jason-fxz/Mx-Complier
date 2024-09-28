@@ -8,11 +8,11 @@ run:
 
 .PHONY: Sema
 Sema: build
-	./testcases/sema/scripts/test.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm' $(file)
+	./testcases/sema/scripts/test.bash 'java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm' $(file)
 
 .PHONY: Semall
 Semall: build
-	time -p ./testcases/sema/scripts/test_all.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm' testcases/sema/
+	time -p ./testcases/sema/scripts/test_all.bash 'java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm' testcases/sema/
 
 .PHONY: clean
 clean:
@@ -24,17 +24,17 @@ genbuiltin:
 
 .PHONY: irtest
 irtest: build genbuiltin
-	java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm -f test.mx -o output.ll\
+	java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm -f test.mx -o output.ll\
 	&& ./script/gen_ir.sh
 
 .PHONY: llvmall
 llvmall: build genbuiltin
-	./testcases/codegen/scripts/test_llvm_ir_all.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm' testcases/codegen ./builtin.ll
+	./testcases/codegen/scripts/test_llvm_ir_all.bash 'java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm' testcases/codegen ./builtin.ll
 
 
 .PHONY: llvm
 llvm: build genbuiltin
-	./testcases/codegen/scripts/test_llvm_ir.bash 'java -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm -debug-ast' $(file) ./builtin.ll
+	./testcases/codegen/scripts/test_llvm_ir.bash 'java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm -debug-ast' $(file) ./builtin.ll
 
 .PHONY: asmall
 asmall: build genbuiltin
