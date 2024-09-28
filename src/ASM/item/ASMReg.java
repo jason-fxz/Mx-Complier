@@ -1,12 +1,26 @@
 package ASM.item;
 
-public class ASMReg {
+public class ASMReg extends ASMItem {
     private int index;
     private String name;
+    private String Saver;
 
-    public ASMReg(int index, String name) {
+    private ASMReg(int index, String name, String Saver) {
+        super(true);
         this.index = index;
         this.name = name;
+        this.Saver = Saver;
+        if (!Saver.equals("Caller") && !Saver.equals("Callee") && !Saver.equals("None")) {
+            throw new RuntimeException("Invalid Saver");
+        }
+    }
+
+    public boolean isCallerSave() {
+        return Saver.equals("Caller");
+    }
+
+    public boolean isCalleeSave() {
+        return Saver.equals("Callee");
     }
 
     @Override
@@ -22,38 +36,54 @@ public class ASMReg {
         return this.name;
     }
 
-    static public ASMReg zero = new ASMReg(0, "zero"); // Hard-wired zero
-    static public ASMReg ra   = new ASMReg(1, "ra");   // Return address
-    static public ASMReg sp   = new ASMReg(2, "sp");   // Stack pointer
-    static public ASMReg gp   = new ASMReg(3, "gp");   // Global pointer
-    static public ASMReg tp   = new ASMReg(4, "tp");   // Thread pointer
-    static public ASMReg t0   = new ASMReg(5, "t0");   // Temporary/alternate link register
-    static public ASMReg t1   = new ASMReg(6, "t1");   // Temporaries
-    static public ASMReg t2   = new ASMReg(7, "t2");   // Temporaries
-    static public ASMReg s0   = new ASMReg(8, "s0");   // Saved register/frame pointer
-    static public ASMReg s1   = new ASMReg(9, "s1");   // Saved register
-    static public ASMReg a0   = new ASMReg(10, "a0");  // Function arguments/return values
-    static public ASMReg a1   = new ASMReg(11, "a1");  // Function arguments/return values
-    static public ASMReg a2   = new ASMReg(12, "a2");  // Function arguments
-    static public ASMReg a3   = new ASMReg(13, "a3");  // Function arguments
-    static public ASMReg a4   = new ASMReg(14, "a4");  // Function arguments
-    static public ASMReg a5   = new ASMReg(15, "a5");  // Function arguments
-    static public ASMReg a6   = new ASMReg(16, "a6");  // Function arguments
-    static public ASMReg a7   = new ASMReg(17, "a7");  // Function arguments
-    static public ASMReg s2   = new ASMReg(18, "s2");  // Saved registers
-    static public ASMReg s3   = new ASMReg(19, "s3");  // Saved registers
-    static public ASMReg s4   = new ASMReg(20, "s4");  // Saved registers
-    static public ASMReg s5   = new ASMReg(21, "s5");  // Saved registers
-    static public ASMReg s6   = new ASMReg(22, "s6");  // Saved registers
-    static public ASMReg s7   = new ASMReg(23, "s7");  // Saved registers
-    static public ASMReg s8   = new ASMReg(24, "s8");  // Saved registers
-    static public ASMReg s9   = new ASMReg(25, "s9");  // Saved registers
-    static public ASMReg s10  = new ASMReg(26, "s10"); // Saved registers
-    static public ASMReg s11  = new ASMReg(27, "s11"); // Saved registers
-    static public ASMReg t3   = new ASMReg(28, "t3");  // Temporaries
-    static public ASMReg t4   = new ASMReg(29, "t4");  // Temporaries
-    static public ASMReg t5   = new ASMReg(30, "t5");  // Temporaries
-    static public ASMReg t6   = new ASMReg(31, "t6");  // Temporaries
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ASMReg) {
+            ASMReg reg = (ASMReg) obj;
+            return index == reg.index;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return index;
+    }
+
+    static public int MAX_REG = 32;
+
+    static public ASMReg zero = new ASMReg(0, "zero", "None"); // Hard-wired zero
+    static public ASMReg ra   = new ASMReg(1, "ra", "Caller");   // Return address
+    static public ASMReg sp   = new ASMReg(2, "sp", "Callee");   // Stack pointer
+    static public ASMReg gp   = new ASMReg(3, "gp", "None");   // Global pointer
+    static public ASMReg tp   = new ASMReg(4, "tp", "None");   // Thread pointer
+    static public ASMReg t0   = new ASMReg(5, "t0", "Caller");   // Temporary/alternate link register
+    static public ASMReg t1   = new ASMReg(6, "t1", "Caller");   // Temporaries
+    static public ASMReg t2   = new ASMReg(7, "t2", "Caller");   // Temporaries
+    static public ASMReg s0   = new ASMReg(8, "s0", "Callee");   // Saved register/frame pointer
+    static public ASMReg s1   = new ASMReg(9, "s1", "Callee");   // Saved register
+    static public ASMReg a0   = new ASMReg(10, "a0", "Caller");  // Function arguments/return values
+    static public ASMReg a1   = new ASMReg(11, "a1", "Caller");  // Function arguments/return values
+    static public ASMReg a2   = new ASMReg(12, "a2", "Caller");  // Function arguments
+    static public ASMReg a3   = new ASMReg(13, "a3", "Caller");  // Function arguments
+    static public ASMReg a4   = new ASMReg(14, "a4", "Caller");  // Function arguments
+    static public ASMReg a5   = new ASMReg(15, "a5", "Caller");  // Function arguments
+    static public ASMReg a6   = new ASMReg(16, "a6", "Caller");  // Function arguments
+    static public ASMReg a7   = new ASMReg(17, "a7", "Caller");  // Function arguments
+    static public ASMReg s2   = new ASMReg(18, "s2", "Callee");  // Saved registers
+    static public ASMReg s3   = new ASMReg(19, "s3", "Callee");  // Saved registers
+    static public ASMReg s4   = new ASMReg(20, "s4", "Callee");  // Saved registers
+    static public ASMReg s5   = new ASMReg(21, "s5", "Callee");  // Saved registers
+    static public ASMReg s6   = new ASMReg(22, "s6", "Callee");  // Saved registers
+    static public ASMReg s7   = new ASMReg(23, "s7", "Callee");  // Saved registers
+    static public ASMReg s8   = new ASMReg(24, "s8", "Callee");  // Saved registers
+    static public ASMReg s9   = new ASMReg(25, "s9", "Callee");  // Saved registers
+    static public ASMReg s10  = new ASMReg(26, "s10", "Callee"); // Saved registers
+    static public ASMReg s11  = new ASMReg(27, "s11", "Callee"); // Saved registers
+    static public ASMReg t3   = new ASMReg(28, "t3", "Caller");  // Temporaries
+    static public ASMReg t4   = new ASMReg(29, "t4", "Caller");  // Temporaries
+    static public ASMReg t5   = new ASMReg(30, "t5", "Caller");  // Temporaries
+    static public ASMReg t6   = new ASMReg(31, "t6", "Caller");  // Temporaries
 
     static public ASMReg x(int id) {
         switch (id) {

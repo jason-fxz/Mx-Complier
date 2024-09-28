@@ -14,6 +14,7 @@ public class ASMLoadIns extends ASMIns {
         this.rd = rd;
         this.addr = addr;
         this.symbol = null;
+        assert addr.getOffset() >= -2048 && addr.getOffset() <= 2047;
     }
 
     public ASMLoadIns(ASMReg rd, String symbol) {

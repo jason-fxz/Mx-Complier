@@ -17,7 +17,6 @@ import Grammar.MxLexer;
 import Grammar.MxParser;
 import Grammar.MxParser.ProgramContext;
 import IR.node.IRRoot;
-import Optimize.LoopAnalysis;
 import Util.error.error;
 import Util.scope.globalScope;
 import Util.ArgumentParser;

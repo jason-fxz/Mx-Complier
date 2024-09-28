@@ -16,6 +16,7 @@ public class ASMStoreIns extends ASMIns {
         this.addr = addr;
         this.rt = null;
         this.symbol = null;
+        assert addr.getOffset() >= -2048 && addr.getOffset() <= 2047;
     }
 
     public ASMStoreIns(ASMReg rs, String symbol, ASMReg rt) {

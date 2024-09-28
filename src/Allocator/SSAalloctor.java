@@ -24,7 +24,7 @@ public class SSAalloctor {
     HashMap<IRvar, List<IRIns>> defuseOfVar = new HashMap<>();
     Map<IRvar, Double> spillCost = new HashMap<>();
 
-    static final int MAX_ALLOC_REG = 20;
+    static final int MAX_ALLOC_REG = 24;
     Set<Integer> inUse = new HashSet<>();
     // Set<Integer> freeReg = new HashSet<>();
     Stack<Integer> freeReg = new Stack<>();
@@ -75,6 +75,10 @@ public class SSAalloctor {
             if (ins.getDef() != null && !curFunc.spilledVar.containsKey(ins.getDef())) {
                 assert ins.liveOut.contains(ins.getDef());
             }
+        }
+
+        if (check) {
+            curFunc.maxUsedReg = Math.max(curFunc.maxUsedReg, ins.liveOut.size());
         }
     }
 
@@ -146,6 +150,7 @@ public class SSAalloctor {
         }
         var reg = freeReg.pop();
         inUse.add(reg);
+        assert reg < curFunc.maxUsedReg;
         return reg;
     }
 
@@ -184,7 +189,7 @@ public class SSAalloctor {
                 inUse.add(curFunc.regOfVar.get(x));
             }
         }
-        for (int i = 0; i < MAX_ALLOC_REG; i++) {
+        for (int i = MAX_ALLOC_REG - 1; i >= 0; --i) {
             if (!inUse.contains(i)) freeReg.add(i);
         }
 

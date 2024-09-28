@@ -14,10 +14,12 @@ public class ASMFuncDefNode extends ASMNode {
     public int paramCnt;
     public ArrayList<ASMBlock> blocks;
     public int stackSize = 0;
-    public int stackVarAddrMax = 0; // above is used for function params
+    public int stackVarAddrMax = 0;
     public HashMap<String, Integer> stackAddrBaseOns0;
     public HashMap<String, Integer> paramsId;
     // public boolean isGlobal = true;
+
+    public int stackSpillOffset = 0; // sp + offset;  + is for spilled vars, - is for saved regs and call params
 
     public ASMFuncDefNode(String name, int paramCnt) {
         this.name = name;

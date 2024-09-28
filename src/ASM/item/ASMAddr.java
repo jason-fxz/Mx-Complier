@@ -1,10 +1,11 @@
 package ASM.item;
 
-public class ASMAddr {
+public class ASMAddr extends ASMItem {
     private ASMReg base;
     private int offset;
 
     public ASMAddr(ASMReg base, int offset) {
+        super(false);
         this.base = base;
         this.offset = offset;
     }
@@ -20,6 +21,20 @@ public class ASMAddr {
 
     public int getOffset() {
         return offset;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ASMAddr) {
+            ASMAddr addr = (ASMAddr) obj;
+            return base.equals(addr.base) && offset == addr.offset;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return base.hashCode() ^ offset;
     }
 
 }

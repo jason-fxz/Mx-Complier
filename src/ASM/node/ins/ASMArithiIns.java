@@ -16,6 +16,7 @@ public class ASMArithiIns extends ASMIns {
         this.rd = rd;
         this.rs1 = rs1;
         this.imm = imm;
+        assert imm >= -2048 && imm <= 2047;
     }
 
     @Override

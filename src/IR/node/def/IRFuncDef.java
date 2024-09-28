@@ -19,6 +19,7 @@ public class IRFuncDef extends IRDefNode {
 
     public HashMap<IRvar, Integer> spilledVar;
     public HashMap<IRvar, Integer> regOfVar;
+    public int maxUsedReg = 0;
 
 
     public IRFuncDef(String name, IRType returnType) {
