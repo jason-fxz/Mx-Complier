@@ -20,6 +20,7 @@ public class ASMFuncDefNode extends ASMNode {
     // public boolean isGlobal = true;
 
     public int stackSpillOffset = 0; // sp + offset;  + is for spilled vars, - is for saved regs and call params
+    public int regSaveCur = 0;
 
     public ASMFuncDefNode(String name, int paramCnt) {
         this.name = name;

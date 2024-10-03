@@ -122,6 +122,51 @@ public class ASMReg extends ASMItem {
             default: return null;
         }
     }
+
+    static public ASMReg a(int id) {
+        switch (id) {
+            case 0: return a0;
+            case 1: return a1;
+            case 2: return a2;
+            case 3: return a3;
+            case 4: return a4;
+            case 5: return a5;
+            case 6: return a6;
+            case 7: return a7;
+            default: return null;
+        }
+    }
+
+    static public ASMReg s(int id) {
+        switch (id) {
+            case 0: return s0;
+            case 1: return s1;
+            case 2: return s2;
+            case 3: return s3;
+            case 4: return s4;
+            case 5: return s5;
+            case 6: return s6;
+            case 7: return s7;
+            case 8: return s8;
+            case 9: return s9;
+            case 10: return s10;
+            case 11: return s11;
+            default: return null;
+        }
+    }
+
+    static public ASMReg t(int id) {
+        switch (id) {
+            case 0: return t0;
+            case 1: return t1;
+            case 2: return t2;
+            case 3: return t3;
+            case 4: return t4;
+            case 5: return t5;
+            case 6: return t6;
+            default: return null;
+        }
+    }
     /*
      * x0 zero Hard-wired zero —
      * x1 ra Return address Caller

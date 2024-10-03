@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import AST.Node.RootNode;
 import Allocator.SSALiveness;
 import Allocator.SSAalloctor;
+import Backend.ASMBuilder;
 import Backend.NaiveASMBuilder;
 import Frontend.ASTBuilder;
 import Frontend.IRBuilder;
@@ -88,14 +89,8 @@ public class Main {
             IRRoot irRoot = irBuilder.getRoot();
             
 
-            if (ArgP.hasArgument("-debug-ir")) {
-                System.err.println(irRoot.toString());
-            }
-            
             // Mem2Reg
             new Optimize.Mem2Reg(irRoot).run();
-            
-
             
             // Dead Code Elimination
             new Optimize.DCE(irRoot).run();
@@ -109,7 +104,6 @@ public class Main {
             new SSALiveness(irRoot).run();
             new SSAalloctor(irRoot).run();
 
-
             // print IR
             if (ArgP.hasArgument("-emit-llvm")) {
                 output.println(irRoot.toString());
@@ -118,11 +112,15 @@ public class Main {
             if (ArgP.hasArgument("-debug-ir")) {
                 System.err.println(irRoot.toString());
             }
-            
 
-            // Naive ASMBuilder
-            NaiveASMBuilder asmBuilder = new NaiveASMBuilder();
+
+            ASMBuilder asmBuilder = new ASMBuilder();
             asmBuilder.visit(irRoot);
+
+
+            // // Naive ASMBuilder
+            // NaiveASMBuilder asmBuilder = new NaiveASMBuilder();
+            // asmBuilder.visit(irRoot);
 
             // print ASM
             if (ArgP.hasArgument("-S")) {
