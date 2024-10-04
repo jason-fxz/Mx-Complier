@@ -23,7 +23,7 @@ public class SSAalloctor {
     // HashMap<IRvar, List<IRIns>> defuseOfVar = new HashMap<>();
     Map<IRvar, Double> spillCost = new HashMap<>();
 
-    static final int MAX_ALLOC_REG = 24; // 0-7 are for params
+    static final int MAX_ALLOC_REG = 26; // 0-7 are for params
     Set<Integer> inUse = new HashSet<>();
     // Set<Integer> freeReg = new HashSet<>();
     Stack<Integer> freeReg = new Stack<>();

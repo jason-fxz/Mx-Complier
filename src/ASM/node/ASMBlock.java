@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import ASM.ASMVisitor;
 import ASM.node.ins.ASMIns;
+import ASM.node.ins.ASMMoveIns;
 
 public class ASMBlock extends ASMNode {
     private String Label;
@@ -30,12 +31,16 @@ public class ASMBlock extends ASMNode {
     }
 
     public void addIns(ASMIns ins) {
+        if (ins instanceof ASMMoveIns) {
+            ASMMoveIns moveIns = (ASMMoveIns) ins;
+            if (moveIns.isUseless()) return;
+        }
         insList.add(ins);
     }
 
     public void addIns(ASMIns ins, String comment) {
         ins.Note(comment);
-        insList.add(ins);
+        addIns(ins);
     }
 
     public void addJumpIns(ASMIns ins) {
@@ -44,7 +49,7 @@ public class ASMBlock extends ASMNode {
 
     public void addJumpIns(ASMIns ins, String comment) {
         ins.Note(comment);
-        jumpInsList.add(ins);
+        addJumpIns(ins);
     }
 
     @Override

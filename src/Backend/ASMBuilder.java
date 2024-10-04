@@ -226,7 +226,8 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
     public ASMHelper visit(callIns it) {
         // Save caller-save registers
         int regSaveCur = curFunc.regSaveCur;
-        for (var reg : regMap.values()) {
+        for (var irvar : it.liveIn) {
+            var reg = (ASMReg)var2ASMItem.get(irvar);
             if (reg.isCallerSave()) {
                 regSaveCur -= 4;
                 var addr = new ASMAddr(ASMReg.sp, regSaveCur);
@@ -274,9 +275,7 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
             if (i < 8) {
                 aAddr.put(ASMReg.a(i), callerSaveMap.get(ASMReg.a(i)));
             }
-        }
-
-        
+        }        
 
         curBlock.addIns(new ASMCallIns(it.func), it.toString() + getVarASMitem(it));
 
@@ -448,11 +447,6 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
     }
 
 
-
-    
-
-
-
     @Override
     public ASMHelper visit(IRFuncDec it) {
         throw new UnsupportedOperationException("Should Not visit IRFuncDec");
@@ -474,6 +468,10 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
             if (regCnt >= maxUsedReg) return;
             regMap.put(regCnt++, ASMReg.t(i));
         }
+        if (regCnt >= maxUsedReg) return;
+        regMap.put(regCnt++, ASMReg.gp);
+        if (regCnt >= maxUsedReg) return;
+        regMap.put(regCnt++, ASMReg.tp);
     }
 
     @Override

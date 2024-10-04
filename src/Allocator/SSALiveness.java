@@ -11,6 +11,7 @@ import IR.node.IRblock;
 import IR.node.def.IRFuncDef;
 import IR.node.ins.IRIns;
 import IR.node.ins.phiIns;
+import Util.ExecutionTimer;
 
 public class SSALiveness {
     IRRoot irRoot;
@@ -19,6 +20,9 @@ public class SSALiveness {
     HashMap<IRIns, IRblock> blockOfIns = new HashMap<>();
     HashMap<IRvar, List<IRIns>> useOfVar = new HashMap<>();
     HashSet<IRblock> visited = new HashSet<>();
+    ExecutionTimer timer = ExecutionTimer.timer;
+
+    int totalUse = 0;
 
     public SSALiveness(IRRoot irRoot) {
         this.irRoot = irRoot;
@@ -27,8 +31,12 @@ public class SSALiveness {
     public void run() {
         for (var func : irRoot.funcs) {
             curFunc = func;
+            timer.start("SSA Liveness init");
             init(func);
+            timer.stop("SSA Liveness init");
+            timer.start("SSA Liveness main : " + func.name);
             ssaLiveness();
+            timer.stop("SSA Liveness main : " + func.name);
         }
         
     }
@@ -39,6 +47,7 @@ public class SSALiveness {
                 useOfVar.put(var, new ArrayList<>());
             }
             useOfVar.get(var).add(ins);
+            totalUse++;
         });
 
     }
@@ -47,22 +56,32 @@ public class SSALiveness {
         prevIns.clear();
         blockOfIns.clear();
         useOfVar.clear();
+        totalUse = 0;
         for (var block : func.blocks.values()) {
             for (int i = 0; i < block.insList.size(); i++) {
+                var ins = block.insList.get(i);
                 if (i > 0){
-                    prevIns.put(block.insList.get(i), block.insList.get(i - 1));
+                    prevIns.put(ins, block.insList.get(i - 1));
                 }
-                blockOfIns.put(block.insList.get(i), block);
-                getUseOfVar(block.insList.get(i));
+                ins.liveIn = new HashSet<>();
+                ins.liveOut = new HashSet<>();
+                blockOfIns.put(ins, block);
+                getUseOfVar(ins);
             }
             if (block.insList.size() > 0) {
                 prevIns.put(block.endIns, block.insList.getLast());
             }
             blockOfIns.put(block.endIns, block);
+            block.endIns.liveIn = new HashSet<>();
+            block.endIns.liveOut = new HashSet<>();
             getUseOfVar(block.endIns);
 
+            var phiLiveIn = new HashSet<IRvar>();
+            var phiLiveOut = new HashSet<IRvar>();
             for (var phi : block.phiList) {
                 blockOfIns.put(phi, block);
+                phi.liveIn = phiLiveIn;
+                phi.liveOut = phiLiveOut;
                 getUseOfVar(phi);
             }
         }
@@ -80,7 +99,7 @@ public class SSALiveness {
                             IRblock pre = curFunc.blocks.get(phi.values.get(idx).label);
                             scanBlock(pre, var);
                         }
-                    }                    
+                    }
                 } else {
                     scanliveIn(ins, var);
                 }
@@ -102,13 +121,11 @@ public class SSALiveness {
                 }
             }
             // all phiIns happens in the same time
-            block.phiList.forEach(phi -> {
-                phi.liveOut.add(var);
-            });
+
+            if (!block.phiList.isEmpty()) block.phiList.getFirst().liveOut.add(var);
+
             if (!hasPhiDef) {
-                block.phiList.forEach(phi -> {
-                    phi.liveIn.add(var);
-                });
+                if (!block.phiList.isEmpty()) block.phiList.getFirst().liveIn.add(var);
                 for (var pre : block.getPrevBlocks()) {
                     scanBlock(pre, var);
                 }
@@ -130,8 +147,7 @@ public class SSALiveness {
         if (visited.contains(block))
             return;
         visited.add(block);
-        var ins = block.endIns;
-        scanlivesOut(ins, var);
+        scanlivesOut( block.endIns, var);
     }
 
 }

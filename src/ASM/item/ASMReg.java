@@ -55,8 +55,8 @@ public class ASMReg extends ASMItem {
     static public ASMReg zero = new ASMReg(0, "zero", "None"); // Hard-wired zero
     static public ASMReg ra   = new ASMReg(1, "ra", "Caller");   // Return address
     static public ASMReg sp   = new ASMReg(2, "sp", "Callee");   // Stack pointer
-    static public ASMReg gp   = new ASMReg(3, "gp", "None");   // Global pointer
-    static public ASMReg tp   = new ASMReg(4, "tp", "None");   // Thread pointer
+    static public ASMReg gp   = new ASMReg(3, "gp", "Caller");   // Global pointer
+    static public ASMReg tp   = new ASMReg(4, "tp", "Caller");   // Thread pointer
     static public ASMReg t0   = new ASMReg(5, "t0", "Caller");   // Temporary/alternate link register
     static public ASMReg t1   = new ASMReg(6, "t1", "Caller");   // Temporaries
     static public ASMReg t2   = new ASMReg(7, "t2", "Caller");   // Temporaries

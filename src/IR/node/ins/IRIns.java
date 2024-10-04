@@ -12,8 +12,8 @@ import java.util.Set;
 public abstract class IRIns extends IRNode {
     public boolean removed = false;
 
-    public HashSet<IRvar> liveIn = new HashSet<>();
-    public HashSet<IRvar> liveOut = new HashSet<>();
+    public HashSet<IRvar> liveIn;
+    public HashSet<IRvar> liveOut;
     
     public abstract void replaceUse(IRitem old, IRitem nw);
 

@@ -13,8 +13,13 @@ public class ASMMoveIns extends ASMIns {
         this.rs = rs;
     }
 
+    public boolean isUseless() {
+        return rd.equals(rs);
+    }
+
     @Override
     public String toString() {
+        if (isUseless()) return "";
         return String.format("%-8s", "mv") + rd + ", " + rs;
     }
 

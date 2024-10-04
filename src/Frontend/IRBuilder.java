@@ -663,9 +663,15 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         return new IRhelper(new IRLiteral(IRType.IRBoolType, String.valueOf(it.value)));
     }
 
+    private HashMap<String, IRvar> strVarMap = new HashMap<>(); // same string only need one var
+
     private IRvar handleStrDef(String str) {
+        if (strVarMap.containsKey(str)) {
+            return strVarMap.get(str);
+        }
         IRvar var = new IRvar(IRType.IRPtrType, IRLabeler.getIdLabel("@.str"));
         root.gStrs.add(new IRStrDef(var.name, str));
+        strVarMap.put(str, var);
         return var;
     }
 
