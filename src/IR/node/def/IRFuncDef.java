@@ -52,6 +52,7 @@ public class IRFuncDef extends IRDefNode {
             str.append(params.get(i).type.toString() + " " + params.get(i).toString());
         }
         str.append(") {\n");
+        str.append(" ".repeat(80) +  ";  maxUsedReg: " + maxUsedReg + "\n");
         for (var entry : blocks.entrySet()) {
             str.append(entry.getValue().toString());
             str.append("\n");

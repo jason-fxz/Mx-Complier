@@ -9,7 +9,6 @@ import AST.Node.RootNode;
 import Allocator.SSALiveness;
 import Allocator.SSAalloctor;
 import Backend.ASMBuilder;
-import Backend.NaiveASMBuilder;
 import Frontend.ASTBuilder;
 import Frontend.IRBuilder;
 import Frontend.SemanticChecker;
@@ -116,11 +115,6 @@ public class Main {
 
             ASMBuilder asmBuilder = new ASMBuilder();
             asmBuilder.visit(irRoot);
-
-
-            // // Naive ASMBuilder
-            // NaiveASMBuilder asmBuilder = new NaiveASMBuilder();
-            // asmBuilder.visit(irRoot);
 
             // print ASM
             if (ArgP.hasArgument("-S")) {

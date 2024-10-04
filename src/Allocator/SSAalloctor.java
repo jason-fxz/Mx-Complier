@@ -2,7 +2,6 @@ package Allocator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -21,10 +20,10 @@ public class SSAalloctor {
     IRRoot irRoot;
     IRFuncDef curFunc;
 
-    HashMap<IRvar, List<IRIns>> defuseOfVar = new HashMap<>();
+    // HashMap<IRvar, List<IRIns>> defuseOfVar = new HashMap<>();
     Map<IRvar, Double> spillCost = new HashMap<>();
 
-    static final int MAX_ALLOC_REG = 24;
+    static final int MAX_ALLOC_REG = 24; // 0-7 are for params
     Set<Integer> inUse = new HashSet<>();
     // Set<Integer> freeReg = new HashSet<>();
     Stack<Integer> freeReg = new Stack<>();
@@ -85,9 +84,9 @@ public class SSAalloctor {
     private void countInsUsage(IRIns ins, double delta) {
         ins.getUses().forEach(var -> {
             spillCost.put(var, spillCost.getOrDefault(var, 0.0) + delta);
-            if (!defuseOfVar.containsKey(var))
-                defuseOfVar.put(var, new ArrayList<>());
-            defuseOfVar.get(var).add(ins);
+            // if (!defuseOfVar.containsKey(var))
+            //     defuseOfVar.put(var, new ArrayList<>());
+            // defuseOfVar.get(var).add(ins);
         });
     }
 
@@ -97,6 +96,10 @@ public class SSAalloctor {
         // handle function params (>8 params all spilled)
         for (int i = 8; i < curFunc.params.size(); i++) {
             curFunc.spilledVar.put(curFunc.params.get(i), curFunc.spilledVar.size());
+        }
+        // <8 never spill
+        for (int i = 0; i < 8 && i < curFunc.params.size(); i++) {
+            spillCost.put(curFunc.params.get(i), 1e200); 
         }
 
         // count the usage of each var & get def use IRvar
@@ -135,9 +138,16 @@ public class SSAalloctor {
         
         curFunc.regOfVar = new HashMap<>();
         // handle function params
-        int i = 0;
-        for (var x : curFunc.entryBlock.getLiveIn()) {
-            curFunc.regOfVar.put(x, i++);
+        // int i = 0;
+        // for (var x : curFunc.entryBlock.getLiveIn()) {
+        //     curFunc.regOfVar.put(x, i++);
+        // }
+        for (int i = 0; i < 8 && i < curFunc.params.size(); i++) {
+            var x = curFunc.params.get(i);
+            if (curFunc.entryBlock.getLiveIn().contains(x)) {
+                curFunc.regOfVar.put(x, i);
+                curFunc.maxUsedReg = Math.max(curFunc.maxUsedReg, i + 1);
+            }
         }
         preOrderDFS(curFunc.entryBlock);
 

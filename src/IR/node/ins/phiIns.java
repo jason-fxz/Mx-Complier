@@ -41,6 +41,15 @@ public class phiIns extends IRIns {
         values.add(new phiItem(value, label));
     }
 
+    public IRitem getValue(String label) {
+        for (var val : values) {
+            if (val.label.equals(label)) {
+                return val.value;
+            }
+        }
+        throw new RuntimeException("phiIns: getValue: No such label in phiIns `" + label);
+    }
+
     @Override
     public String toString() {
         String str = result.toString() + " = phi " + result.type.toString() + " ";

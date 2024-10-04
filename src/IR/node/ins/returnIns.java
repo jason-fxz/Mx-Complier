@@ -43,7 +43,7 @@ public class returnIns extends IRIns {
     @Override
     public Set<IRvar> getUses() {
         Set<IRvar> res = new HashSet<>();
-        if (value instanceof IRvar) {
+        if (value instanceof IRvar && !((IRvar) value).isGlobal()) {
             res.add((IRvar) value);
         }
         return res;
