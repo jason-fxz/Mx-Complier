@@ -6,26 +6,31 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Queue;
+import java.util.ArrayDeque;
 
 import IR.item.IRvar;
 import IR.node.IRRoot;
 import IR.node.IRblock;
 import IR.node.def.IRFuncDef;
 import IR.node.ins.IRIns;
+import IR.node.ins.branchIns;
+import IR.node.ins.jumpIns;
 import IR.node.ins.phiIns;
 import Optimize.CFGBuilder;
+import Util.IRLabeler;
+import Util.Pair;
 
 public class SSAalloctor {
     CFGBuilder CFG;
     IRRoot irRoot;
     IRFuncDef curFunc;
 
-    // HashMap<IRvar, List<IRIns>> defuseOfVar = new HashMap<>();
     Map<IRvar, Double> spillCost = new HashMap<>();
 
     static final int MAX_ALLOC_REG = 26; // 0-7 are for params
     Set<Integer> inUse = new HashSet<>();
-    // Set<Integer> freeReg = new HashSet<>();
     Stack<Integer> freeReg = new Stack<>();
 
     public SSAalloctor(IRRoot irRoot) {
@@ -34,16 +39,12 @@ public class SSAalloctor {
     }
 
     public void run() {
-        // spilling
         for (var func : irRoot.funcs) {
             curFunc = func;
             SSASpill();
-        }
-
-        // coloring
-        for (var func : irRoot.funcs) {
-            curFunc = func;
             SSAColor();
+            insertBlockOnCriticalEdges();
+            reorderBlocks();
         }
     }
 
@@ -84,9 +85,6 @@ public class SSAalloctor {
     private void countInsUsage(IRIns ins, double delta) {
         ins.getUses().forEach(var -> {
             spillCost.put(var, spillCost.getOrDefault(var, 0.0) + delta);
-            // if (!defuseOfVar.containsKey(var))
-            //     defuseOfVar.put(var, new ArrayList<>());
-            // defuseOfVar.get(var).add(ins);
         });
     }
 
@@ -111,11 +109,11 @@ public class SSAalloctor {
             countInsUsage(block.endIns, delta);
         }
         // prechecks TODO: to be removed
-        for (var block : curFunc.blocks.values()) {
-            block.phiList.forEach(ins -> {
-                assert ins.liveOut.contains(ins.getDef());
-            });
-        }
+        // for (var block : curFunc.blocks.values()) {
+        //     block.phiList.forEach(ins -> {
+        //         assert ins.liveOut.contains(ins.getDef());
+        //     });
+        // }
 
 
         // check if need to spill
@@ -134,7 +132,7 @@ public class SSAalloctor {
 
     void SSAColor() {
         // coloring
-        CFG.build(curFunc);
+        CFG.buildCFG(curFunc).calcDom().buildDomTree();
         
         curFunc.regOfVar = new HashMap<>();
         // handle function params
@@ -218,6 +216,88 @@ public class SSAalloctor {
 
         for (var child : CFG.domChildren.get(block)) {
             preOrderDFS(child);
+        }
+    }
+
+    void insertBlockOnCriticalEdges() {
+        List<Pair<IRblock, IRblock>> criticalEdges = findCirticalEdges();
+
+        for (var edge : criticalEdges) {
+            IRblock newBlock = new IRblock(IRLabeler.getIdLabel(".CTE"));
+
+            IRblock pred = edge.first;
+            IRblock succ = edge.second;
+
+            if (pred.endIns instanceof jumpIns) {
+                ((jumpIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
+            } else if (pred.endIns instanceof branchIns) {
+                ((branchIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
+            } else
+                throw new RuntimeException("insertBlockOnCriticalEdges: pred.endIns not jumpIns or branchIns");
+
+            newBlock.setEndIns(new jumpIns(succ.Label));
+            newBlock.initPrevNextBlocks();
+
+            pred.getNextBlocks().remove(succ);
+            pred.addNextBlock(newBlock);
+            newBlock.addPrevBlock(pred);
+
+            succ.getPrevBlocks().remove(pred);
+            succ.addPrevBlock(newBlock);
+            newBlock.addNextBlock(succ);
+
+            succ.phiList.forEach(phi -> {
+                phi.replaceLabel(pred.Label, newBlock.Label);
+            });
+
+            curFunc.blocks.put(newBlock.Label, newBlock);
+        }
+
+
+        if (!findCirticalEdges().isEmpty()) {
+            throw new RuntimeException("critical edges not removed");
+        }
+    }
+
+    List<Pair<IRblock, IRblock>> findCirticalEdges() {
+        List<Pair<IRblock, IRblock>> criticalEdges = new ArrayList<>();
+
+        for (var block : CFG.blockList) {
+            if (block.getNextBlocks().size() > 1) {
+                for (var nextBlock : block.getNextBlocks()) {
+                    if (nextBlock.getPrevBlocks().size() > 1) {
+                        criticalEdges.add(new Pair<>(block, nextBlock));
+                    }
+                }
+            }
+        }
+        return criticalEdges;
+    }
+
+    void reorderBlocks() {
+        // Reorder blocks to ensure connected blocks are closer
+        List<IRblock> orderedBlocks = new ArrayList<>();
+        Set<IRblock> visitedBlocks = new HashSet<>();
+        Queue<IRblock> blockQueue = new ArrayDeque<>();
+
+        blockQueue.add(curFunc.entryBlock);
+        visitedBlocks.add(curFunc.entryBlock);
+
+        while (!blockQueue.isEmpty()) {
+            IRblock currentBlock = blockQueue.poll();
+            orderedBlocks.add(currentBlock);
+
+            for (IRblock nextBlock : currentBlock.getNextBlocks()) {
+                if (!visitedBlocks.contains(nextBlock)) {
+                    visitedBlocks.add(nextBlock);
+                    blockQueue.add(nextBlock);
+                }
+            }
+        }
+
+        curFunc.blocks.clear();
+        for (var block : orderedBlocks) {
+            curFunc.blocks.put(block.Label, block);
         }
     }
 

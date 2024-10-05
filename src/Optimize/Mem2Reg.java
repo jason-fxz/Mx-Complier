@@ -181,6 +181,33 @@ public class Mem2Reg {
             block.phiList.forEach(ins -> ins.replaceUse(replaceMap));
             block.insList.forEach(ins -> ins.replaceUse(replaceMap));
             block.endIns.replaceUse(replaceMap);
+        }        
+    }
+
+    void reorderBlocks() {
+        // Reorder blocks to ensure connected blocks are closer
+        List<IRblock> orderedBlocks = new ArrayList<>();
+        Set<IRblock> visitedBlocks = new HashSet<>();
+        Queue<IRblock> blockQueue = new ArrayDeque<>();
+
+        blockQueue.add(curFunc.entryBlock);
+        visitedBlocks.add(curFunc.entryBlock);
+
+        while (!blockQueue.isEmpty()) {
+            IRblock currentBlock = blockQueue.poll();
+            orderedBlocks.add(currentBlock);
+
+            for (IRblock nextBlock : currentBlock.getNextBlocks()) {
+                if (!visitedBlocks.contains(nextBlock)) {
+                    visitedBlocks.add(nextBlock);
+                    blockQueue.add(nextBlock);
+                }
+            }
+        }
+
+        curFunc.blocks.clear();
+        for (var block : orderedBlocks) {
+            curFunc.blocks.put(block.Label, block);
         }
     }
 
@@ -237,13 +264,9 @@ public class Mem2Reg {
 
         curFunc = funcDef;
 
-        CFG.build(funcDef);
-        insertBlockOnCriticalEdges();
-        CFG.build(funcDef);
-
-        if (!findCirticalEdges().isEmpty()) {
-            throw new RuntimeException("visitFunc: critical edges not removed");
-        }
+        // CFG.build(funcDef);
+        // insertBlockOnCriticalEdges();
+        CFG.buildCFG(funcDef).calcDom().calcDomF();
 
         phiInsertPositions(funcDef);
         insertPhi();
@@ -253,6 +276,7 @@ public class Mem2Reg {
 
         replaceVar(funcDef.entryBlock, new HashSet<>(), valueStack, null);
         tidyUp();
+        // reorderBlocks();
     }
 
     public void run() {

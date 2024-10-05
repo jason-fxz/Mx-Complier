@@ -99,11 +99,15 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         throw new UnsupportedOperationException("Should Not visit allocaIns");
     }
 
+    boolean fitImm(int x) {
+        return -2048 <= x && x <= 2047;
+    }
+
     void handleASMAddrLoad(ASMReg rd, ASMAddr addr, String comment) {
         if (comment == null) {
             comment = "handleASMAddrLoad";
         }
-        if (-2048 <= addr.getOffset() && addr.getOffset() <= 2047) {
+        if (fitImm(addr.getOffset())) {
             curBlock.addIns(new ASMLoadIns(rd, addr), comment);
         } else {
             curBlock.addIns(new ASMLoadImmIns(rd, addr.getOffset()), comment);
@@ -117,7 +121,7 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
             comment = "handleASMAddrStore";
         }
         if (rs.equals(tmp)) throw new RuntimeException("handleASMAddrStore: rs == tmp");
-        if (-2048 <= addr.getOffset() && addr.getOffset() <= 2047) {
+        if (fitImm(addr.getOffset())) {
             curBlock.addIns(new ASMStoreIns(rs, addr), comment);
         } else {
             curBlock.addIns(new ASMLoadImmIns(tmp, addr.getOffset()), comment);
@@ -130,7 +134,7 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         if (comment == null) {
             comment = "handleASMAddi";
         }
-        if (-2048 <= imm && imm <= 2047) {
+        if (fitImm(imm)) {
             curBlock.addIns(new ASMArithiIns("addi", rd, rs, imm), comment);
         } else {
             curBlock.addIns(new ASMLoadImmIns(ASMReg.t0, imm), comment);
@@ -187,13 +191,31 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
             default -> throw new UnsupportedOperationException("Unknown arithIns op");
         }
         var rs1 = loadIRitem(it.lhs, ASMReg.t1, "load lhs");
-        var rs2 = loadIRitem(it.rhs, ASMReg.t2, "load rhs");
 
+        boolean useImm = false; 
+        int imm = 0;
+        
+        if (it.rhs instanceof IRLiteral && (op.equals("add") || op.equals("sub") || op.equals("sll") || op.equals("sra") || op.equals("and") || op.equals("or") || op.equals("xor"))) {
+            imm = ((IRLiteral)it.rhs).getInt();
+            if (op.equals("sub")) imm = -imm;
+            useImm = fitImm(imm);
+            if (op.equals("sub") && useImm) op = "add";
+        }
+    
+        var rs2 = useImm ? null : loadIRitem(it.rhs, ASMReg.t2, "load rhs");
         var asmitem = var2ASMItem.get(it.result);
         if (asmitem instanceof ASMReg) {
-            curBlock.addIns(new ASMArithIns(op, (ASMReg) asmitem, rs1, rs2), it.toString() + getVarASMitem(it));
+            if (useImm) {
+                curBlock.addIns(new ASMArithiIns(op + "i", (ASMReg) asmitem, rs1, imm), it.toString() + getVarASMitem(it));
+            } else {
+                curBlock.addIns(new ASMArithIns(op, (ASMReg) asmitem, rs1, rs2), it.toString() + getVarASMitem(it));
+            }
         } else {
-            curBlock.addIns(new ASMArithIns(op, ASMReg.t1, rs1, rs2), it.toString() + getVarASMitem(it));
+            if (useImm) {
+                curBlock.addIns(new ASMArithiIns(op + "i", ASMReg.t1, rs1, imm), it.toString() + getVarASMitem(it));
+            } else {
+                curBlock.addIns(new ASMArithIns(op, ASMReg.t1, rs1, rs2), it.toString() + getVarASMitem(it));
+            }
             handleASMAddrStore(ASMReg.t1, (ASMAddr) asmitem, ASMReg.t2, "store result");
         }
         return null;
@@ -209,14 +231,16 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         
         var cond = loadIRitem(it.cond, ASMReg.t1, "load cond");
         curBlock.addJumpIns(new ASMBeqzIns(cond, tmpLabel), it.toString() + getVarASMitem(it));
-        curBlock.addJumpIns(new ASMLoadAddrIns(ASMReg.t1, tureLabel));
-        curBlock.addJumpIns(new ASMJumpIns(ASMReg.t1));
+        curBlock.addJumpIns(new ASMJumpIns(tureLabel));
+        // curBlock.addJumpIns(new ASMLoadAddrIns(ASMReg.t1, tureLabel));
+        // curBlock.addJumpIns(new ASMJumpIns(ASMReg.t1));
 
         ASMBlock tmpblock = new ASMBlock(tmpLabel);
         curFunc.addBlock(tmpblock);
         curBlock = tmpblock;
-        curBlock.addJumpIns(new ASMLoadAddrIns(ASMReg.t1, falseLabel));
-        curBlock.addJumpIns(new ASMJumpIns(ASMReg.t1));
+        curBlock.addJumpIns(new ASMJumpIns(falseLabel));
+        // curBlock.addJumpIns(new ASMLoadAddrIns(ASMReg.t1, falseLabel));
+        // curBlock.addJumpIns(new ASMJumpIns(ASMReg.t1));
         return null;
     }
 

@@ -14,7 +14,10 @@ A Compiler of Mx, See [Compiler-Design-Implementation](https://github.com/ACMCla
 - [x] Optimization
     - [x] Mem2reg 
     - [x] DCE
-    - [ ] Register Allocation 🔥
+    - [x] Register Allocation
+    - [ ] SCCP
+    - [ ] Arithmetic-Simplification
+    - [ ] Inlining
 
 
 ## Overview

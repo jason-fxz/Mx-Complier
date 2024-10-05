@@ -23,7 +23,7 @@ public class LoopAnalysis {
 
     public void run() {
         for (var func : irRoot.funcs) {
-            CFG.build(func);
+            CFG.buildCFG(func).calcDom();
             findBackEdges(func);
             getLoops(func);
         }

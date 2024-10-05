@@ -60,12 +60,6 @@ public class CFGBuilder {
 
     private void initializeDomSets(LinkedHashMap<String, IRblock> blocks) {
         domSets = new HashMap<>();
-        domFrontiers = new HashMap<>();
-
-        for (var block : blocks.values()) {
-            block.initPrevNextBlocks();
-        }
-
         int tot = blocks.size();
         for (var curblock : blocks.values()) {
             BitSet domSet = new BitSet(tot);
@@ -75,20 +69,6 @@ public class CFGBuilder {
                 domSet.set(0, tot); // set all bits to 1
             }
             domSets.put(curblock, domSet);
-            domFrontiers.put(curblock, new HashSet<>()); // initialize the dominance frontier
-            // calculate the predecessors
-            if (curblock.endIns instanceof branchIns) {
-                IRblock trueBlock = blocks.get(((branchIns) curblock.endIns).trueLabel);
-                IRblock falseBlock = blocks.get(((branchIns) curblock.endIns).falseLabel);
-                curblock.addNextBlock(trueBlock);
-                curblock.addNextBlock(falseBlock);
-                trueBlock.addPrevBlock(curblock);
-                falseBlock.addPrevBlock(curblock);
-            } else if (curblock.endIns instanceof jumpIns) {
-                IRblock nextBlock = blocks.get(((jumpIns) curblock.endIns).label);
-                curblock.addNextBlock(nextBlock);
-                nextBlock.addPrevBlock(curblock);
-            }
         }
     }
 
@@ -115,9 +95,14 @@ public class CFGBuilder {
         }
     }
 
-    private void computeDominanceFrontier(LinkedHashMap<String, IRblock> blocks) {
-        int tot = blocks.size();
-        for (IRblock block : blocks.values()) {
+    private void computeDominanceFrontier() {
+        domFrontiers = new HashMap<>();
+
+        for (var curblock : blockList)
+            domFrontiers.put(curblock, new HashSet<>()); // initialize the dominance frontier
+        
+        int tot = blockList.size();
+        for (IRblock block : blockList) {
             BitSet domf = new BitSet(tot);
 
             for (var perd : block.getPrevBlocks()) {
@@ -137,7 +122,7 @@ public class CFGBuilder {
         }
     }
 
-    private void buildDomTree() {
+    public CFGBuilder buildDomTree() {
         domChildren = new HashMap<>();
         domParent = new HashMap<>();
 
@@ -162,24 +147,72 @@ public class CFGBuilder {
             domParent.put(block, idom);
             domChildren.get(idom).add(block);
         }
+        return this;
     }
 
     public boolean isAncestor(IRblock ance, IRblock child) {
         return domSets.get(child).get(ance.index);
     }
 
-    public void build(IRFuncDef func) {
+    public CFGBuilder buildCFG(IRFuncDef func) {
         curFunc = func;
-
         blockList = new ArrayList<>(func.blocks.values());
         for (int i = 0; i < blockList.size(); i++) {
             blockList.get(i).index = i;
         }
-        initializeDomSets(func.blocks);
-        computeDominance(func.blocks);
-        computeDominanceFrontier(func.blocks);
-        buildDomTree();
+        var blocks = func.blocks;
+        for (var block : blocks.values()) {
+            block.initPrevNextBlocks();
+        }
+        for (var curblock : blocks.values()) {
+            if (curblock.endIns instanceof branchIns) {
+                IRblock trueBlock = blocks.get(((branchIns) curblock.endIns).trueLabel);
+                IRblock falseBlock = blocks.get(((branchIns) curblock.endIns).falseLabel);
+                curblock.addNextBlock(trueBlock);
+                curblock.addNextBlock(falseBlock);
+                trueBlock.addPrevBlock(curblock);
+                falseBlock.addPrevBlock(curblock);
+            } else if (curblock.endIns instanceof jumpIns) {
+                IRblock nextBlock = blocks.get(((jumpIns) curblock.endIns).label);
+                curblock.addNextBlock(nextBlock);
+                nextBlock.addPrevBlock(curblock);
+            }
+        }
+        return this;
     }
+
+    public CFGBuilder calcDom() {
+        if (curFunc == null) {
+            throw new RuntimeException("calcDom: curFunc == null");
+        }
+        initializeDomSets(curFunc.blocks);
+        computeDominance(curFunc.blocks);
+        return this;
+    }
+    
+    
+    public CFGBuilder calcDomF() {
+        if (curFunc == null) {
+            throw new RuntimeException("calcDomF: curFunc == null");
+        }
+        computeDominanceFrontier();
+        return this;
+    }
+
+
+
+    // public void build(IRFuncDef func) {
+    //     curFunc = func;
+
+    //     blockList = new ArrayList<>(func.blocks.values());
+    //     for (int i = 0; i < blockList.size(); i++) {
+    //         blockList.get(i).index = i;
+    //     }
+    //     initializeDomSets(func.blocks);
+    //     computeDominance(func.blocks);
+    //     computeDominanceFrontier(func.blocks);
+    //     buildDomTree();
+    // }
 
 
 

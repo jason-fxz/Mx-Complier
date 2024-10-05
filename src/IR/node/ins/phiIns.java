@@ -50,6 +50,15 @@ public class phiIns extends IRIns {
         throw new RuntimeException("phiIns: getValue: No such label in phiIns `" + label);
     }
 
+    public void replaceLabel(String old, String nw) {
+        for (var val : values) {
+            if (val.label.equals(old)) {
+                val.label = nw;
+                break;
+            }
+        }
+    }
+
     @Override
     public String toString() {
         String str = result.toString() + " = phi " + result.type.toString() + " ";

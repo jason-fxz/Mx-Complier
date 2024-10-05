@@ -1,3 +1,5 @@
+JAVA_RUN_OPTS=-ea -Xss10m -cp /usr/share/java/antlr-4.13.1-complete.jar:bin
+
 .PHONY: build
 build: 
 	./script/compile.sh
@@ -5,14 +7,6 @@ build:
 .PHONY: run
 run: 
 	java -Xss10m -cp /ulib/antlr-4.13.1-complete.jar:bin Main -S && cat ./src/builtin/builtin.s
-
-.PHONY: Sema
-Sema: build
-	./testcases/sema/scripts/test.bash 'java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -S' $(file)
-
-.PHONY: Semall
-Semall: build
-	time -p ./testcases/sema/scripts/test_all.bash 'java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -S' testcases/sema/
 
 .PHONY: clean
 clean:
@@ -22,28 +16,36 @@ clean:
 genbuiltin:
 	./script/gen_builtin.sh
 
+.PHONY: Sema
+Sema: build
+	./testcases/sema/scripts/test.bash 'java $(JAVA_RUN_OPTS) Main -S' $(file)
+
+.PHONY: Semall
+Semall: build
+	time -p ./testcases/sema/scripts/test_all.bash 'java $(JAVA_RUN_OPTS) Main -S' testcases/sema/
+
 .PHONY: irtest
 irtest: build genbuiltin
-	java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm -f test.mx -o output.ll\
+	java $(JAVA_RUN_OPTS) Main -emit-llvm -f test.mx -o output.ll\
 	&& ./script/gen_ir.sh
 
 .PHONY: asmtest
 asmtest: build genbuiltin
-	java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -S -f test.mx -o output.s\
+	java $(JAVA_RUN_OPTS) Main -S -f test.mx -o output.s\
 	&& reimu -f output.s,builtin.s -i test.in -o test.out && cat test.out
 
 .PHONY: llvmall
 llvmall: build genbuiltin
-	./testcases/codegen/scripts/test_llvm_ir_all.bash 'java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm' testcases/codegen ./builtin.ll
+	./testcases/codegen/scripts/test_llvm_ir_all.bash 'java $(JAVA_RUN_OPTS) Main -emit-llvm' testcases/codegen ./builtin.ll
 
 .PHONY: llvm
 llvm: build genbuiltin
-	./testcases/codegen/scripts/test_llvm_ir.bash 'java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -emit-llvm -debug-ast' $(file) ./builtin.ll
+	./testcases/codegen/scripts/test_llvm_ir.bash 'java $(JAVA_RUN_OPTS) Main -emit-llvm -debug-ast' $(file) ./builtin.ll
 
 .PHONY: asmall
 asmall: build genbuiltin
-	./testcases/codegen/scripts/test_asm_all.bash 'java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -S' testcases/codegen ./builtin.s
+	./testcases/codegen/scripts/test_asm_all.bash 'java $(JAVA_RUN_OPTS) Main -S' testcases/codegen ./builtin.s
 
 .PHONY: asm
 asm: build genbuiltin
-	./testcases/codegen/scripts/test_asm.bash 'java -ea -cp /usr/share/java/antlr-4.13.1-complete.jar:bin Main -S' $(file) ./builtin.s
+	./testcases/codegen/scripts/test_asm.bash 'java $(JAVA_RUN_OPTS) Main -S' $(file) ./builtin.s
