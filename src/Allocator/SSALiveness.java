@@ -20,15 +20,17 @@ public class SSALiveness {
     HashMap<IRIns, IRblock> blockOfIns = new HashMap<>();
     HashMap<IRvar, List<IRIns>> useOfVar = new HashMap<>();
     HashSet<IRblock> visited = new HashSet<>();
-    ExecutionTimer timer = ExecutionTimer.timer;
-
+    
     int totalUse = 0;
-
+    
     public SSALiveness(IRRoot irRoot) {
         this.irRoot = irRoot;
     }
-
+    
     public void run() {
+        var timer = ExecutionTimer.timer;
+        timer.start("Liveness");
+
         for (var func : irRoot.funcs) {
             curFunc = func;
             timer.start("SSA Liveness init");
@@ -38,7 +40,8 @@ public class SSALiveness {
             ssaLiveness();
             timer.stop("SSA Liveness main : " + func.name);
         }
-        
+        timer.stop("Liveness");
+
     }
 
     void getUseOfVar(IRIns ins) {

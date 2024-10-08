@@ -12,12 +12,14 @@ A Compiler of Mx, See [Compiler-Design-Implementation](https://github.com/ACMCla
     - [x] Translate AST to LLVM IR 
     - [x] Translate IR to RISC-V Assembly 
 - [x] Optimization
-    - [x] Mem2reg 
+    - [x] Mem2reg
     - [x] DCE
-    - [x] Register Allocation
-    - [ ] SCCP
+    - [x] Register Allocation 
+    - [x] SCCP 
     - [ ] Arithmetic-Simplification
-    - [ ] Inlining
+    - [ ] Inlining 🔥
+    - [ ] loop-invariant-code-motion
+    - [ ] Jump-Elimination 
 
 
 ## Overview
@@ -52,3 +54,10 @@ A Compiler of Mx, See [Compiler-Design-Implementation](https://github.com/ACMCla
 
     - DCE (Dead Code Elimination)
         See `src/Optimize/DCE.java` for details.
+
+    - SCCP (Sparse Conditional Constant Propagation)
+        See `src/Optimize/SCCP.java` for details.
+
+    - Jump-Elimination
+        Just delete the block that only has one jump instruction.
+        I just write in `src/Optimize/DCE.java`.

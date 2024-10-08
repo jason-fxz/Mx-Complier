@@ -39,6 +39,8 @@ public class SSAalloctor {
     }
 
     public void run() {
+        var timer = Util.ExecutionTimer.timer;
+        timer.start("Allocator");
         for (var func : irRoot.funcs) {
             curFunc = func;
             SSASpill();
@@ -46,6 +48,7 @@ public class SSAalloctor {
             insertBlockOnCriticalEdges();
             reorderBlocks();
         }
+        timer.stop("Allocator");
     }
 
     private void Spillvars(ArrayList<IRvar> vars) {

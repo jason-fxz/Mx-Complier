@@ -9,20 +9,84 @@ import java.util.Set;
 
 import IR.item.IRvar;
 import IR.node.IRRoot;
+import IR.node.IRblock;
 import IR.node.def.IRFuncDef;
 import IR.node.ins.IRIns;
+import IR.node.ins.branchIns;
 import IR.node.ins.callIns;
+import IR.node.ins.jumpIns;
+import Optimize.CFGBuilder;
+
 
 public class DCE {
     IRRoot irRoot;
+    CFGBuilder CFG = new CFGBuilder();
 
     public DCE(IRRoot irRoot) {
         this.irRoot = irRoot;
     }
 
     public void run() {
+        var timer = Util.ExecutionTimer.timer;
+        timer.start("DCE");        
         for (var func : irRoot.funcs) {
+            CFG.buildCFG(func);
+            removeUnreachableBlock(func);
+            // jumpElimination(func);
             removeUnuseReg(func);
+        }
+        timer.stop("DCE");
+    }
+
+    void jumpElimination(IRFuncDef func) {
+        for (var block : func.blocks.values()) {
+            if (block.phiList.size() == 0 && block.insList.size() == 0 && block.endIns instanceof jumpIns) {
+                var jump = (jumpIns) block.endIns;
+                var succ = func.blocks.get(jump.label);
+
+                if (!succ.phiList.isEmpty()) continue;
+    
+                for (var prev : block.getPrevBlocks()) {
+                    if (prev.endIns instanceof jumpIns) {
+                        ((jumpIns)prev.endIns).replaceLabel(block.Label, jump.label);
+                    } else if (prev.endIns instanceof branchIns) {
+                        ((branchIns)prev.endIns).replaceLabel(block.Label, jump.label);
+                    } else throw new RuntimeException("jumpElimination: unexpected endIns");
+                    prev.getNextBlocks().remove(block);
+                    prev.getNextBlocks().add(succ);
+
+                    succ.getPrevBlocks().remove(block);
+                    succ.getPrevBlocks().add(prev);
+
+                    succ.phiList.forEach(phi -> {
+                        phi.replaceLabel(block.Label, prev.Label);
+                    });
+                }
+                
+            }
+        }
+
+    }
+
+    void removeUnreachableBlock(IRFuncDef curFunc) {
+        Set<IRblock> reachable = new HashSet<>();
+        Queue<IRblock> workList = new ArrayDeque<>();
+        workList.add(curFunc.entryBlock);
+        reachable.add(curFunc.entryBlock);
+        while (!workList.isEmpty()) {
+            var block = workList.poll();
+            for (var suc : block.getNextBlocks()) {
+                if (!reachable.contains(suc)) {
+                    reachable.add(suc);
+                    workList.add(suc);
+                }
+            }
+        }
+        curFunc.blocks.values().removeIf(block -> !reachable.contains(block));
+        for (var block : curFunc.blocks.values()) {
+            for (var phi : block.phiList) {
+                phi.values.removeIf(item -> !reachable.contains(curFunc.blocks.get(item.label)));
+            }
         }
     }
 

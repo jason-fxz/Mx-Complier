@@ -59,6 +59,10 @@ public class phiIns extends IRIns {
         }
     }
 
+    public void removeLabel(String label) {
+        values.removeIf(val -> val.label.equals(label));
+    }
+
     @Override
     public String toString() {
         String str = result.toString() + " = phi " + result.type.toString() + " ";
@@ -84,7 +88,7 @@ public class phiIns extends IRIns {
     @Override
     public void replaceUse(IRitem old, IRitem nw) {
         for (var val : values) {
-            if (val.value.equals(old)) {
+            if (val.value != null && val.value.equals(old)) {
                 val.value = nw;
             }
         }

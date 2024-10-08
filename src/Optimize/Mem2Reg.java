@@ -280,9 +280,13 @@ public class Mem2Reg {
     }
 
     public void run() {
+        var timer = Util.ExecutionTimer.timer;
+
+        timer.start("Mem2Reg");        
         for (var funcDef : root.funcs) {
             visitFunc(funcDef);
         }
+        timer.stop("Mem2Reg");
     }
 
 }

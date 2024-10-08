@@ -22,11 +22,14 @@ public class LoopAnalysis {
     }
 
     public void run() {
+        var timer = Util.ExecutionTimer.timer;
+        timer.start("LoopAnalysis");
         for (var func : irRoot.funcs) {
             CFG.buildCFG(func).calcDom();
             findBackEdges(func);
             getLoops(func);
         }
+        timer.stop("LoopAnalysis");
     }
 
     void findBackEdges(IRFuncDef func) {

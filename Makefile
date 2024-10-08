@@ -32,7 +32,7 @@ irtest: build genbuiltin
 .PHONY: asmtest
 asmtest: build genbuiltin
 	java $(JAVA_RUN_OPTS) Main -S -f test.mx -o output.s\
-	&& reimu -f output.s,builtin.s -i test.in -o test.out && cat test.out
+	&& reimu --all -f output.s,builtin.s -i test.in -o test.out
 
 .PHONY: llvmall
 llvmall: build genbuiltin

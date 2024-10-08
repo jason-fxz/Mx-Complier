@@ -53,26 +53,21 @@ public class Main {
         
         ExecutionTimer timer = ExecutionTimer.timer;
         
-        try {
+        Compiling: try {
             
             RootNode ASTRoot;
             globalScope gScope = new globalScope();
-            // ExecutionTimer.timer 
-            // Lexer
-            timer.start("Lexer");
+            
+            // Antlr: Lexer & Parser
+            timer.start("Lexer & Parser");
             MxLexer lexer = new MxLexer(CharStreams.fromStream(input));
             lexer.removeErrorListeners();
             lexer.addErrorListener(new MxErrorListener());
-            timer.stop("Lexer");
-
-            // Parse
-            timer.start("Parser");
             MxParser parser = new MxParser(new CommonTokenStream(lexer));
             parser.removeErrorListeners();
             parser.addErrorListener(new MxErrorListener());
-            timer.stop("Parser");
-
             ProgramContext parseTreeRoot = parser.program();
+            timer.stop("Lexer & Parser");
             
             // Build AST
             timer.start("ASTBuilder");
@@ -93,8 +88,7 @@ public class Main {
             timer.stop("Semantic");
 
             if (ArgP.hasArgument("-fsyntax-only")) {
-                timer.printTimeLog();
-                System.exit(0);
+                break Compiling;
             }
 
             // IRBuilder
@@ -104,40 +98,26 @@ public class Main {
             IRRoot irRoot = irBuilder.getRoot();
             timer.stop("IRBuilder");
             
+            // Optimize
 
-            // Mem2Reg
-            timer.start("Mem2Reg");
             new Optimize.Mem2Reg(irRoot).run();
-            timer.stop("Mem2Reg");
+            new Optimize.DCE(irRoot).run();     // Dead Code Elimination
+            new Optimize.SCCP(irRoot).run();    // Sparse Conditional Constant Propagation
+            new Optimize.DCE(irRoot).run();            
+            new Optimize.LoopAnalysis(irRoot).run(); // Loop Analysis : calculate loop depth 
             
-            // Dead Code Elimination
-            timer.start("DCE");
-            new Optimize.DCE(irRoot).run();
-            timer.stop("DCE");
-            
-            // Loop Analysis : calculate loop depth
-            timer.start("LoopAnalysis");
-            new Optimize.LoopAnalysis(irRoot).run();
-            timer.stop("LoopAnalysis");
-            
-
-            // Allocator
-            timer.start("Liveness");
-            new SSALiveness(irRoot).run();
-            timer.stop("Liveness");
-            timer.start("Allocator");
-            new SSAalloctor(irRoot).run();
-            timer.stop("Allocator");
-
             // print IR
             if (ArgP.hasArgument("-emit-llvm")) {
                 output.println(irRoot.toString());
-                timer.printTimeLog();
-                System.exit(0);
+                break Compiling;
             }
             if (ArgP.hasArgument("-debug-ir")) {
                 System.err.println(irRoot.toString());
             }
+
+            // Allocator
+            new SSALiveness(irRoot).run();
+            new SSAalloctor(irRoot).run();
 
             // ASMBuilder
             timer.start("ASMBuilder");
@@ -148,10 +128,9 @@ public class Main {
             // print ASM
             if (ArgP.hasArgument("-S")) {
                 output.println(asmBuilder.getRoot());
-                timer.printTimeLog();
-                System.exit(0);
+                break Compiling;
             }
-
+            
             
             
         } catch (error err) {
@@ -159,6 +138,10 @@ public class Main {
             System.out.println(err.getErrorType());
             System.exit(127);
         }
+        if (ArgP.hasArgument("-log-time")) {
+            timer.printTimeLog();
+        }
+
 
         output.flush();
         output.close();
