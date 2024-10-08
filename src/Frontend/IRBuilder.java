@@ -539,11 +539,15 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     }
 
     private IRitem handleNewArray(ArrayList<IRitem> asize, int idx) {
-        if (idx == asize.size())
-            return new IRLiteral("null");
+        // if (idx == asize.size())
+        //     return new IRLiteral("null");
         IRvar var = new IRvar(IRLabeler.getIdLabel("%new.array"));
         // call __mx_allocate_array
         curBlock.addIns(new callIns(var, "__mx_allocate_array", new IRLiteral("4"), asize.get(idx)));
+
+        if (idx == asize.size() - 1) {
+            return var;
+        }
 
         String looplabel = IRLabeler.getIdLabel("arrayinit.for");
         LoopStack_break.add(looplabel + ".end");
