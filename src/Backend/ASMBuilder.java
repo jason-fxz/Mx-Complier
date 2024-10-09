@@ -253,6 +253,7 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         int regSaveCur = curFunc.regSaveCur;
         for (var irvar : it.liveIn) {
             var reg = (ASMReg)var2ASMItem.get(irvar);
+            if (!it.liveOut.contains(irvar) && (reg.getIndex() < 10 || reg.getIndex() > 9 + Math.max(8, it.args.size()))) continue;
             if (reg.isCallerSave()) {
                 regSaveCur -= 4;
                 var addr = new ASMAddr(ASMReg.sp, regSaveCur);
@@ -312,12 +313,19 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
                 udpreg = (ASMReg) asmitem;
             }
         }
-
+        
         // Restore caller-save registers
-        for (var entry : callerSaveMap.entrySet()) {
-            if (entry.getKey().equals(udpreg)) continue;
-            handleASMAddrLoad(entry.getKey(), entry.getValue(), "restore caller-save registers");
+        for (var irvar : it.liveOut) {
+            var reg = (ASMReg)var2ASMItem.get(irvar);
+            if (callerSaveMap.containsKey(reg) && !reg.equals(udpreg)) {
+                handleASMAddrLoad(reg, callerSaveMap.get(reg), "restore caller-save registers");
+            }
         }
+
+        // for (var entry : callerSaveMap.entrySet()) {
+        //     if (entry.getKey().equals(udpreg)) continue;
+        //     handleASMAddrLoad(entry.getKey(), entry.getValue(), "restore caller-save registers");
+        // }
         
         return null;
     }

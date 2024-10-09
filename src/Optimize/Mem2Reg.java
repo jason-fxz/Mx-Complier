@@ -228,52 +228,53 @@ public class Mem2Reg {
         }
     }
 
-    void insertBlockOnCriticalEdges() {
-        List<Pair<IRblock, IRblock>> criticalEdges = findCirticalEdges();
+    // void insertBlockOnCriticalEdges() {
+    //     List<Pair<IRblock, IRblock>> criticalEdges = findCirticalEdges();
 
-        for (var edge : criticalEdges) {
-            IRblock newBlock = new IRblock(IRLabeler.getIdLabel(".CTE"));
+    //     for (var edge : criticalEdges) {
+    //         IRblock newBlock = new IRblock(IRLabeler.getIdLabel(".CTE"));
 
-            IRblock pred = edge.first;
-            IRblock succ = edge.second;
+    //         IRblock pred = edge.first;
+    //         IRblock succ = edge.second;
 
-            if (pred.endIns instanceof jumpIns) {
-                ((jumpIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
-            } else if (pred.endIns instanceof branchIns) {
-                ((branchIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
-            } else
-                throw new RuntimeException("insertBlockOnCriticalEdges: pred.endIns not jumpIns or branchIns");
+    //         if (pred.endIns instanceof jumpIns) {
+    //             ((jumpIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
+    //         } else if (pred.endIns instanceof branchIns) {
+    //             ((branchIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
+    //         } else if (pred.endIns instanceof icmpbranchIns) {
+    //             ((icmpbranchIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
+    //         } else throw new RuntimeException("insertBlockOnCriticalEdges: pred.endIns not jumpIns or branchIns");
 
-            newBlock.setEndIns(new jumpIns(succ.Label));
-            newBlock.initPrevNextBlocks();
+    //         newBlock.setEndIns(new jumpIns(succ.Label));
+    //         newBlock.initPrevNextBlocks();
 
-            pred.getNextBlocks().remove(succ);
-            pred.addNextBlock(newBlock);
-            newBlock.addPrevBlock(pred);
+    //         pred.getNextBlocks().remove(succ);
+    //         pred.addNextBlock(newBlock);
+    //         newBlock.addPrevBlock(pred);
 
-            succ.getPrevBlocks().remove(pred);
-            succ.addPrevBlock(newBlock);
-            newBlock.addNextBlock(succ);
+    //         succ.getPrevBlocks().remove(pred);
+    //         succ.addPrevBlock(newBlock);
+    //         newBlock.addNextBlock(succ);
 
-            curFunc.blocks.put(newBlock.Label, newBlock);
-        }
+    //         curFunc.blocks.put(newBlock.Label, newBlock);
+    //     }
 
-    }
+    // }
 
-    List<Pair<IRblock, IRblock>> findCirticalEdges() {
-        List<Pair<IRblock, IRblock>> criticalEdges = new ArrayList<>();
+    // List<Pair<IRblock, IRblock>> findCirticalEdges() {
+    //     List<Pair<IRblock, IRblock>> criticalEdges = new ArrayList<>();
 
-        for (var block : CFG.blockList) {
-            if (block.getNextBlocks().size() > 1) {
-                for (var nextBlock : block.getNextBlocks()) {
-                    if (nextBlock.getPrevBlocks().size() > 1) {
-                        criticalEdges.add(new Pair<>(block, nextBlock));
-                    }
-                }
-            }
-        }
-        return criticalEdges;
-    }
+    //     for (var block : CFG.blockList) {
+    //         if (block.getNextBlocks().size() > 1) {
+    //             for (var nextBlock : block.getNextBlocks()) {
+    //                 if (nextBlock.getPrevBlocks().size() > 1) {
+    //                     criticalEdges.add(new Pair<>(block, nextBlock));
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     return criticalEdges;
+    // }
 
     void visitFunc(IRFuncDef funcDef) {
         allocVar = new HashSet<>();

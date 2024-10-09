@@ -80,7 +80,7 @@ public class IRblock extends IRNode {
             return ;
             // throw new RuntimeException("endIns have been set");
         }
-        if (ins instanceof returnIns || ins instanceof branchIns || ins instanceof jumpIns) {
+        if (ins instanceof returnIns || ins instanceof branchIns || ins instanceof jumpIns || ins instanceof icmpbranchIns) {
             throw new RuntimeException("endIns should be the last instruction in a block"); 
         }
         insList.add(ins);
