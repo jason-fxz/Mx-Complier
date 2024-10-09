@@ -24,9 +24,12 @@ public class ArithmeticSimplification {
     }
 
     public void run() {
+        var timer = Util.ExecutionTimer.timer;
+        timer.start("ArithmeticSimplification");
         for (var func : irRoot.funcs) {
             instcombine(func);
         }
+        timer.stop("ArithmeticSimplification");
     }
 
     void setConst2Right(arithIns ins) {

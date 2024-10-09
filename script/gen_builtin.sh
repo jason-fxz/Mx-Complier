@@ -2,7 +2,7 @@
 
 
 # 定义输入文件和输出文件
-input_file=$(find src -name "builtin.c")
+input_file=$(find . -name "builtin.c")
 
 echo $input_file
 tmp_file="builtin.tmp.ll"
