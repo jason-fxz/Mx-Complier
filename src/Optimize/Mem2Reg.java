@@ -18,9 +18,11 @@ import IR.node.def.IRFuncDef;
 import IR.node.ins.IRIns;
 import IR.node.ins.allocaIns;
 import IR.node.ins.branchIns;
+import IR.node.ins.icmpbranchIns;
 import IR.node.ins.jumpIns;
 import IR.node.ins.loadIns;
 import IR.node.ins.phiIns;
+import IR.node.ins.returnIns;
 import IR.node.ins.storeIns;
 import Util.IRLabeler;
 import Util.Pair;
@@ -170,6 +172,21 @@ public class Mem2Reg {
             curVarValue.push(new HashMap<>());
             replaceVar(falseBlock, visited, curVarValue, block);
             curVarValue.pop();
+        } else if (block.endIns instanceof icmpbranchIns) {
+            IRblock trueBlock = curFunc.blocks.get(((icmpbranchIns) block.endIns).trueLabel);
+            IRblock falseBlock = curFunc.blocks.get(((icmpbranchIns) block.endIns).falseLabel);
+
+            curVarValue.push(new HashMap<>());
+            replaceVar(trueBlock, visited, curVarValue, block);
+            curVarValue.pop();
+
+            curVarValue.push(new HashMap<>());
+            replaceVar(falseBlock, visited, curVarValue, block);
+            curVarValue.pop();
+        } else if (block.endIns instanceof returnIns) {
+            // do nothing
+        } else {
+            throw new RuntimeException("replaceVar: unexpected endIns");
         }
     }
 

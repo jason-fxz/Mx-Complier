@@ -14,6 +14,8 @@ import IR.node.def.IRFuncDef;
 import IR.node.ins.IRIns;
 import IR.node.ins.branchIns;
 import IR.node.ins.callIns;
+import IR.node.ins.icmpIns;
+import IR.node.ins.icmpbranchIns;
 import IR.node.ins.jumpIns;
 import Optimize.CFGBuilder;
 
@@ -53,7 +55,9 @@ public class DCE {
                         ((jumpIns)prev.endIns).replaceLabel(block.Label, jump.label);
                     } else if (prev.endIns instanceof branchIns) {
                         ((branchIns)prev.endIns).replaceLabel(block.Label, jump.label);
-                    } else throw new RuntimeException("jumpElimination: unexpected endIns");
+                    } else if (prev.endIns instanceof icmpbranchIns) {
+                        ((icmpbranchIns)prev.endIns).replaceLabel(block.Label, jump.label);
+                    }  else throw new RuntimeException("jumpElimination: unexpected endIns");
                     prev.getNextBlocks().remove(block);
                     prev.getNextBlocks().add(succ);
 

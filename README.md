@@ -16,10 +16,11 @@ A Compiler of Mx, See [Compiler-Design-Implementation](https://github.com/ACMCla
     - [x] DCE
     - [x] Register Allocation 
     - [x] SCCP 
-    - [ ] Arithmetic-Simplification
+    - [x] Arithmetic-Simplification
     - [ ] Inlining 🔥
     - [ ] loop-invariant-code-motion
-    - [ ] Jump-Elimination 
+    - [ ] local-CSE
+    - [x] Jump-Elimination 
 
 
 ## Overview

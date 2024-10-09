@@ -39,5 +39,7 @@ public interface ASMVisitor<T> {
     T visit(ASMArithiIns asmArithiIns);
 
     T visit(ASMUnaryIns asmUnaryIns);
+
+    T visit(ASMBrIns asmBrIns);
     
 }

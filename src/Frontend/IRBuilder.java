@@ -221,6 +221,16 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
             IRblock els = func.blocks.get(((branchIns) cur.endIns).falseLabel);
             dfs(then, func, visited);
             dfs(els, func, visited);
+        }  else if (cur.endIns instanceof icmpbranchIns) {
+            IRblock then = func.blocks.get(((icmpbranchIns) cur.endIns).trueLabel);
+            IRblock els = func.blocks.get(((icmpbranchIns) cur.endIns).falseLabel);
+            dfs(then, func, visited);
+            dfs(els, func, visited);
+        } else if (cur.endIns instanceof returnIns) {
+            // do nothing
+        } else {
+            throw new RuntimeException("Unexpected endIns");
+
         }
     }
 
@@ -397,12 +407,17 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
     @Override
     public IRhelper visit(ConditionExprNode it) {
-        IRitem cond = it.cond.accept(this).exprVar;
         IRblock cond_ture = curFunc.newBlock(IRLabeler.getIdLabel("cond.true"));
         IRblock cond_false = curFunc.newBlock(IRLabeler.getIdLabel("cond.false"));
         IRblock cond_end = curFunc.newBlock(IRLabeler.getIdLabel("cond.end"));
-
-        curBlock.setEndIns(new branchIns(cond, cond_ture.getLabel(), cond_false.getLabel()));
+        
+        if (isCmpExpr(it.cond)) {
+            var icmp = handleCmpExpr((BinaryExprNode)it.cond);
+            curBlock.setEndIns(new icmpbranchIns(icmp, cond_ture.getLabel(), cond_false.getLabel()));
+        } else {
+            IRitem cond = it.cond.accept(this).exprVar;
+            curBlock.setEndIns(new branchIns(cond, cond_ture.getLabel(), cond_false.getLabel()));
+        }        
 
         IRvar resptr = null;
         if (!it.thenExpr.info.isVoid) {
@@ -564,12 +579,14 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         curBlock.setEndIns(new jumpIns(for_cond.getLabel()));
 
         curBlock = for_cond;
-        IRvar cond = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%tmp"));
+        // IRvar cond = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%tmp"));
         IRvar vari = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%tmp"));
 
         curBlock.addIns(new loadIns(vari, variaddr));
-        curBlock.addIns(new icmpIns(cond, "slt", vari, asize.get(idx)));
-        curBlock.setEndIns(new branchIns(cond, for_body.getLabel(), for_end.getLabel()));
+        // curBlock.addIns(new icmpIns(cond, "slt", vari, asize.get(idx)));
+        // curBlock.setEndIns(new branchIns(cond, for_body.getLabel(), for_end.getLabel()));
+        curBlock.setEndIns(new icmpbranchIns(vari, asize.get(idx), "slt", for_body.getLabel(), for_end.getLabel()));
+
 
         curBlock = for_step;
         IRvar vari1 = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%tmp"));
@@ -738,6 +755,50 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         return null;
     }
 
+    private boolean isCmpExpr(ExprNode expr) {
+        if (expr instanceof BinaryExprNode) {
+            return ((BinaryExprNode) expr).op.in("==", "!=", "<", ">", "<=", ">=");
+        }
+        return false;
+    }
+
+    private icmpIns handleCmpExpr(BinaryExprNode it) {
+        String opstr = it.op.toIRIns();
+
+        IRitem lhsvar = it.lhs.accept(this).exprVar;
+        IRitem rhsvar = it.rhs.accept(this).exprVar;
+        IRvar res = null;
+        var lhsinfo = it.lhs.info;
+
+        if (lhsinfo.isArray() || lhsinfo.isCustom()) {
+            // only support == and != for array and class
+            res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
+            if (it.op.in("==", "!=")) {
+                return new icmpIns(res, opstr, lhsvar, rhsvar);
+            } else throw new UnsupportedOperationException("handleCmpExpr: Array/Custom don't accept " + it.op);
+        } else if (lhsinfo.equals(BuiltinElements.stringType)) {
+           if (it.op.in("==", "!=", "<", ">", "<=", ">=")) {
+                // strcmp my builtin.c
+                // int __mx_string_compare(char *s1, char *s2)
+                IRvar tmpcmp = new IRvar(IRType.IRIntType, IRLabeler.getIdLabel("%str.cmp"));
+                res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%str.cmp." + opstr));
+                curBlock.addIns(new callIns(tmpcmp, "__mx_string_compare", lhsvar, rhsvar));
+                return new icmpIns(res, opstr, tmpcmp, new IRLiteral("0"));
+            } else throw new UnsupportedOperationException("handleCmpExpr: WTF? String binary: " + it.op);
+        } else if (lhsinfo.equals(BuiltinElements.intType)) {
+            if (it.op.in("==", "!=", "<", ">", "<=", ">=")) {
+                // camp
+                res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
+                return new icmpIns(res, opstr, lhsvar, rhsvar);
+            } else throw new UnsupportedOperationException("handleCmpExpr: WTF? int binary: " + it.op);
+        } else if (lhsinfo.equals(BuiltinElements.boolType)) {
+            if (it.op.in("==", "!=")) {
+                res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
+                return new icmpIns(res, opstr, lhsvar, rhsvar);
+            } else throw new UnsupportedOperationException("handleCmpExpr: WTF? bool binary: " + it.op);
+        } throw new UnsupportedOperationException("handleCmpExpr: WTF?? " + lhsinfo);
+    }
+
     @Override
     public IRhelper visit(IfStmtNode it) {
         String iflabel = IRLabeler.getIdLabel("if");
@@ -745,8 +806,14 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         IRblock if_else = curFunc.newBlock(iflabel + ".else");
         IRblock if_end = curFunc.newBlock(iflabel + ".end");
 
-        IRitem cond = it.condition.accept(this).exprVar;
-        curBlock.setEndIns(new branchIns(cond, if_then.getLabel(), if_else.getLabel()));
+        if (isCmpExpr(it.condition)) {
+            var icmp = handleCmpExpr((BinaryExprNode)it.condition);
+            curBlock.setEndIns(new icmpbranchIns(icmp, if_then.getLabel(), if_else.getLabel()));
+        } else {
+            IRitem cond = it.condition.accept(this).exprVar;
+            curBlock.setEndIns(new branchIns(cond, if_then.getLabel(), if_else.getLabel()));
+        }
+
 
         curBlock = if_then;
         it.thenStmt.accept(this);
@@ -782,8 +849,13 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         curBlock = for_cond;
         if (it.cond != null) {
-            IRitem cond = it.cond.accept(this).exprVar;
-            curBlock.setEndIns(new branchIns(cond, for_body.getLabel(), for_end.getLabel()));
+            if (isCmpExpr(it.cond)) {
+                var icmp = handleCmpExpr((BinaryExprNode)it.cond);
+                curBlock.setEndIns(new icmpbranchIns(icmp, for_body.getLabel(), for_end.getLabel()));
+            } else {
+                IRitem cond = it.cond.accept(this).exprVar;
+                curBlock.setEndIns(new branchIns(cond, for_body.getLabel(), for_end.getLabel()));
+            }
         } else {
             curBlock.setEndIns(new jumpIns(for_body.getLabel()));
         }
@@ -818,9 +890,13 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         curBlock.setEndIns(new jumpIns(while_cond.getLabel()));
 
         curBlock = while_cond;
-        IRitem cond = it.condition.accept(this).exprVar;
-        curBlock.setEndIns(new branchIns(cond, while_body.getLabel(), while_end.getLabel()));
-
+        if (isCmpExpr(it.condition)) {
+            var icmp = handleCmpExpr((BinaryExprNode)it.condition);
+            curBlock.setEndIns(new icmpbranchIns(icmp, while_body.getLabel(), while_end.getLabel()));
+        } else {
+            IRitem cond = it.condition.accept(this).exprVar;
+            curBlock.setEndIns(new branchIns(cond, while_body.getLabel(), while_end.getLabel()));
+        }
         curBlock = while_body;
         it.body.accept(this);
         if (!curBlock.isEnd()) curBlock.setEndIns(new jumpIns(while_cond.getLabel()));

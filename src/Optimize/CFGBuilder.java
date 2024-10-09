@@ -14,7 +14,9 @@ import java.util.Set;
 import IR.node.IRblock;
 import IR.node.def.IRFuncDef;
 import IR.node.ins.branchIns;
+import IR.node.ins.icmpbranchIns;
 import IR.node.ins.jumpIns;
+import IR.node.ins.returnIns;
 
 public class CFGBuilder {
     private IRFuncDef curFunc;
@@ -176,6 +178,17 @@ public class CFGBuilder {
                 IRblock nextBlock = blocks.get(((jumpIns) curblock.endIns).label);
                 curblock.addNextBlock(nextBlock);
                 nextBlock.addPrevBlock(curblock);
+            } else if (curblock.endIns instanceof icmpbranchIns) {
+                IRblock trueBlock = blocks.get(((icmpbranchIns) curblock.endIns).trueLabel);
+                IRblock falseBlock = blocks.get(((icmpbranchIns) curblock.endIns).falseLabel);
+                curblock.addNextBlock(trueBlock);
+                curblock.addNextBlock(falseBlock);
+                trueBlock.addPrevBlock(curblock);
+                falseBlock.addPrevBlock(curblock);
+            } else if (curblock.endIns instanceof returnIns) {
+                // do nothing
+            } else {
+                throw new RuntimeException("buildCFG: unexpected endIns");
             }
         }
         return this;

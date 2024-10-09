@@ -251,6 +251,32 @@ public class SCCP {
                 // do nothing
             }
 
+        } else if (ins instanceof icmpbranchIns) {
+            var icmpbr = (icmpbranchIns) ins;
+            var lt1 = getLattice(icmpbr.lhs);
+            var lt2 = getLattice(icmpbr.rhs);
+            
+            Lattice condLt = null;
+            if (lt1.type == latticeType.CONST && lt2.type == latticeType.CONST) {
+                condLt = computeIcmp(icmpbr.op, lt1.value, lt2.value);
+            } else if (lt1.type == latticeType.BOTTOM || lt2.type == latticeType.BOTTOM) {
+                condLt = new Lattice(latticeType.BOTTOM, null);
+            } else {
+                condLt = new Lattice(latticeType.TOP, null);
+            }
+
+            if (condLt.type == latticeType.BOTTOM) {
+                edgesQueue.add((new Edge(block, curFunc.blocks.get(icmpbr.trueLabel))));
+                edgesQueue.add((new Edge(block, curFunc.blocks.get(icmpbr.falseLabel))));
+            } else if (condLt.type == latticeType.CONST) {
+                if (condLt.value.getInt() == 1) {
+                    edgesQueue.add((new Edge(block, curFunc.blocks.get(icmpbr.trueLabel))));
+                } else {
+                    edgesQueue.add((new Edge(block, curFunc.blocks.get(icmpbr.falseLabel))));
+                }
+            } else {
+                // do nothing
+            }            
         } else throw new RuntimeException("Ins " + ins + " should not be the end of block");
 
     }
@@ -355,6 +381,24 @@ public class SCCP {
                     } else {
                         block.endIns = new jumpIns(br.falseLabel);
                         rewirePhi(curFunc.blocks.get(br.trueLabel), block.getLabel());
+                    }
+                }
+            }
+
+            if (block.endIns instanceof icmpbranchIns) {
+                var icmpbr = (icmpbranchIns) block.endIns;
+                var lt1 = getLattice(icmpbr.lhs);
+                var lt2 = getLattice(icmpbr.rhs);
+                if (lt1.type == latticeType.CONST && lt2.type == latticeType.CONST) {
+                    var condLt = computeIcmp(icmpbr.op, lt1.value, lt2.value);
+                    if (condLt.type == latticeType.CONST) {
+                        if (condLt.value.getInt() == 1) {
+                            block.endIns = new jumpIns(icmpbr.trueLabel);
+                            rewirePhi(curFunc.blocks.get(icmpbr.falseLabel), block.getLabel());
+                        } else {
+                            block.endIns = new jumpIns(icmpbr.falseLabel);
+                            rewirePhi(curFunc.blocks.get(icmpbr.trueLabel), block.getLabel());
+                        }
                     }
                 }
             }

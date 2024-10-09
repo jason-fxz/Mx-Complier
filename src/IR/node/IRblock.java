@@ -94,7 +94,7 @@ public class IRblock extends IRNode {
         if (endIns != null) {
             throw new RuntimeException("endIns have been set");
         }
-        if (ins instanceof returnIns || ins instanceof branchIns || ins instanceof jumpIns) {
+        if (ins instanceof returnIns || ins instanceof branchIns || ins instanceof jumpIns || ins instanceof icmpbranchIns) {
             endIns = ins;
         } else {
             throw new RuntimeException("endIns should be the Jump instruction in a block");

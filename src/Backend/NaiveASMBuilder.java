@@ -470,4 +470,9 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
         throw new UnsupportedOperationException("Should Not visit IRStructDef");
     }
 
+    @Override
+    public ASMHelper visit(icmpbranchIns icmpbranchIns) {
+        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+    }
+
 }

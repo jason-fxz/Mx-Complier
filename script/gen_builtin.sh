@@ -11,7 +11,7 @@ asm_file="builtin.s"
 
 # 生成 LLVM IR
 echo "gen LLVM IR..."
-clang-17 -S -emit-llvm --target=riscv32-unknown-elf -O0 -fno-discard-value-names -fno-builtin-printf -fno-builtin-memcpy -fno-builtin-malloc -fno-builtin-strlen \
+clang-17 -S -emit-llvm --target=riscv32-unknown-elf -O2 -fno-discard-value-names -fno-builtin-printf -fno-builtin-memcpy -fno-builtin-malloc -fno-builtin-strlen \
     $input_file -o $tmp_file
 
 

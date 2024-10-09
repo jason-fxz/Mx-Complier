@@ -7,6 +7,7 @@ import ASM.node.global.*;
 import ASM.node.ins.ASMArithIns;
 import ASM.node.ins.ASMArithiIns;
 import ASM.node.ins.ASMBeqzIns;
+import ASM.node.ins.ASMBrIns;
 import ASM.node.ins.ASMCallIns;
 import ASM.node.ins.ASMJumpIns;
 import ASM.node.ins.ASMLoadAddrIns;
@@ -716,6 +717,32 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
 
         }
 
+    }
+
+    @Override
+    public ASMHelper visit(icmpbranchIns it) {
+        var rs1 = loadIRitem(it.lhs, ASMReg.t1, "load lhs");
+        var rs2 = loadIRitem(it.rhs, ASMReg.t2, "load rhs");
+
+        String tureLabel = getLabel(it.trueLabel);
+        String falseLabel = getLabel(it.falseLabel);
+        String tmpLabel = getLabel("L.branch." + branchLabelCnt++);
+
+        switch (it.op) {
+            case "eq" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "beq", tmpLabel));
+            case "ne" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "bne", tmpLabel));
+            case "slt" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "blt", tmpLabel));
+            case "sgt" -> curBlock.addIns(new ASMBrIns(rs2, rs1, "blt", tmpLabel));
+            case "sle" -> curBlock.addIns(new ASMBrIns(rs2, rs1, "bge", tmpLabel));
+            case "sge" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "bge", tmpLabel));
+            default -> throw new UnsupportedOperationException("Unknown icmpIns op");
+        }
+        curBlock.addJumpIns(new ASMJumpIns(falseLabel));
+        ASMBlock tmpblock = new ASMBlock(tmpLabel);
+        curFunc.addBlock(tmpblock);
+        curBlock = tmpblock;
+        curBlock.addJumpIns(new ASMJumpIns(tureLabel));
+        return null;
     }
 
 }

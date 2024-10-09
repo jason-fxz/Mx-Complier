@@ -6,7 +6,7 @@ build:
 
 .PHONY: run
 run: 
-	java -Xss10m -cp /ulib/antlr-4.13.1-complete.jar:bin Main -S && cat ./src/builtin/builtin.s
+	java -Xss10m -cp /ulib/antlr-4.13.1-complete.jar:bin Main -S -log-time && cat ./src/builtin/builtin.s
 
 .PHONY: clean
 clean:
@@ -48,4 +48,4 @@ asmall: build genbuiltin
 
 .PHONY: asm
 asm: build genbuiltin
-	./testcases/codegen/scripts/test_asm.bash 'java $(JAVA_RUN_OPTS) Main -S' $(file) ./builtin.s
+	./testcases/codegen/scripts/test_asm.bash 'java $(JAVA_RUN_OPTS) Main -S -log-time' $(file) ./builtin.s

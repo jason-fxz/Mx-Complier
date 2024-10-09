@@ -45,6 +45,8 @@ public interface IRvisitor<T> {
 
     T visit(IRStructDef it);
 
+    T visit(icmpbranchIns icmpbranchIns);
+
 
     
     

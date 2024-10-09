@@ -16,6 +16,7 @@ import IR.node.IRblock;
 import IR.node.def.IRFuncDef;
 import IR.node.ins.IRIns;
 import IR.node.ins.branchIns;
+import IR.node.ins.icmpbranchIns;
 import IR.node.ins.jumpIns;
 import IR.node.ins.phiIns;
 import Optimize.CFGBuilder;
@@ -46,7 +47,7 @@ public class SSAalloctor {
             SSASpill();
             SSAColor();
             insertBlockOnCriticalEdges();
-            reorderBlocks();
+            // reorderBlocks();
         }
         timer.stop("Allocator");
     }
@@ -235,8 +236,9 @@ public class SSAalloctor {
                 ((jumpIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
             } else if (pred.endIns instanceof branchIns) {
                 ((branchIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
-            } else
-                throw new RuntimeException("insertBlockOnCriticalEdges: pred.endIns not jumpIns or branchIns");
+            } else if (pred.endIns instanceof icmpbranchIns) {
+                ((icmpbranchIns) pred.endIns).replaceLabel(succ.Label, newBlock.Label);
+            } else throw new RuntimeException("insertBlockOnCriticalEdges: pred.endIns not jumpIns or branchIns");
 
             newBlock.setEndIns(new jumpIns(succ.Label));
             newBlock.initPrevNextBlocks();

@@ -103,7 +103,10 @@ public class Main {
             new Optimize.Mem2Reg(irRoot).run();
             new Optimize.DCE(irRoot).run();     // Dead Code Elimination
             new Optimize.SCCP(irRoot).run();    // Sparse Conditional Constant Propagation
-            new Optimize.DCE(irRoot).run();            
+            new Optimize.DCE(irRoot).run();
+            new Optimize.ArithmeticSimplification(irRoot).run();
+            new Optimize.DCE(irRoot).run();
+            
             new Optimize.LoopAnalysis(irRoot).run(); // Loop Analysis : calculate loop depth 
             
             // print IR
