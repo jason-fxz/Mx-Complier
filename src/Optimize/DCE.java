@@ -32,7 +32,8 @@ public class DCE {
         for (var func : irRoot.funcs) {
             CFG.buildCFG(func);
             removeUnreachableBlock(func);
-            // jumpElimination(func);
+            jumpElimination(func);
+            removeUnreachableBlock(func);
             removeUnuseReg(func);
         }
         timer.stop("DCE");
@@ -44,6 +45,7 @@ public class DCE {
                 var jump = (jumpIns) block.endIns;
                 var succ = func.blocks.get(jump.label);
 
+                if (succ == block) continue;
                 if (!succ.phiList.isEmpty()) continue;
     
                 for (var prev : block.getPrevBlocks()) {

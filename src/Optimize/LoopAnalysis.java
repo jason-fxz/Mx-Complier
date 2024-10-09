@@ -59,8 +59,10 @@ public class LoopAnalysis {
 
             Queue<IRblock> queue = new LinkedList<>();
             for (var tail : tails) {
-                queue.add(tail);
-                loopBlocks.add(tail);
+                if (tail != header) {
+                    queue.add(tail);
+                    loopBlocks.add(tail);
+                }
             }
 
             while (!queue.isEmpty()) {

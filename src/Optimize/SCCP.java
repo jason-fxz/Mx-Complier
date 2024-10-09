@@ -201,7 +201,7 @@ public class SCCP {
             } else {
                 varLattice.put(val, new Lattice(latticeType.TOP, null));
             }
-        } else if (ins instanceof getelementptrIns) {
+        } /*else if (ins instanceof getelementptrIns) {
             // Since our getelementptrIns only have two forms:
             // %res = getelementptrIns %ptr, i32 0, %var
             // %res = getelementptrIns %ptr, %var
@@ -218,7 +218,7 @@ public class SCCP {
             } else {
                 varLattice.put(val, new Lattice(latticeType.TOP, null));
             }
-        } else {
+        } */ else {
             throw new RuntimeException("Ins " + ins + " not supported in SCCP");
         }
 
@@ -275,6 +275,7 @@ public class SCCP {
     boolean checkpPossible(IRIns ins) {
         if (ins.getDef() == null) return false; // callIns(void) / storeIns / ...
         if (ins instanceof callIns) return false;
+        if (ins instanceof getelementptrIns) return false;
         if (ins instanceof loadIns) return false;
         return true;
     }
