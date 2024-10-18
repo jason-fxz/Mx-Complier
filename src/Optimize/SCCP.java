@@ -81,7 +81,7 @@ public class SCCP {
                         processIns(ins);
                     }
                 }
-                propagate(edge.to);                
+                propagate(edge.to);
                 continue;
             }
 
@@ -191,10 +191,21 @@ public class SCCP {
             }
 
         } else if (ins instanceof icmpIns) {
-            var lt1 = getLattice(((icmpIns) ins).lhs);
-            var lt2 = getLattice(((icmpIns) ins).rhs);
+            var icmpins = (icmpIns) ins;
+            var lt1 = getLattice(icmpins.lhs);
+            var lt2 = getLattice(icmpins.rhs);
 
-            if (lt1.type == latticeType.CONST && lt2.type == latticeType.CONST) {
+            // special case for icmpIns   a <=> a
+            if (icmpins.lhs.equals(icmpins.rhs)) {
+                switch (icmpins.op) {
+                    case "eq": case "sge": case "sle":
+                        varLattice.put(val, new Lattice(latticeType.CONST, new IRLiteral(IRType.IRBoolType, "true")));
+                        break;
+                    case "ne": case "sgt": case "slt":
+                        varLattice.put(val, new Lattice(latticeType.CONST, new IRLiteral(IRType.IRBoolType, "false")));
+                        break;
+                }
+            } else if (lt1.type == latticeType.CONST && lt2.type == latticeType.CONST) {
                 varLattice.put(val, computeIcmp(((icmpIns) ins).op, lt1.value, lt2.value));
             } else if (lt1.type == latticeType.BOTTOM || lt2.type == latticeType.BOTTOM) {
                 varLattice.put(val, new Lattice(latticeType.BOTTOM, null));
@@ -257,7 +268,16 @@ public class SCCP {
             var lt2 = getLattice(icmpbr.rhs);
             
             Lattice condLt = null;
-            if (lt1.type == latticeType.CONST && lt2.type == latticeType.CONST) {
+            if (icmpbr.lhs.equals(icmpbr.rhs)) {
+                switch (icmpbr.op) {
+                    case "eq": case "sge": case "sle":
+                        condLt = new Lattice(latticeType.CONST, new IRLiteral(IRType.IRBoolType, "true"));
+                        break;
+                    case "ne": case "sgt": case "slt":
+                        condLt = new Lattice(latticeType.CONST, new IRLiteral(IRType.IRBoolType, "false"));
+                        break;
+                }
+            } else if (lt1.type == latticeType.CONST && lt2.type == latticeType.CONST) {
                 condLt = computeIcmp(icmpbr.op, lt1.value, lt2.value);
             } else if (lt1.type == latticeType.BOTTOM || lt2.type == latticeType.BOTTOM) {
                 condLt = new Lattice(latticeType.BOTTOM, null);
