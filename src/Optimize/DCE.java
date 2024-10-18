@@ -34,8 +34,8 @@ public class DCE {
         for (var func : irRoot.funcs) {
             CFG.buildCFG(func);
             removeUnreachableBlock(func);
-            jumpElimination(func);
-            removeUnreachableBlock(func);
+            // jumpElimination(func);
+            // removeUnreachableBlock(func);
             removeUnuseReg(func);
         }
         timer.stop("DCE");
