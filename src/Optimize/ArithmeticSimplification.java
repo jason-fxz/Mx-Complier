@@ -65,8 +65,6 @@ public class ArithmeticSimplification {
                     int C = ((IRLiteral)ins.rhs).getInt();
                     if (C == -1) {
                         ref.replace(new arithIns(ins.result, "sub", new IRLiteral("0"), ins.lhs));
-                    } else if (C == 0) {
-                        ref.replace(new arithIns(ins.result, "and", new IRLiteral("0"), new IRLiteral("0")));
                     } else if (Integer.bitCount(C) == 1) { // Check if mulc is a power of 2
                         int shiftAmount = Integer.numberOfTrailingZeros(C);
                         ref.replace(new arithIns(ins.result, "shl", ins.lhs, new IRLiteral(String.valueOf(shiftAmount))));
@@ -124,7 +122,7 @@ public class ArithmeticSimplification {
             for (var Ins2 : varUses.get(Y)) {
                 assert Ins2.ins().lhs.equals(Y);
                 var Z = Ins2.ins().result;
-                var C2 = ((IRLiteral)Ins2.ins().rhs).getInt();
+                int C2 = ((IRLiteral)Ins2.ins().rhs).getInt();
                 
                 if (Ins1.ins().op.equals(Ins2.ins().op)) {
                     switch (Ins1.ins().op) {
@@ -142,6 +140,9 @@ public class ArithmeticSimplification {
                         }
                         case "xor" -> {
                             Ins2.replace(new arithIns(Z, "xor", X, new IRLiteral(String.valueOf(C1 ^ C2))));
+                        }
+                        default -> {
+                            break;
                         }
                     }
                 }

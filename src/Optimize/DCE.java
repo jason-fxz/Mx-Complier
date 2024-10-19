@@ -34,9 +34,10 @@ public class DCE {
         for (var func : irRoot.funcs) {
             CFG.buildCFG(func);
             removeUnreachableBlock(func);
+            removeUnuseReg(func);
+            removeUnreachableBlock(func);
             jumpElimination(func);
             removeUnreachableBlock(func);
-            removeUnuseReg(func);
         }
         timer.stop("DCE");
     }
@@ -117,6 +118,17 @@ public class DCE {
                 if (ins.getDef() != null) {
                     varDef.put(ins.getDef(), ins);
                     varUseCnt.put(ins.getDef(), 0);
+                }
+            }
+            if (block.endIns instanceof branchIns) {
+                var ins = (branchIns) block.endIns;
+                if (ins.trueLabel.equals(ins.falseLabel)) {
+                    block.endIns = new jumpIns(ins.trueLabel);
+                }
+            } else if (block.endIns instanceof icmpbranchIns) {
+                var ins = (icmpbranchIns) block.endIns;
+                if (ins.trueLabel.equals(ins.falseLabel)) {
+                    block.endIns = new jumpIns(ins.trueLabel);
                 }
             }
             if (block.endIns.getDef() != null) {

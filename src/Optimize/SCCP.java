@@ -132,7 +132,7 @@ public class SCCP {
         } else if (op.equals("sdiv")) {
             res.value = rhs.getInt() == 0 ? "0" : String.valueOf(lhs.getInt() / rhs.getInt());
         } else if (op.equals("srem")) {
-            res.value = String.valueOf(lhs.getInt() % rhs.getInt());
+            res.value = rhs.getInt() == 0 ? "0" : String.valueOf(lhs.getInt() % rhs.getInt());
         } else if (op.equals("shl")) {
             res.value = String.valueOf(lhs.getInt() << rhs.getInt());
         } else if (op.equals("ashr")) {

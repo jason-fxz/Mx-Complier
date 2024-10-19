@@ -276,7 +276,8 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
             res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
 
             IRitem lhsvar = it.lhs.accept(this).exprVar; // visit lhs
-            curBlock.addIns(new storeIns(lhsvar, resptr));
+            if (it.op.equals("&&")) curBlock.addIns(new storeIns(new IRLiteral("false"), resptr));
+            else curBlock.addIns(new storeIns(new IRLiteral("true"), resptr));
 
             IRblock l_rhs = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".rhs"));
             IRblock l_end = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".end"));
