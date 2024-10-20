@@ -17,6 +17,7 @@ import IR.node.ins.callIns;
 import IR.node.ins.icmpIns;
 import IR.node.ins.icmpbranchIns;
 import IR.node.ins.jumpIns;
+import IR.node.ins.storeIns;
 import Optimize.CFGBuilder;
 
 
@@ -34,12 +35,72 @@ public class DCE {
         for (var func : irRoot.funcs) {
             CFG.buildCFG(func);
             removeUnreachableBlock(func);
+            removeUselessIns(func);
             removeUnuseReg(func);
             removeUnreachableBlock(func);
             jumpElimination(func);
             removeUnreachableBlock(func);
         }
         timer.stop("DCE");
+    }
+
+    void removeUselessIns(IRFuncDef func) {
+        HashMap<IRvar, IRIns> varDef = new HashMap<>();
+
+        Queue<IRIns> workList = new ArrayDeque<>();
+
+        for (var x : func.params) {
+            varDef.put(x, null);
+        }
+
+        for (var block : func.blocks.values()) {
+            for (var ins : block.phiList) {
+                if (ins.getDef() != null) {
+                    varDef.put(ins.getDef(), ins);
+                }
+                ins.removed = true;
+            }
+            for (var ins : block.insList) {
+                if (ins.getDef() != null) {
+                    varDef.put(ins.getDef(), ins);
+                }
+                ins.removed = true;
+                if (ins instanceof storeIns || ins instanceof callIns) {
+                    workList.add(ins);
+                    ins.removed = false;
+                }
+            }
+            if (block.endIns instanceof branchIns) {
+                var ins = (branchIns) block.endIns;
+                if (ins.trueLabel.equals(ins.falseLabel)) {
+                    block.endIns = new jumpIns(ins.trueLabel);
+                }
+            } else if (block.endIns instanceof icmpbranchIns) {
+                var ins = (icmpbranchIns) block.endIns;
+                if (ins.trueLabel.equals(ins.falseLabel)) {
+                    block.endIns = new jumpIns(ins.trueLabel);
+                }
+            }
+            workList.add(block.endIns);
+        }
+        
+        while (!workList.isEmpty()) {
+            var ins = workList.poll();
+            for (var x : ins.getUses()) {
+                if (varDef.containsKey(x)) {
+                    var defins = varDef.get(x);
+                    if (defins != null && defins.removed == true) {
+                        defins.removed = false;
+                        workList.add(varDef.get(x));
+                    }
+                } else throw new RuntimeException("removeUselessIns: unexpected varDef");
+            }
+        }
+
+        for (var block : func.blocks.values()) {
+            block.phiList.removeIf(ins -> ins.removed);
+            block.insList.removeIf(ins -> ins.removed);
+        }
     }
 
     void jumpElimination(IRFuncDef func) {
