@@ -8,7 +8,7 @@ public interface ASMVisitor<T> {
 
     T visit(ASMFuncDefNode node);
 
-    T visit(ASMBeqzIns asmBeqzIns);
+    T visit(ASMBrzIns asmBeqzIns);
 
     T visit(ASMArithIns asmBinaryIns);
 

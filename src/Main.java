@@ -97,15 +97,13 @@ public class Main {
             irBuilder.visit(ASTRoot);
             IRRoot irRoot = irBuilder.getRoot();
             timer.stop("IRBuilder");
-            
+
             // Optimize
 
             new Optimize.Mem2Reg(irRoot).run();
             new Optimize.DCE(irRoot).run();     // Dead Code Elimination
             new Optimize.SCCP(irRoot).run();    // Sparse Conditional Constant Propagation
             new Optimize.DCE(irRoot).run();
-
-
             new Optimize.ArithmeticSimplification(irRoot).run();
             new Optimize.DCE(irRoot).run();
             
@@ -123,6 +121,7 @@ public class Main {
             // Allocator
             new SSALiveness(irRoot).run();
             new SSAalloctor(irRoot).run();
+            // new Optimize.DCE(irRoot).runJumpElimination();
 
             // ASMBuilder
             timer.start("ASMBuilder");

@@ -273,28 +273,30 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         if (it.op.in("&&", "||")) {
             // Short-circuit evaluation
             IRvar resptr = handleTmpVarAlloc(IRType.IRBoolType, "%" + opstr + ".ptr");
-            res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
-
-            IRitem lhsvar = it.lhs.accept(this).exprVar; // visit lhs
-            if (it.op.equals("&&")) curBlock.addIns(new storeIns(new IRLiteral("false"), resptr));
-            else curBlock.addIns(new storeIns(new IRLiteral("true"), resptr));
-
             IRblock l_rhs = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".rhs"));
             IRblock l_end = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".end"));
 
-            IRblock lastcur = curBlock; // land.lhs done
+            res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
+
+            if (it.op.equals("&&")) curBlock.addIns(new storeIns(new IRLiteral("false"), resptr));
+            else curBlock.addIns(new storeIns(new IRLiteral("true"), resptr));
+
+            if (isCmpExpr(it.lhs)) {
+                var icmp = handleCmpExpr((BinaryExprNode)it.lhs);
+                if (it.op.equals("&&")) curBlock.setEndIns(new icmpbranchIns(icmp, l_rhs.getLabel(), l_end.getLabel()));    
+                else curBlock.setEndIns(new icmpbranchIns(icmp, l_end.getLabel(), l_rhs.getLabel()));
+            } else {
+                IRitem lhsvar = it.lhs.accept(this).exprVar; // visit lhs
+                if (it.op.equals("&&")) curBlock.setEndIns(new branchIns(lhsvar, l_rhs.getLabel(), l_end.getLabel()));
+                else curBlock.setEndIns(new branchIns(lhsvar, l_end.getLabel(), l_rhs.getLabel()));
+            }
+            
             curBlock = l_rhs;
             IRitem rhsvar = it.rhs.accept(this).exprVar; // visit rhs
             curBlock.addIns(new storeIns(rhsvar, resptr));
             curBlock.setEndIns(new jumpIns(l_end.getLabel()));
 
-            if (it.op.equals("&&")) {
-                lastcur.setEndIns(new branchIns(lhsvar, l_rhs.getLabel(), l_end.getLabel()));
-                l_end.addIns(new loadIns(res, resptr));
-            } else {
-                lastcur.setEndIns(new branchIns(lhsvar, l_end.getLabel(), l_rhs.getLabel()));
-                l_end.addIns(new loadIns(res, resptr));
-            }
+            l_end.addIns(new loadIns(res, resptr));
             curBlock = l_end;
 
         } else {

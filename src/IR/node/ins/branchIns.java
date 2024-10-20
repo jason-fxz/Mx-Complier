@@ -13,6 +13,7 @@ public class branchIns extends IRIns {
     public IRitem cond;
     public String trueLabel;
     public String falseLabel;
+    public boolean likely = true;
 
     public branchIns(IRitem cond, String trueLabel, String falseLabel) {
         if (!cond.type.equals(IRType.IRBoolType)) {

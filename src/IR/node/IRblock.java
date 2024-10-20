@@ -2,33 +2,37 @@ package IR.node;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 import IR.IRvisitor;
+import IR.item.IRitem;
 import IR.item.IRvar;
 import IR.node.ins.*;
+import Util.Pair;
 
 public class IRblock extends IRNode {
     public String Label;
     public ArrayList<phiIns> phiList = new ArrayList<>();
     public ArrayList<IRIns> insList;
+    public ArrayList<Pair<IRitem, IRitem>> moveList;
     public IRIns endIns;
     public int index;
     
     public int loopDepth = 0;
 
-    private HashSet<IRblock> prevBlocks;
-    private HashSet<IRblock> nextBlocks;
+    private LinkedHashSet<IRblock> prevBlocks;
+    private LinkedHashSet<IRblock> nextBlocks;
 
     public void initPrevNextBlocks() {
-        prevBlocks = new HashSet<>();
-        nextBlocks = new HashSet<>();
+        prevBlocks = new LinkedHashSet<>();
+        nextBlocks = new LinkedHashSet<>();
     }
 
-    public HashSet<IRblock> getPrevBlocks() {
+    public LinkedHashSet<IRblock> getPrevBlocks() {
         return prevBlocks;
     }
 
-    public HashSet<IRblock> getNextBlocks() {
+    public LinkedHashSet<IRblock> getNextBlocks() {
         return nextBlocks;
     }
 

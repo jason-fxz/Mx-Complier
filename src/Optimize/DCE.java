@@ -44,6 +44,18 @@ public class DCE {
         timer.stop("DCE");
     }
 
+    public void runJumpElimination() {
+        var timer = Util.ExecutionTimer.timer;
+        timer.start("DCE");
+        for (var func : irRoot.funcs) {
+            CFG.buildCFG(func);
+            removeUnreachableBlock(func);
+            jumpElimination(func);
+            removeUnreachableBlock(func);
+        }
+        timer.stop("DCE");
+    }
+
     void removeUselessIns(IRFuncDef func) {
         HashMap<IRvar, IRIns> varDef = new HashMap<>();
 
@@ -105,7 +117,8 @@ public class DCE {
 
     void jumpElimination(IRFuncDef func) {
         for (var block : func.blocks.values()) {
-            if (block.phiList.size() == 0 && block.insList.size() == 0 && block.endIns instanceof jumpIns) {
+            if (block.phiList.size() == 0 && block.insList.size() == 0 && block.endIns instanceof jumpIns
+            && block.moveList == null) {
                 var jump = (jumpIns) block.endIns;
                 var succ = func.blocks.get(jump.label);
 

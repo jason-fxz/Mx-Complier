@@ -6,7 +6,7 @@ import ASM.node.*;
 import ASM.node.global.*;
 import ASM.node.ins.ASMArithIns;
 import ASM.node.ins.ASMArithiIns;
-import ASM.node.ins.ASMBeqzIns;
+import ASM.node.ins.ASMBrzIns;
 import ASM.node.ins.ASMBrIns;
 import ASM.node.ins.ASMCallIns;
 import ASM.node.ins.ASMJumpIns;
@@ -222,26 +222,35 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         return null;
     }
 
-
+    boolean fastbranchFlag = true;
 
     @Override
     public ASMHelper visit(branchIns it) {
         String tureLabel = getLabel(it.trueLabel);
         String falseLabel = getLabel(it.falseLabel);
-        String tmpLabel = getLabel("L.branch." + branchLabelCnt++);
-        
-        var cond = loadIRitem(it.cond, ASMReg.t1, "load cond");
-        curBlock.addJumpIns(new ASMBeqzIns(cond, tmpLabel), it.toString() + getVarASMitem(it));
-        curBlock.addJumpIns(new ASMJumpIns(tureLabel));
-        // curBlock.addJumpIns(new ASMLoadAddrIns(ASMReg.t1, tureLabel));
-        // curBlock.addJumpIns(new ASMJumpIns(ASMReg.t1));
 
-        ASMBlock tmpblock = new ASMBlock(tmpLabel);
-        curFunc.addBlock(tmpblock);
-        curBlock = tmpblock;
-        curBlock.addJumpIns(new ASMJumpIns(falseLabel));
-        // curBlock.addJumpIns(new ASMLoadAddrIns(ASMReg.t1, falseLabel));
-        // curBlock.addJumpIns(new ASMJumpIns(ASMReg.t1));
+        if (fastbranchFlag) {
+            if (it.likely) { // likely true
+                var cond = loadIRitem(it.cond, ASMReg.t1, "load cond");
+                curBlock.addIns(new ASMBrzIns(cond, "eq", falseLabel), it.toString() + getVarASMitem(it));
+                curBlock.addJumpIns(new ASMJumpIns(tureLabel));
+            } else { // likely false
+                var cond = loadIRitem(it.cond, ASMReg.t1, "load cond");
+                curBlock.addIns(new ASMBrzIns(cond, "ne", tureLabel), it.toString() + getVarASMitem(it));
+                curBlock.addJumpIns(new ASMJumpIns(falseLabel));
+            }
+        } else {
+            String tmpLabel = getLabel("L.branch." + branchLabelCnt++);
+            
+            var cond = loadIRitem(it.cond, ASMReg.t1, "load cond");
+            curBlock.addIns(new ASMBrzIns(cond, "eq", tmpLabel), it.toString() + getVarASMitem(it));
+            curBlock.addJumpIns(new ASMJumpIns(tureLabel));
+    
+            ASMBlock tmpblock = new ASMBlock(tmpLabel);
+            curFunc.addBlock(tmpblock);
+            curBlock = tmpblock;
+            curBlock.addJumpIns(new ASMJumpIns(falseLabel));
+        }
         return null;
     }
 
@@ -586,25 +595,12 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
             for (var ins : block.insList) {
                 ins.accecpt(this);
             }
+            if (block.moveList != null) {
+                insertMove(curBlock, block.moveList);
+            }
             block.endIns.accecpt(this);
         }
 
-        // handle phiIns
-        for (var block : it.blocks.values()) {
-            if (block.empty()) throw new RuntimeException("ASMBuiler: block empty");
-            if (block.phiList.isEmpty()) continue;
-            for (var prev : block.getPrevBlocks()) {
-                var prevBlock = blockMap.get(prev);
-
-                List<Pair<IRitem, IRitem>> moves = new ArrayList<>();
-                for (var phi : block.phiList) {
-                    moves.add(new Pair<>(phi.getValue(prev.getLabel()), phi.result));
-                }
-
-                insertMove(prevBlock, moves);
-            }
-
-        }
     
 
         return null;
@@ -731,25 +727,53 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
     public ASMHelper visit(icmpbranchIns it) {
         var rs1 = loadIRitem(it.lhs, ASMReg.t1, "load lhs");
         var rs2 = loadIRitem(it.rhs, ASMReg.t2, "load rhs");
-
         String tureLabel = getLabel(it.trueLabel);
         String falseLabel = getLabel(it.falseLabel);
-        String tmpLabel = getLabel("L.branch." + branchLabelCnt++);
 
-        switch (it.op) {
-            case "eq" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "beq", tmpLabel));
-            case "ne" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "bne", tmpLabel));
-            case "slt" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "blt", tmpLabel));
-            case "sgt" -> curBlock.addIns(new ASMBrIns(rs2, rs1, "blt", tmpLabel));
-            case "sle" -> curBlock.addIns(new ASMBrIns(rs2, rs1, "bge", tmpLabel));
-            case "sge" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "bge", tmpLabel));
-            default -> throw new UnsupportedOperationException("Unknown icmpIns op");
+        if (fastbranchFlag) {
+            if (it.likely) { // likely true
+                switch (it.op) {
+                    case "eq" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "bne", falseLabel));
+                    case "ne" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "beq", falseLabel));
+                    case "slt" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "bge", falseLabel));
+                    case "sgt" -> curBlock.addIns(new ASMBrIns(rs2, rs1, "bge", falseLabel));
+                    case "sle" -> curBlock.addIns(new ASMBrIns(rs2, rs1, "blt", falseLabel));
+                    case "sge" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "blt", falseLabel));
+                    default -> throw new UnsupportedOperationException("Unknown icmpIns op");
+                }
+                curBlock.addJumpIns(new ASMJumpIns(tureLabel));
+            } else { // likely false
+                switch (it.op) {
+                    case "eq" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "beq", tureLabel));
+                    case "ne" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "bne", tureLabel));
+                    case "slt" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "blt", tureLabel));
+                    case "sgt" -> curBlock.addIns(new ASMBrIns(rs2, rs1, "blt", tureLabel));
+                    case "sle" -> curBlock.addIns(new ASMBrIns(rs2, rs1, "bge", tureLabel));
+                    case "sge" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "bge", tureLabel));
+                    default -> throw new UnsupportedOperationException("Unknown icmpIns op");
+                }
+                curBlock.addJumpIns(new ASMJumpIns(falseLabel));
+            }
+
+        } else {
+            String tmpLabel = getLabel("L.branch." + branchLabelCnt++);
+    
+            switch (it.op) {
+                case "eq" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "beq", tmpLabel));
+                case "ne" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "bne", tmpLabel));
+                case "slt" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "blt", tmpLabel));
+                case "sgt" -> curBlock.addIns(new ASMBrIns(rs2, rs1, "blt", tmpLabel));
+                case "sle" -> curBlock.addIns(new ASMBrIns(rs2, rs1, "bge", tmpLabel));
+                case "sge" -> curBlock.addIns(new ASMBrIns(rs1, rs2, "bge", tmpLabel));
+                default -> throw new UnsupportedOperationException("Unknown icmpIns op");
+            }
+            curBlock.addJumpIns(new ASMJumpIns(falseLabel));
+            ASMBlock tmpblock = new ASMBlock(tmpLabel);
+            curFunc.addBlock(tmpblock);
+            curBlock = tmpblock;
+            curBlock.addJumpIns(new ASMJumpIns(tureLabel));
         }
-        curBlock.addJumpIns(new ASMJumpIns(falseLabel));
-        ASMBlock tmpblock = new ASMBlock(tmpLabel);
-        curFunc.addBlock(tmpblock);
-        curBlock = tmpblock;
-        curBlock.addJumpIns(new ASMJumpIns(tureLabel));
+
         return null;
     }
 

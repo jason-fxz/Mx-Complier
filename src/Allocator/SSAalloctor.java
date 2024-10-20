@@ -7,9 +7,8 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Queue;
-import java.util.ArrayDeque;
 
+import IR.item.IRitem;
 import IR.item.IRvar;
 import IR.node.IRRoot;
 import IR.node.IRblock;
@@ -45,11 +44,28 @@ public class SSAalloctor {
         for (var func : irRoot.funcs) {
             curFunc = func;
             SSASpill();
+            CFG.buildCFG(curFunc).calcDom().buildDomTree();
             SSAColor();
             insertBlockOnCriticalEdges();
+            PhiElimation();
             // reorderBlocks();
         }
         timer.stop("Allocator");
+    }
+
+    void PhiElimation() {
+        for (var block : curFunc.blocks.values()) {
+            if (block.empty()) throw new RuntimeException("PhiElimation: block empty");
+            if (block.phiList.isEmpty()) continue;
+            for (var prev : block.getPrevBlocks()) {
+                ArrayList<Pair<IRitem, IRitem>> moves = new ArrayList<>();
+                for (var phi : block.phiList) {
+                    moves.add(new Pair<>(phi.getValue(prev.getLabel()), phi.result));
+                }
+                prev.moveList = moves;
+            }
+            block.phiList.clear();
+        }
     }
 
     private void Spillvars(ArrayList<IRvar> vars) {
@@ -136,7 +152,6 @@ public class SSAalloctor {
 
     void SSAColor() {
         // coloring
-        CFG.buildCFG(curFunc).calcDom().buildDomTree();
         
         curFunc.regOfVar = new HashMap<>();
         // handle function params
@@ -225,7 +240,7 @@ public class SSAalloctor {
 
     void insertBlockOnCriticalEdges() {
         List<Pair<IRblock, IRblock>> criticalEdges = findCirticalEdges();
-
+        
         for (var edge : criticalEdges) {
             IRblock newBlock = new IRblock(IRLabeler.getIdLabel(".CTE"));
 
@@ -255,9 +270,14 @@ public class SSAalloctor {
                 phi.replaceLabel(pred.Label, newBlock.Label);
             });
 
-            curFunc.blocks.put(newBlock.Label, newBlock);
+            // curFunc.blocks.put(newBlock.Label, newBlock);
+            CFG.blockList.add(CFG.blockList.indexOf(pred) + 1, newBlock);
         }
 
+        curFunc.blocks.clear();
+        for (var block : CFG.blockList) {
+            curFunc.blocks.put(block.Label, block);
+        }
 
         if (!findCirticalEdges().isEmpty()) {
             throw new RuntimeException("critical edges not removed");
@@ -283,22 +303,9 @@ public class SSAalloctor {
         // Reorder blocks to ensure connected blocks are closer
         List<IRblock> orderedBlocks = new ArrayList<>();
         Set<IRblock> visitedBlocks = new HashSet<>();
-        Queue<IRblock> blockQueue = new ArrayDeque<>();
 
-        blockQueue.add(curFunc.entryBlock);
-        visitedBlocks.add(curFunc.entryBlock);
+        reorderBlocksDFS(curFunc.entryBlock, orderedBlocks, visitedBlocks);
 
-        while (!blockQueue.isEmpty()) {
-            IRblock currentBlock = blockQueue.poll();
-            orderedBlocks.add(currentBlock);
-
-            for (IRblock nextBlock : currentBlock.getNextBlocks()) {
-                if (!visitedBlocks.contains(nextBlock)) {
-                    visitedBlocks.add(nextBlock);
-                    blockQueue.add(nextBlock);
-                }
-            }
-        }
 
         curFunc.blocks.clear();
         for (var block : orderedBlocks) {
@@ -306,6 +313,16 @@ public class SSAalloctor {
         }
     }
 
+    void reorderBlocksDFS(IRblock block, List<IRblock> orderedBlocks, Set<IRblock> visitedBlocks) {
+        orderedBlocks.add(block);
+        visitedBlocks.add(block);
+
+        for (var nextBlock : block.getNextBlocks()) {
+            if (!visitedBlocks.contains(nextBlock)) {
+                reorderBlocksDFS(nextBlock, orderedBlocks, visitedBlocks);
+            }
+        }
+    }
 
 
 }

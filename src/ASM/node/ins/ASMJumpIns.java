@@ -2,6 +2,7 @@ package ASM.node.ins;
 
 import ASM.ASMVisitor;
 import ASM.item.ASMReg;
+import Optimize.SCCP;
 
 // j offset
 // jump to the label / rs
@@ -15,6 +16,10 @@ public class ASMJumpIns extends ASMIns {
 
     public ASMJumpIns(ASMReg rs) {
         this.rs = rs;
+    }
+
+    public String getLabel() {
+        return label;
     }
 
     @Override

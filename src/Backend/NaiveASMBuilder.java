@@ -227,7 +227,7 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
         String tmpLabel = getLabel("L.branch." + branchLabelCnt++);
         
         handleLoadIRitem(ASMReg.t1, it.cond);
-        curBlock.addIns(new ASMBeqzIns(ASMReg.t1, tmpLabel));
+        curBlock.addIns(new ASMBrzIns(ASMReg.t1, "eq", tmpLabel));
         curBlock.addIns(new ASMLoadAddrIns(ASMReg.t1, tureLabel));
         curBlock.addIns(new ASMJumpIns(ASMReg.t1));
 
@@ -358,7 +358,7 @@ public class NaiveASMBuilder implements IRvisitor<ASMHelper> {
         handleLoadIRitem(ASMReg.t1, it.cond);
         handleLoadIRitem(ASMReg.t2, it.value2);
         String tmpLabel = getLabel("L.select." + branchLabelCnt++);
-        curBlock.addIns(new ASMBeqzIns(ASMReg.t1, tmpLabel));
+        curBlock.addIns(new ASMBrzIns(ASMReg.t1, "eq", tmpLabel));
         handleLoadIRitem(ASMReg.t2, it.value1);
 
         ASMBlock tmpblock = new ASMBlock(tmpLabel);

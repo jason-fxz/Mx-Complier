@@ -4,12 +4,13 @@ import java.util.ArrayList;
 
 import ASM.ASMVisitor;
 import ASM.node.ins.ASMIns;
+import ASM.node.ins.ASMJumpIns;
 import ASM.node.ins.ASMMoveIns;
 
 public class ASMBlock extends ASMNode {
     private String Label;
     ArrayList<ASMIns> insList;
-    ArrayList<ASMIns> jumpInsList;
+    ASMJumpIns jumpIns;
     
     @Override
     public String toString() {
@@ -18,8 +19,18 @@ public class ASMBlock extends ASMNode {
         for (ASMIns ins : insList) {
             sb.append(ins.addComment("    " + ins.toString()));
         }
-        for (ASMIns ins : jumpInsList) {
+        if (jumpIns != null) sb.append(jumpIns.addComment("    " + jumpIns.toString()));
+        return sb.toString();
+    }
+
+    public String toString(String nextLabel) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.addComment(Label + ":"));
+        for (ASMIns ins : insList) {
             sb.append(ins.addComment("    " + ins.toString()));
+        }
+        if (jumpIns != null && !jumpIns.getLabel().equals(nextLabel)) {
+            sb.append(jumpIns.addComment("    " + jumpIns.toString()));
         }
         return sb.toString();
     }
@@ -27,7 +38,6 @@ public class ASMBlock extends ASMNode {
     public ASMBlock(String Label) {
         this.Label = Label;
         insList = new ArrayList<ASMIns>();
-        jumpInsList = new ArrayList<ASMIns>();
     }
 
     public void addIns(ASMIns ins) {
@@ -43,13 +53,17 @@ public class ASMBlock extends ASMNode {
         addIns(ins);
     }
 
-    public void addJumpIns(ASMIns ins) {
-        jumpInsList.add(ins);
+    public void addJumpIns(ASMJumpIns ins) {
+        jumpIns = ins;
     }
 
-    public void addJumpIns(ASMIns ins, String comment) {
+    public void addJumpIns(ASMJumpIns ins, String comment) {
         ins.Note(comment);
         addJumpIns(ins);
+    }
+
+    public String getLabel() {
+        return Label;
     }
 
     @Override

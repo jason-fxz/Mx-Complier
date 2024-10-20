@@ -42,8 +42,14 @@ public class ASMFuncDefNode extends ASMNode {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("%-38s   # -- Begin function %s\n", "    .globl " + name, name));
 
-        for (ASMBlock block : blocks) {
-            sb.append(block.toString());
+        for (int i = 0; i < blocks.size(); i++) {
+            if (i == blocks.size() - 1) {
+                sb.append(blocks.get(i).toString());
+            } else {
+                // sb.append(blocks.get(i).toString());
+
+                sb.append(blocks.get(i).toString(blocks.get(i + 1).getLabel()));
+            }
         }
         sb.append("                                          # -- End function " + name + "\n");
         return sb.toString();

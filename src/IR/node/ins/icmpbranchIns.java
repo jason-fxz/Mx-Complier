@@ -16,6 +16,7 @@ public class icmpbranchIns extends IRIns {
     public String op;
     public String trueLabel;
     public String falseLabel;
+    public boolean likely = true;
 
     private IRvar llvmirTmpVar;
 
