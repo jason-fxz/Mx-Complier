@@ -575,7 +575,7 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
             }
         }
 
-        Save2SRegFlag = (countCall >= 3);
+        Save2SRegFlag = (countCall >= 4);
 
         curFunc.stackSize = 8 + it.maxUsedReg * 4 + Math.max(0, countMaxCallParams - 8) * 4 + it.spilledVar.size() * 4;
         curFunc.stackSize = (curFunc.stackSize + 15) / 16 * 16;
