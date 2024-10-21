@@ -28,6 +28,7 @@ import Util.Pair;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Queue;
 
@@ -39,10 +40,13 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
     int branchLabelCnt = 0;
     HashMap<IRvar, ASMItem> var2ASMItem;
     HashMap<Integer, ASMReg> regMap;
+    int regCnt;
     HashMap<ASMReg, ASMAddr> calleeSaveMap;
-    HashMap<ASMReg, ASMAddr> callerSaveMap;
-    HashMap<IRblock, ASMBlock> blockMap;
+    HashMap<ASMReg, ASMItem> callerSaveMap;
 
+    boolean fastbranchFlag = true;
+    boolean Save2SRegFlag = true;
+    
 
     private String getLabel(String label) {
         if (label.equals("entry")) {
@@ -58,8 +62,6 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
     public ASMRoot getRoot() {
         return root;
     }
-
- 
 
     @Override
     public ASMHelper visit(IRglobalVarDef iRglobalVarDef) {
@@ -222,7 +224,6 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         return null;
     }
 
-    boolean fastbranchFlag = true;
 
     @Override
     public ASMHelper visit(branchIns it) {
@@ -254,25 +255,45 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         return null;
     }
 
-
-
     @Override
     public ASMHelper visit(callIns it) {
         // Save caller-save registers
-        int regSaveCur = curFunc.regSaveCur;
+        int regSaveCur = curFunc.regCallerSaveCur;
+        int si = (Save2SRegFlag ? 0 : 12);
+        HashSet<ASMReg> usedRegs = new HashSet<>();
+        for (var x : it.liveIn) {
+            usedRegs.add((ASMReg)var2ASMItem.get(x));
+        }
+        for (var x : it.liveOut) {
+            usedRegs.add((ASMReg)var2ASMItem.get(x));
+        }
+
         for (var irvar : it.liveIn) {
             var reg = (ASMReg)var2ASMItem.get(irvar);
             if (!it.liveOut.contains(irvar) && (reg.getIndex() < 10 || reg.getIndex() > 9 + Math.max(8, it.args.size()))) continue;
             if (reg.isCallerSave()) {
-                regSaveCur -= 4;
-                var addr = new ASMAddr(ASMReg.sp, regSaveCur);
-                callerSaveMap.put(reg, addr);
-                handleASMAddrStore(reg, addr, ASMReg.t1, "save caller-save registers");
+                while (si <= 11 && usedRegs.contains(ASMReg.s(si))) ++si;
+                if (si <= 11) {
+                    // try save to s reg
+                    if (!regMap.containsValue(ASMReg.s(si))) {
+                        regMap.put(regCnt++, ASMReg.s(si));
+                    }
+                    callerSaveMap.put(reg, ASMReg.s(si));
+                    curBlock.addIns(new ASMMoveIns(ASMReg.s(si), reg), "save caller-save registers");
+                    ++si;
+                } else {
+                    regSaveCur -= 4;
+                    var addr = new ASMAddr(ASMReg.sp, regSaveCur);
+                    callerSaveMap.put(reg, addr);
+                    handleASMAddrStore(reg, addr, ASMReg.t1, "save caller-save registers");
+                }
             }
         }
+
+        curFunc.regCalleeSaveCur = Math.min(curFunc.regCalleeSaveCur, regSaveCur);
         
         int spOffset = 0;
-        HashMap<ASMReg, ASMAddr> aAddr = new HashMap<>();
+        HashMap<ASMReg, ASMItem> aAddr = new HashMap<>();
         
         for (int i = 0; i < it.args.size(); ++i) {
             var iritem = it.args.get(i);
@@ -297,7 +318,7 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
             } else {
                 var asmitem = var2ASMItem.get(iritem);
                 if (asmitem.inReg() && aAddr.containsKey((ASMReg)asmitem)) {
-                    asmitem = aAddr.get((ASMReg)asmitem); // load from stack
+                    asmitem = aAddr.get((ASMReg)asmitem); // load from store
                 }
                 if (i < 8) {
                     handlemove(ASMReg.a(i), asmitem, "load arg %d var".formatted(i));
@@ -327,7 +348,12 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         for (var irvar : it.liveOut) {
             var reg = (ASMReg)var2ASMItem.get(irvar);
             if (callerSaveMap.containsKey(reg) && !reg.equals(udpreg)) {
-                handleASMAddrLoad(reg, callerSaveMap.get(reg), "restore caller-save registers");
+                var stplace = callerSaveMap.get(reg);
+                if (stplace.inMem()) {
+                    handleASMAddrLoad(reg, (ASMAddr)callerSaveMap.get(reg), "restore caller-save registers");
+                } else {
+                    curBlock.addIns(new ASMMoveIns(reg, (ASMReg)stplace), "restore caller-save registers");
+                }
             }
         }
 
@@ -464,10 +490,10 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         throw new UnsupportedOperationException("Should Not Use SelectIns!!");
     }
 
+    List<Pair<ASMBlock, returnIns>> retLists;
 
-
-    @Override
-    public ASMHelper visit(returnIns it) {
+    void handleReturn(ASMBlock block, returnIns it) {
+        curBlock = block;
         // handle return value
         if (!it.value.type.equals(IRType.IRvoidType)) {
             if (it.value instanceof IRLiteral) {
@@ -485,6 +511,11 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         handleASMAddrLoad(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4), "restore ra");
         handleASMAddi(ASMReg.sp, ASMReg.sp, curFunc.stackSize, "return stackSize");
         curBlock.addIns(new ASMReturnIns(), it.toString() + getVarASMitem(it));
+    }
+
+    @Override
+    public ASMHelper visit(returnIns it) {
+        retLists.add(new Pair<ASMBlock,returnIns>(curBlock, it));
         return null;
     }
 
@@ -497,7 +528,7 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
     private void initRegMap(int maxUsedReg) {
         // init regMap
         regMap.clear();
-        int regCnt = 0;
+        regCnt = 0;
         for (int i = 0; i < 8; ++i) {
             if (regCnt >= maxUsedReg) return;
             regMap.put(regCnt++, ASMReg.a(i));
@@ -523,16 +554,28 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
 
         initRegMap(it.maxUsedReg);
 
+        retLists = new ArrayList<>();
+
         // calculate stack size
         int countMaxCallParams = 0;
+        int countCall = 0;
         for (var blk : it.blocks.values()) {
+            boolean lastIsCall = false;
             for (var ins : blk.insList) {
                 if (ins instanceof callIns) {
                     var tmp = (callIns) ins;
                     countMaxCallParams = Math.max(countMaxCallParams, tmp.args.size());
-                }
+                    countCall += 1;
+                    if (lastIsCall) countCall += 3;
+                    if (blk.loopDepth > 1) {
+                        countCall += 10;
+                    }
+                } 
+                lastIsCall = (ins instanceof callIns);
             }
         }
+
+        Save2SRegFlag = (countCall >= 3);
 
         curFunc.stackSize = 8 + it.maxUsedReg * 4 + Math.max(0, countMaxCallParams - 8) * 4 + it.spilledVar.size() * 4;
         curFunc.stackSize = (curFunc.stackSize + 15) / 16 * 16;
@@ -540,14 +583,13 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         var2ASMItem = new HashMap<>();
         calleeSaveMap = new HashMap<>();
         callerSaveMap = new HashMap<>();
-        blockMap = new HashMap<>();
 
 
         for (var entry : it.regOfVar.entrySet()) {
             var2ASMItem.put(entry.getKey(), regMap.get(entry.getValue()));   
         }
         curFunc.stackSpillOffset = curFunc.stackSize - (4 + 4 * it.spilledVar.size());
-        curFunc.regSaveCur = curFunc.stackSpillOffset;
+        curFunc.regCalleeSaveCur = curFunc.regCallerSaveCur = curFunc.stackSpillOffset;
 
         // !! curFunc.stackSize - 4  save ra
         for (var entry : it.spilledVar.entrySet()) {
@@ -557,41 +599,9 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
 
         for (var block : it.blocks.values()) {
             if (block.empty()) throw new RuntimeException("ASMBuiler: block empty");
+            if (block.getLabel().equals("entry")) continue;
             curBlock = new ASMBlock(getLabel(block.getLabel()));
             curFunc.addBlock(curBlock);
-            blockMap.put(block, curBlock);
-
-            if (block.getLabel().equals("entry")) {
-                handleASMAddi(ASMReg.sp, ASMReg.sp, -curFunc.stackSize, "fetch stackSize");
-                handleASMAddrStore(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4), ASMReg.t1, "save ra");
-
-                // handle params
-                for (int i = 0; i < it.params.size(); ++i) {
-                    var asmitem = var2ASMItem.get(it.params.get(i));
-                    if (asmitem == null) {
-                        // no use param
-                        continue;
-                    }
-                    if (i < 8) {
-                        // a0 - a7 : 10 - 17
-                        handlemove(asmitem, ASMReg.a(i), "load param %d".formatted(i));
-                    } else {
-                        var par = new ASMAddr(ASMReg.sp, curFunc.stackSize + 4 * (i - 8));
-                        handlemove(asmitem, par, "load param %d (from stack)".formatted(i));
-                    }
-                }
-
-                // save callee-save registers
-                for (var reg : regMap.values()) {
-                    if (reg.isCalleeSave()) {
-                        curFunc.regSaveCur -= 4;
-                        var addr = new ASMAddr(ASMReg.sp, curFunc.regSaveCur);
-                        calleeSaveMap.put(reg, addr);
-                        handleASMAddrStore(reg, addr, ASMReg.t1, "save callee-save registers");
-                    }
-                }
-            }
-
             for (var ins : block.insList) {
                 ins.accecpt(this);
             }
@@ -601,7 +611,50 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
             block.endIns.accecpt(this);
         }
 
-    
+        // handle entry
+        curBlock = new ASMBlock(getLabel("entry"));
+        curFunc.blocks.addFirst(curBlock);
+        // curFunc.addBlock(curBlock);
+        handleASMAddi(ASMReg.sp, ASMReg.sp, -curFunc.stackSize, "fetch stackSize");
+        handleASMAddrStore(ASMReg.ra, new ASMAddr(ASMReg.sp, curFunc.stackSize - 4), ASMReg.t1, "save ra");
+
+        // handle params
+        for (int i = 0; i < it.params.size(); ++i) {
+            var asmitem = var2ASMItem.get(it.params.get(i));
+            if (asmitem == null) {
+                // no use param
+                continue;
+            }
+            if (i < 8) {
+                // a0 - a7 : 10 - 17
+                handlemove(asmitem, ASMReg.a(i), "load param %d".formatted(i));
+            } else {
+                var par = new ASMAddr(ASMReg.sp, curFunc.stackSize + 4 * (i - 8));
+                handlemove(asmitem, par, "load param %d (from stack)".formatted(i));
+            }
+        }
+
+        // save callee-save registers
+        for (var reg : regMap.values()) {
+            if (reg.isCalleeSave()) {
+                curFunc.regCalleeSaveCur -= 4;
+                var addr = new ASMAddr(ASMReg.sp, curFunc.regCalleeSaveCur);
+                calleeSaveMap.put(reg, addr);
+                handleASMAddrStore(reg, addr, ASMReg.t1, "save callee-save registers");
+            }
+        }
+        for (var ins : it.entryBlock.insList) {
+            ins.accecpt(this);
+        }
+        if (it.entryBlock.moveList != null) {
+            insertMove(curBlock,  it.entryBlock.moveList);
+        }
+        it.entryBlock.endIns.accecpt(this);
+
+        // handle return
+        for (var entry : retLists) {
+            handleReturn(entry.first, entry.second);
+        }
 
         return null;
     }
