@@ -52,9 +52,9 @@ void *__mx_allocate(int size) {
   return malloc(size);
 }
 
-// My Builtin: __mx_allocate_array(int size, int length)
-void *__mx_allocate_array(int size, int length) {
-  int *a = (int*) malloc(size * length + 4);
+// My Builtin: __mx_allocate_array(int length)
+void *__mx_allocate_array(int length) {
+  int *a = (int*) malloc(length * 4 + 4);
   a[0] = length;
   return a + 1;
 }

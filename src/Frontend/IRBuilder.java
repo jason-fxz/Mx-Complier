@@ -80,7 +80,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
 
         root.builtinfuncs.add(new IRFuncDec("@__mx_allocate", new IRType("ptr"), new IRType("i32")));
         root.builtinfuncs
-                .add(new IRFuncDec("@__mx_allocate_array", new IRType("ptr"), new IRType("i32"), new IRType("i32")));
+                .add(new IRFuncDec("@__mx_allocate_array", new IRType("ptr"), new IRType("i32")));
         root.builtinfuncs.add(new IRFuncDec("@__mx_array_size", new IRType("i32"), new IRType("ptr")));
         root.builtinfuncs.add(new IRFuncDec("@__mx_bool_to_string", new IRType("ptr"), new IRType("i1")));
 
@@ -561,7 +561,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         //     return new IRLiteral("null");
         IRvar var = new IRvar(IRLabeler.getIdLabel("%new.array"));
         // call __mx_allocate_array
-        curBlock.addIns(new callIns(var, "__mx_allocate_array", new IRLiteral("4"), asize.get(idx)));
+        curBlock.addIns(new callIns(var, "__mx_allocate_array", asize.get(idx)));
 
         if (idx == asize.size() - 1) {
             return var;
@@ -638,8 +638,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     @Override
     public IRhelper visit(ArrayInitNode it) {
         IRvar var = new IRvar(IRLabeler.getIdLabel("%array.init"));
-        curBlock.addIns(new callIns(var, "__mx_allocate_array", new IRLiteral("4"),
-                new IRLiteral(String.valueOf(it.exprs.size()))));
+        curBlock.addIns(new callIns(var, "__mx_allocate_array", new IRLiteral(String.valueOf(it.exprs.size()))));
         // if (it.dep == 1) {
         for (int i = 0; i < it.exprs.size(); ++i) {
             IRitem expritem = it.exprs.get(i).accept(this).exprVar;

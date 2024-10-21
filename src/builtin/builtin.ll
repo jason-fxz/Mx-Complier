@@ -1,5 +1,5 @@
-; ModuleID = './builtin.c'
-source_filename = "./builtin.c"
+; ModuleID = './src/builtin/builtin.c'
+source_filename = "./src/builtin/builtin.c"
 target datalayout = "e-m:e-p:32:32-i64:64-n32-S128"
 target triple = "riscv32-unknown-unknown-elf"
 
@@ -89,9 +89,9 @@ entry:
 }
 
 ; Function Attrs: nounwind
-define dso_local nonnull ptr @__mx_allocate_array(i32 noundef %size, i32 noundef %length) local_unnamed_addr #0 {
+define dso_local nonnull ptr @__mx_allocate_array(i32 noundef %length) local_unnamed_addr #0 {
 entry:
-  %mul = mul nsw i32 %length, %size
+  %mul = shl nsw i32 %length, 2
   %add = add nsw i32 %mul, 4
   %call = tail call ptr @malloc(i32 noundef %add) #8
   store i32 %length, ptr %call, align 4, !tbaa !4

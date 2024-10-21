@@ -143,8 +143,8 @@ __mx_allocate_array:                    # @__mx_allocate_array
 	addi	sp, sp, -16
 	sw	ra, 12(sp)                      # 4-byte Folded Spill
 	sw	s0, 8(sp)                       # 4-byte Folded Spill
-	mv	s0, a1
-	mul	a0, a1, a0
+	mv	s0, a0
+	slli	a0, a0, 2
 	addi	a0, a0, 4
 	call	malloc
 	addi	a1, a0, 4
