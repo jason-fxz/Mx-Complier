@@ -1,14 +1,22 @@
 package IR.node.def;
 
 import IR.IRvisitor;
+import IR.item.IRLiteral;
 import IR.item.IRvar;
 import IR.type.IRType;
 
 public class IRglobalVarDef extends IRDefNode {
-    IRvar var;
+    public IRvar var;
+    public IRLiteral value;
 
     public IRglobalVarDef(IRvar var) {
         this.var = var;
+        this.value = new IRLiteral(var.type);
+    }
+
+    public IRglobalVarDef(IRvar var, IRLiteral value) {
+        this.var = var;
+        this.value = value;
     }
 
     public String getVarName() {
@@ -21,13 +29,13 @@ public class IRglobalVarDef extends IRDefNode {
     
     @Override
     public String toString() {
-        String str = var.toString() + " = global " + var.type.toString();
+        String str = var.toString() + " = global " + var.type.toString() + " " + value.toString();
         if (var.type.equals(IRType.IRBoolType)) {
-            str += " false";
+            // str += " false";
         } else if (var.type.equals(IRType.IRIntType)) {
-            str += " 0";
+            // str += " 0";
         } else if (var.type.equals(IRType.IRPtrType)) {
-            str += " null";
+            // str += " null";
         } else {
             throw new RuntimeException("Unsupported type in global variable definition");
         }

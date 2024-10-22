@@ -12,7 +12,7 @@ public class ASMglobalStrDef extends ASMNode {
         StringBuilder sb = new StringBuilder();
         sb.append(name + ":\n    " + String.format("%-8s", ".asciz"));
         sb.append("\"");
-        int len = 0;
+        // int len = 0;
         for (int i = 0; i < value.length(); ++i) {
             char c = value.charAt(i);
             if (i + 1 < value.length() && c == '\\') {
@@ -30,9 +30,9 @@ public class ASMglobalStrDef extends ASMNode {
             } else {
                 sb.append(c);
             }
-            ++len;
+            // ++len;
         }
-        ++len;
+        // ++len;
         sb.append("\\000");
         sb.append("\"");
         return sb.toString();

@@ -5,16 +5,16 @@ import ASM.node.ASMNode;
 
 public class ASMglobalVarDef extends ASMNode {
     private String name;
-    private int size;
+    private int value;
 
     @Override
     public String toString() {
-        return name + ":\n    " + String.format("%-8s", ".zero") + size;
+        return name + ":\n    " + String.format("%-8s", ".word") + value;
     }
 
-    public ASMglobalVarDef(String name, int size) {
+    public ASMglobalVarDef(String name, int value) {
         this.name = name;
-        this.size = size;
+        this.value = value;
     }
 
     @Override

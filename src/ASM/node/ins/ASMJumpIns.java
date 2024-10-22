@@ -2,7 +2,6 @@ package ASM.node.ins;
 
 import ASM.ASMVisitor;
 import ASM.item.ASMReg;
-import Optimize.SCCP;
 
 // j offset
 // jump to the label / rs

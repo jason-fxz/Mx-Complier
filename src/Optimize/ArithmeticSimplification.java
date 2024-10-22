@@ -13,7 +13,6 @@ import IR.item.IRvar;
 import IR.node.IRRoot;
 import IR.node.IRblock;
 import IR.node.def.IRFuncDef;
-import IR.node.ins.IRIns;
 import IR.node.ins.arithIns;
 
 public class ArithmeticSimplification {

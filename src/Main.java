@@ -100,7 +100,13 @@ public class Main {
 
             // Optimize
 
+            new Optimize.GlobalLocalization(irRoot).run();
+            // output.println(irRoot.toString());
+
+
             new Optimize.Mem2Reg(irRoot).run();
+
+
             new Optimize.DCE(irRoot).run();     // Dead Code Elimination
             new Optimize.SCCP(irRoot).run();    // Sparse Conditional Constant Propagation
             new Optimize.DCE(irRoot).run();

@@ -17,10 +17,16 @@ A Compiler of Mx, See [Compiler-Design-Implementation](https://github.com/ACMCla
     - [x] Register Allocation 
     - [x] SCCP 
     - [x] Arithmetic-Simplification
-    - [ ] Inlining 🔥
+    - [ ] Inlining
     - [ ] loop-invariant-code-motion
     - [ ] local-CSE
     - [x] Jump-Elimination 
+    - [ ] Tail-Call-Optimization
+    - [x] Trail Optimization
+    - Some useful tricks:
+        - [x] Global Localization
+        - [x] use s0-s11 to save caller-saved registers
+        - [ ] buildin functions optimization (by human intelligence)
 
 
 ## Overview
@@ -61,4 +67,4 @@ A Compiler of Mx, See [Compiler-Design-Implementation](https://github.com/ACMCla
 
     - Jump-Elimination
         Just delete the block that only has one jump instruction.
-        I just write in `src/Optimize/DCE.java`.
+ 

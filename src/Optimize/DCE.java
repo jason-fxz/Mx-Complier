@@ -14,11 +14,9 @@ import IR.node.def.IRFuncDef;
 import IR.node.ins.IRIns;
 import IR.node.ins.branchIns;
 import IR.node.ins.callIns;
-import IR.node.ins.icmpIns;
 import IR.node.ins.icmpbranchIns;
 import IR.node.ins.jumpIns;
 import IR.node.ins.storeIns;
-import Optimize.CFGBuilder;
 
 
 public class DCE {

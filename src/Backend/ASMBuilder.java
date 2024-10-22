@@ -65,7 +65,7 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
 
     @Override
     public ASMHelper visit(IRglobalVarDef iRglobalVarDef) {
-        root.globalVars.add(new ASMglobalVarDef(iRglobalVarDef.getVarName(), 4));
+        root.globalVars.add(new ASMglobalVarDef(iRglobalVarDef.getVarName(), iRglobalVarDef.value.getInt()));
         return null;
     }
 

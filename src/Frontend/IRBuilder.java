@@ -50,11 +50,20 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     private void handleglobalVar(VarDefNode varDef) {
         IRvar var = new IRvar(varDef, true);
         // in fact global variable is a global pointer
-        root.gVars.add(new IRglobalVarDef(var));
-        if (varDef.init != null) {
-            var t = varDef.init.accept(this); // calc the init expr
-            curBlock.addIns(new storeIns(t.exprVar, var)); // store the result to the global variable
+        if (varDef.init instanceof IntExprNode) {
+            var value = ((IntExprNode)varDef.init).value;
+            root.gVars.add(new IRglobalVarDef(var, new IRLiteral(IRType.IRIntType, String.valueOf(value))));
+        } else if (varDef.init instanceof BoolExprNode) {
+            var value = ((BoolExprNode)varDef.init).value;
+            root.gVars.add(new IRglobalVarDef(var, new IRLiteral(IRType.IRIntType, String.valueOf(value))));
+        } else {
+            root.gVars.add(new IRglobalVarDef(var));
+            if (varDef.init != null) {
+                var t = varDef.init.accept(this); // calc the init expr
+                curBlock.addIns(new storeIns(t.exprVar, var)); // store the result to the global variable
+            }
         }
+        
     }
 
     @Override
