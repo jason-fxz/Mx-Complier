@@ -271,6 +271,147 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         return new IRhelper();
     }
 
+    boolean isBoolOpExpr(ExprNode it) {
+        if (it instanceof BinaryExprNode) {
+            return ((BinaryExprNode)it).op.in("&&", "||");
+        }
+        return false;
+    }
+    
+    ArrayList<ExprNode> LeafNodes = new ArrayList<>();
+    HashMap<ExprNode, ExprNode> jump0 = new HashMap<>();
+    HashMap<ExprNode, ExprNode> jump1 = new HashMap<>();
+    HashMap<ExprNode, Integer> firstLeaf = new HashMap<>();
+
+    void DfsBoolTree(ExprNode it) {
+        if (isBoolOpExpr(it)) {
+            BinaryExprNode bit = (BinaryExprNode)it;
+            if (bit.op.equals("&&")) {
+                jump0.put(bit.lhs, jump0.get(it));
+                jump1.put(bit.lhs, bit);               
+            } else if (bit.op.equals("||")) {
+                jump0.put(bit.lhs, bit);
+                jump1.put(bit.lhs, jump1.get(it));
+            } else throw new UnsupportedOperationException("WTF? DfsBoolTree");
+            jump0.put(bit.rhs, jump0.get(it));
+            jump1.put(bit.rhs, jump1.get(it));
+            DfsBoolTree(bit.lhs);
+            DfsBoolTree(bit.rhs);
+            firstLeaf.put(it, firstLeaf.get(bit.lhs));
+        } else {
+            // is leaf
+            LeafNodes.add(it);
+            firstLeaf.put(it, LeafNodes.size() - 1);
+        }
+    }
+
+    int getNextLeaf(ExprNode it, int flag) {
+        if (flag == 0) {
+            var jp = jump0.get(it);
+            if (jp == null) return -1;
+            return firstLeaf.get(((BinaryExprNode)jp).rhs);            
+        } else {
+            var jp = jump1.get(it);
+            if (jp == null) return -1;
+            return firstLeaf.get(((BinaryExprNode)jp).rhs);
+        }
+    }
+
+    
+    IRvar handleBoolTree(ExprNode root, String trueLabel, String falseLabel) {
+        LeafNodes.clear();
+        jump0.clear();
+        jump1.clear();
+        firstLeaf.clear();
+        jump0.put(root, null); // false block
+        jump1.put(root, null); // true block
+        DfsBoolTree(root);
+
+        boolean hasJump = trueLabel != null && falseLabel != null;
+
+        String label = IRLabeler.getIdLabel(".BoolTree");
+
+        IRvar resptr =  handleTmpVarAlloc(IRType.IRBoolType, "%" + label + ".ptr");
+
+        IRblock l_end = curFunc.newBlock(label + ".end"); // end block
+
+        
+        for (int i = 0; i < LeafNodes.size(); ++i) {
+            ExprNode leaf = LeafNodes.get(i);
+            if (i != 0) curBlock = curFunc.newBlock(label + ".leaf." + i);
+
+            
+            int false_id = getNextLeaf(leaf, 0);
+            int true_id = getNextLeaf(leaf, 1);
+
+            if (false_id == -1 && true_id == -1) {
+                // must be last
+                assert i == LeafNodes.size() - 1 : "handleBoolTree: false_id == -1 && true_id == -1 must be last";
+                if (hasJump) {
+                    if (isCmpExpr(leaf)) {
+                        var icmp = handleCmpExpr((BinaryExprNode)leaf);
+                        curBlock.setEndIns(new icmpbranchIns(icmp, trueLabel, falseLabel));
+                    } else {
+                        var info = leaf.accept(this); // visit leaf
+                        curBlock.setEndIns(new branchIns(info.exprVar, trueLabel, falseLabel));
+                    }
+                } else {
+                    var info = leaf.accept(this); // visit leaf
+                    curBlock.addIns(new storeIns(info.exprVar, resptr));
+                    curBlock.setEndIns(new jumpIns(l_end.getLabel()));
+                }
+            } else if (true_id == -1) {
+                String false_label = label + ".leaf." + false_id;
+                if (hasJump) {
+                    if (isCmpExpr(leaf)) {
+                        var icmp = handleCmpExpr((BinaryExprNode)leaf);
+                        curBlock.setEndIns(new icmpbranchIns(icmp, trueLabel, false_label, false));
+                    } else {
+                        var info = leaf.accept(this); // visit leaf
+                        curBlock.setEndIns(new branchIns(info.exprVar, trueLabel, false_label, false));
+                    }
+                } else {
+                    var info = leaf.accept(this); // visit leaf
+                    curBlock.addIns(new storeIns(new IRLiteral("true"), resptr));
+                    curBlock.setEndIns(new branchIns(info.exprVar, l_end.getLabel(), false_label, false));
+                }
+            } else if (false_id == -1) {
+                String true_label = label + ".leaf." + true_id;
+                if (hasJump) {
+                    if (isCmpExpr(leaf)) {
+                        var icmp = handleCmpExpr((BinaryExprNode)leaf);
+                        curBlock.setEndIns(new icmpbranchIns(icmp, true_label, falseLabel));
+                    } else {
+                        var info = leaf.accept(this); // visit leaf
+                        curBlock.setEndIns(new branchIns(info.exprVar, true_label, falseLabel));
+                    }
+                } else {
+                    var info = leaf.accept(this); // visit leaf
+                    curBlock.addIns(new storeIns(new IRLiteral("false"), resptr));
+                    curBlock.setEndIns(new branchIns(info.exprVar, true_label, l_end.getLabel()));
+                }
+            } else {
+                String true_label = label + ".leaf." + true_id;
+                String false_label = label + ".leaf." + false_id;
+                if (isCmpExpr(leaf)) {
+                    var icmp = handleCmpExpr((BinaryExprNode)leaf);
+                    curBlock.setEndIns(new icmpbranchIns(icmp, true_label, false_label, true_id < false_id));
+                } else {
+                    var info = leaf.accept(this); // visit leaf
+                    curBlock.setEndIns(new branchIns(info.exprVar, true_label, false_label, true_id < false_id));
+                }
+            }
+        }
+        if (!hasJump) {
+            curBlock = l_end;
+            IRvar res = new IRvar(IRType.IRBoolType, "%" + label + ".val");
+            curBlock.addIns(new loadIns(res, resptr));
+            return res;
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public IRhelper visit(BinaryExprNode it) {
 
@@ -280,33 +421,35 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         // var rhsinfo = it.rhs.info;
 
         if (it.op.in("&&", "||")) {
-            // Short-circuit evaluation
-            IRvar resptr = handleTmpVarAlloc(IRType.IRBoolType, "%" + opstr + ".ptr");
-            IRblock l_rhs = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".rhs"));
-            IRblock l_end = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".end"));
-
-            res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
-
-            if (it.op.equals("&&")) curBlock.addIns(new storeIns(new IRLiteral("false"), resptr));
-            else curBlock.addIns(new storeIns(new IRLiteral("true"), resptr));
-
-            if (isCmpExpr(it.lhs)) {
-                var icmp = handleCmpExpr((BinaryExprNode)it.lhs);
-                if (it.op.equals("&&")) curBlock.setEndIns(new icmpbranchIns(icmp, l_rhs.getLabel(), l_end.getLabel()));    
-                else curBlock.setEndIns(new icmpbranchIns(icmp, l_end.getLabel(), l_rhs.getLabel()));
-            } else {
-                IRitem lhsvar = it.lhs.accept(this).exprVar; // visit lhs
-                if (it.op.equals("&&")) curBlock.setEndIns(new branchIns(lhsvar, l_rhs.getLabel(), l_end.getLabel()));
-                else curBlock.setEndIns(new branchIns(lhsvar, l_end.getLabel(), l_rhs.getLabel()));
-            }
+            res = handleBoolTree(it, null, null);
             
-            curBlock = l_rhs;
-            IRitem rhsvar = it.rhs.accept(this).exprVar; // visit rhs
-            curBlock.addIns(new storeIns(rhsvar, resptr));
-            curBlock.setEndIns(new jumpIns(l_end.getLabel()));
+            // // Short-circuit evaluation
+            // IRvar resptr = handleTmpVarAlloc(IRType.IRBoolType, "%" + opstr + ".ptr");
+            // IRblock l_rhs = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".rhs"));
+            // IRblock l_end = curFunc.newBlock(IRLabeler.getIdLabel("l" + opstr + ".end"));
 
-            l_end.addIns(new loadIns(res, resptr));
-            curBlock = l_end;
+            // res = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel("%" + opstr));
+
+            // if (it.op.equals("&&")) curBlock.addIns(new storeIns(new IRLiteral("false"), resptr));
+            // else curBlock.addIns(new storeIns(new IRLiteral("true"), resptr));
+
+            // if (isCmpExpr(it.lhs)) {
+            //     var icmp = handleCmpExpr((BinaryExprNode)it.lhs);
+            //     if (it.op.equals("&&")) curBlock.setEndIns(new icmpbranchIns(icmp, l_rhs.getLabel(), l_end.getLabel()));    
+            //     else curBlock.setEndIns(new icmpbranchIns(icmp, l_end.getLabel(), l_rhs.getLabel()));
+            // } else {
+            //     IRitem lhsvar = it.lhs.accept(this).exprVar; // visit lhs
+            //     if (it.op.equals("&&")) curBlock.setEndIns(new branchIns(lhsvar, l_rhs.getLabel(), l_end.getLabel()));
+            //     else curBlock.setEndIns(new branchIns(lhsvar, l_end.getLabel(), l_rhs.getLabel()));
+            // }
+            
+            // curBlock = l_rhs;
+            // IRitem rhsvar = it.rhs.accept(this).exprVar; // visit rhs
+            // curBlock.addIns(new storeIns(rhsvar, resptr));
+            // curBlock.setEndIns(new jumpIns(l_end.getLabel()));
+
+            // l_end.addIns(new loadIns(res, resptr));
+            // curBlock = l_end;
 
         } else {
             IRitem lhsvar = it.lhs.accept(this).exprVar;
@@ -820,6 +963,8 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         if (isCmpExpr(it.condition)) {
             var icmp = handleCmpExpr((BinaryExprNode)it.condition);
             curBlock.setEndIns(new icmpbranchIns(icmp, if_then.getLabel(), if_else.getLabel()));
+        } else if (isBoolOpExpr(it.condition)) {
+            handleBoolTree(it.condition, if_then.getLabel(), if_else.getLabel());
         } else {
             IRitem cond = it.condition.accept(this).exprVar;
             curBlock.setEndIns(new branchIns(cond, if_then.getLabel(), if_else.getLabel()));
@@ -863,6 +1008,8 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
             if (isCmpExpr(it.cond)) {
                 var icmp = handleCmpExpr((BinaryExprNode)it.cond);
                 curBlock.setEndIns(new icmpbranchIns(icmp, for_body.getLabel(), for_end.getLabel()));
+            } else if (isBoolOpExpr(it.cond)) {
+                handleBoolTree(it.cond, for_body.getLabel(), for_end.getLabel());
             } else {
                 IRitem cond = it.cond.accept(this).exprVar;
                 curBlock.setEndIns(new branchIns(cond, for_body.getLabel(), for_end.getLabel()));
@@ -904,6 +1051,8 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         if (isCmpExpr(it.condition)) {
             var icmp = handleCmpExpr((BinaryExprNode)it.condition);
             curBlock.setEndIns(new icmpbranchIns(icmp, while_body.getLabel(), while_end.getLabel()));
+        } else if (isBoolOpExpr(it.condition)) {
+            handleBoolTree(it.condition, while_body.getLabel(), while_end.getLabel());
         } else {
             IRitem cond = it.condition.accept(this).exprVar;
             curBlock.setEndIns(new branchIns(cond, while_body.getLabel(), while_end.getLabel()));

@@ -46,6 +46,16 @@ public class icmpbranchIns extends IRIns {
         this.falseLabel = falseLabel;
     }
 
+    public icmpbranchIns(icmpIns icmp, String trueLabel, String falseLabel, boolean likely) {
+        this.llvmirTmpVar = icmp.result;
+        this.lhs = icmp.lhs;
+        this.rhs = icmp.rhs;
+        this.op = icmp.op;
+        this.trueLabel = trueLabel;
+        this.falseLabel = falseLabel;
+        this.likely = likely;
+    }
+
     public void replaceLabel(String old, String nw) {
         if (trueLabel.equals(old)) {
             trueLabel = nw;

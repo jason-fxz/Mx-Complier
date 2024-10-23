@@ -16,6 +16,7 @@ public class ASMLoadImmIns extends ASMIns {
 
     @Override
     public String toString() {
+        if (-2048 <= imm && imm <= 2047) return String.format("%-8s", "addi") + rd + ", zero, " + imm;
         return String.format("%-8s", "li") + rd + ", " + imm;
     }
 
@@ -24,4 +25,8 @@ public class ASMLoadImmIns extends ASMIns {
         return visitor.visit(this);
     }
     
+    @Override
+    public int countBytes() {
+        return (-2048 <= imm && imm <= 2047) ? 4 : 8;
+    }
 }

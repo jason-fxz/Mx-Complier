@@ -29,6 +29,10 @@ public class ASMArithiIns extends ASMIns {
         return visitor.visit(this);
     }
 
+    @Override
+    public int countBytes() {
+        return 4;
+    }
     
     
 }

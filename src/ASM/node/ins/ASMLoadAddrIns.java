@@ -24,4 +24,8 @@ public class ASMLoadAddrIns extends ASMIns {
         return visitor.visit(this);
     }
     
+    @Override
+    public int countBytes() {
+        return 8;
+    }
 }

@@ -70,4 +70,13 @@ public class ASMBlock extends ASMNode {
     public <T> T accept(ASMVisitor<T> visitor) {
         return visitor.visit(this);
     }
+
+    public int countBytes() {
+        int cnt = 0;
+        for (ASMIns ins : insList) {
+            cnt += ins.countBytes();
+        }
+        if (jumpIns != null) cnt += jumpIns.countBytes();
+        return cnt;
+    }
 }

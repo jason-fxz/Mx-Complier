@@ -471,8 +471,16 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
 
         for (var gVar : it.gVars) gVar.accecpt(this);
         for (var gStr : it.gStrs) gStr.accecpt(this);
-        for (var func : it.funcs) func.accecpt(this);
-        
+        for (var func : it.funcs) {
+            fastbranchFlag = true;
+            func.accecpt(this);
+            if (root.funcs.getLast().countBytes() > 4095) {
+                // throw new RuntimeException("ASMBuilder: function too large");
+                root.funcs.removeLast();
+                fastbranchFlag = false;
+                func.accecpt(this);
+            }
+        }
         return null;
     }
 

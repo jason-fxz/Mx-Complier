@@ -28,4 +28,9 @@ public class ASMBrzIns extends ASMIns {
     public <T> T accept(ASMVisitor<T> visitor) {
         return visitor.visit(this);
     }
+
+    @Override
+    public int countBytes() {
+        return 4;
+    }
 }

@@ -64,4 +64,12 @@ public class ASMFuncDefNode extends ASMNode {
     public String getName() {
         return name;
     }
+
+    public int countBytes() {
+        int cnt = 0;
+        for (ASMBlock block : blocks) {
+            cnt += block.countBytes();
+        }
+        return cnt;
+    }
 }

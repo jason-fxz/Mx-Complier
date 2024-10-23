@@ -127,7 +127,7 @@ public class Main {
             // Allocator
             new SSALiveness(irRoot).run();
             new SSAalloctor(irRoot).run();
-            // new Optimize.DCE(irRoot).runJumpElimination();
+            new Optimize.DCE(irRoot).runJumpElimination();
 
             // ASMBuilder
             timer.start("ASMBuilder");

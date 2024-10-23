@@ -24,6 +24,16 @@ public class branchIns extends IRIns {
         this.falseLabel = falseLabel;
     }
 
+    public branchIns(IRitem cond, String trueLabel, String falseLabel, boolean likely) {
+        if (!cond.type.equals(IRType.IRBoolType)) {
+            throw new RuntimeException("branchIns cond should be IRBoolType");
+        }
+        this.cond = cond;
+        this.trueLabel = trueLabel;
+        this.falseLabel = falseLabel;
+        this.likely = likely;
+    }
+
     public void replaceLabel(String old, String nw) {
         if (trueLabel.equals(old)) {
             trueLabel = nw;
