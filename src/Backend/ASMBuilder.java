@@ -533,7 +533,7 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         throw new UnsupportedOperationException("Should Not visit IRFuncDec");
     }
 
-    private void initRegMap(int maxUsedReg) {
+    private void initRegMap(int maxUsedReg, boolean isLeafFunc) {
         // init regMap
         regMap.clear();
         regCnt = 0;
@@ -541,18 +541,33 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
             if (regCnt >= maxUsedReg) return;
             regMap.put(regCnt++, ASMReg.a(i));
         }
-        for (int i = 0; i < 12; ++i) {
+        if (isLeafFunc) {
+            for (int i = 3; i < 7; ++i) {
+                if (regCnt >= maxUsedReg) return;
+                regMap.put(regCnt++, ASMReg.t(i));
+            }
             if (regCnt >= maxUsedReg) return;
-            regMap.put(regCnt++, ASMReg.s(i));
-        }
-        for (int i = 3; i < 7; ++i) {
+            regMap.put(regCnt++, ASMReg.gp);
             if (regCnt >= maxUsedReg) return;
-            regMap.put(regCnt++, ASMReg.t(i));
+            regMap.put(regCnt++, ASMReg.tp);
+            for (int i = 0; i < 12; ++i) {
+                if (regCnt >= maxUsedReg) return;
+                regMap.put(regCnt++, ASMReg.s(i));
+            }
+        } else {
+            for (int i = 0; i < 12; ++i) {
+                if (regCnt >= maxUsedReg) return;
+                regMap.put(regCnt++, ASMReg.s(i));
+            }
+            for (int i = 3; i < 7; ++i) {
+                if (regCnt >= maxUsedReg) return;
+                regMap.put(regCnt++, ASMReg.t(i));
+            }
+            if (regCnt >= maxUsedReg) return;
+            regMap.put(regCnt++, ASMReg.gp);
+            if (regCnt >= maxUsedReg) return;
+            regMap.put(regCnt++, ASMReg.tp);
         }
-        if (regCnt >= maxUsedReg) return;
-        regMap.put(regCnt++, ASMReg.gp);
-        if (regCnt >= maxUsedReg) return;
-        regMap.put(regCnt++, ASMReg.tp);
     }
 
     @Override
@@ -560,10 +575,9 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         curFunc = new ASMFuncDefNode(it.getName().substring(1), it.params.size());
         root.funcs.add(curFunc);
 
-        initRegMap(it.maxUsedReg);
-
+        
         retLists = new ArrayList<>();
-
+        
         // calculate stack size
         int countMaxCallParams = 0;
         int countCall = 0;
@@ -582,9 +596,10 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
                 lastIsCall = (ins instanceof callIns);
             }
         }
-
+        
+        initRegMap(it.maxUsedReg, countCall == 0);
         Save2SRegFlag = (countCall >= 4);
-
+        
         curFunc.stackSize = 8 + it.maxUsedReg * 4 + Math.max(0, countMaxCallParams - 8) * 4 + it.spilledVar.size() * 4;
         curFunc.stackSize = (curFunc.stackSize + 15) / 16 * 16;
 
