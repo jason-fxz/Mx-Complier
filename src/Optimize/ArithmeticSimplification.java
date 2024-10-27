@@ -13,7 +13,9 @@ import IR.item.IRvar;
 import IR.node.IRRoot;
 import IR.node.IRblock;
 import IR.node.def.IRFuncDef;
+import IR.node.ins.IRIns;
 import IR.node.ins.arithIns;
+import Util.IRLabeler;
 
 public class ArithmeticSimplification {
     IRRoot irRoot;
@@ -45,36 +47,6 @@ public class ArithmeticSimplification {
         }
     }
 
-    void makeSimple(InsRef ref) {
-        var ins = ref.ins();
-        switch (ins.op) {
-            case "add":
-                if (ins.lhs.equals(ins.rhs)) {
-                    ref.replace(new arithIns(ins.result, "shl", ins.lhs, new IRLiteral("1")));
-                }
-                break;
-            case "sub":
-                if (ins.rhs instanceof IRLiteral) {
-                    int C = ((IRLiteral)ins.rhs).getInt();
-                    ref.replace(new arithIns(ins.result, "add", ins.lhs, new IRLiteral(String.valueOf(-C))));
-                }
-                break;
-            case "mul":
-                if (ins.rhs instanceof IRLiteral) {
-                    int C = ((IRLiteral)ins.rhs).getInt();
-                    if (C == -1) {
-                        ref.replace(new arithIns(ins.result, "sub", new IRLiteral("0"), ins.lhs));
-                    } else if (Integer.bitCount(C) == 1) { // Check if mulc is a power of 2
-                        int shiftAmount = Integer.numberOfTrailingZeros(C);
-                        ref.replace(new arithIns(ins.result, "shl", ins.lhs, new IRLiteral(String.valueOf(shiftAmount))));
-                    }
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
     void instcombine(IRFuncDef func) {
         Map<IRvar, List<InsRef>> varUses = new HashMap<>();
         Map<IRvar, InsRef> varDef = new HashMap<>();
@@ -83,12 +55,64 @@ public class ArithmeticSimplification {
 
 
         for (var block : func.blocks.values()) {
+            ArrayList<IRIns> replaceList = new ArrayList<>();
+            for (int i = 0; i < block.insList.size(); ++i) {
+                if (block.insList.get(i) instanceof arithIns) {
+                    var ins = (arithIns) block.insList.get(i);
+                    setConst2Right(ins);
+                    switch (ins.op) {
+                        case "add":
+                            if (ins.lhs.equals(ins.rhs)) {
+                                replaceList.add(new arithIns(ins.result, "shl", ins.lhs, new IRLiteral("1")));
+                            } else replaceList.add(ins);
+                            break;
+                        case "sub":
+                            if (ins.rhs instanceof IRLiteral) {
+                                int C = ((IRLiteral)ins.rhs).getInt();
+                                replaceList.add(new arithIns(ins.result, "add", ins.lhs, new IRLiteral(String.valueOf(-C))));
+                            } else replaceList.add(ins);
+                            break;
+                        case "mul":
+                            if (ins.rhs instanceof IRLiteral) {
+                                int C = ((IRLiteral)ins.rhs).getInt();
+                                if (C == -1) {
+                                    replaceList.add(new arithIns(ins.result, "sub", new IRLiteral("0"), ins.lhs));
+                                } else if (C == 0) {
+                                    replaceList.add(new arithIns(ins.result, "xor", new IRLiteral("0") , new IRLiteral("0")));  
+                                } else if (C > 0) {
+                                    if (Integer.bitCount(C) == 1) { // Check if mulc is a power of 2
+                                        int shiftAmount = Integer.numberOfTrailingZeros(C);
+                                        replaceList.add(new arithIns(ins.result, "shl", ins.lhs, new IRLiteral(String.valueOf(shiftAmount))));
+                                    } else replaceList.add(ins);
+                                } else if (C < 0) {
+                                    int CC = -C;
+                                    if (Integer.bitCount(CC) == 1) {
+                                        int shiftAmount = Integer.numberOfTrailingZeros(CC);
+                                        var tmpvar = new IRvar(IRLabeler.getIdLabel("%mul.tmp"));
+                                        replaceList.add(new arithIns(tmpvar, "sub", new IRLiteral("0"), ins.lhs));
+                                        replaceList.add(new arithIns(ins.result, "shl", tmpvar, new IRLiteral(String.valueOf(shiftAmount))));
+                                    } else replaceList.add(ins);
+                                } else {
+                                    replaceList.add(ins);
+                                }
+                            } else replaceList.add(ins);
+                            break;
+                        default:
+                            replaceList.add(ins);
+                            break;
+                    }
+                } else {
+                    replaceList.add(block.insList.get(i));
+                }
+            }
+            block.insList = replaceList;
+        }
+
+        for (var block : func.blocks.values()) {
             for (int i = 0; i < block.insList.size(); ++i) {
                 var ins = block.insList.get(i);
                 if (ins instanceof arithIns) {
                     var arith = (arithIns) ins;
-                    setConst2Right(arith);
-                    makeSimple(new InsRef(block, i));
                     if (arith.rhs instanceof IRLiteral && arith.lhs instanceof IRvar) {
                         var ref = new InsRef(block, i);
                         varDef.put(arith.result, ref);
