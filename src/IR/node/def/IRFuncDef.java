@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 
 
 public class IRFuncDef extends IRDefNode {
-    public String name;
+    public String name; // function name (begin with @)
     public IRType returnType;
     public ArrayList<IRvar> params;
     public IRblock entryBlock;
@@ -21,6 +21,7 @@ public class IRFuncDef extends IRDefNode {
     public HashMap<IRvar, Integer> spilledVar;
     public HashMap<IRvar, Integer> regOfVar;
     public int maxUsedReg = 0;
+    public int inlineDepth = 0;
 
 
     public IRFuncDef(String name, IRType returnType) {
@@ -86,6 +87,18 @@ public class IRFuncDef extends IRDefNode {
         return result;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof IRFuncDef) {
+            return name.equals(((IRFuncDef) obj).name);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
     // public int StackVarCount()  {
     //     int count = 0, mxcall = 0;
     //     for (IRblock block : blockList) {

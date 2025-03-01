@@ -20,9 +20,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import org.stringtemplate.v4.compiler.STParser.namedArg_return;
+
 public class IRBuilder implements ASTVisitor<IRhelper> {
     private IRblock curBlock;
     private IRFuncDef curFunc;
+    private ArrayList<IRblock> retBlock;
     private IRFuncDef gInit;
     private IRRoot root;
     private String curClassName;
@@ -163,6 +166,7 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         root.funcs.add(funcDef);
         curFunc = funcDef;
         curBlock = funcDef.entryBlock;
+        retBlock = new ArrayList<>();
         if (it.name.equals("main")) {
             curBlock.addIns(new callIns("__mx_global_init"));
         }
@@ -194,18 +198,30 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         it.body.accept(this);
 
         curFunc.entryBlock.setEndIns(new jumpIns("entry.start"));
-        curFunc = null;
-        curBlock = null;
-
+        
         tidyUp(funcDef);
+        
+        curBlock = null;
+        curFunc = null;
         
         
         return null;
     }
+
+    IRvar retaddr = null;
     
     // Tidy Up : clean empty blocks & clean unreachable blocks
     private void tidyUp(IRFuncDef funcDef) {
         HashSet<IRblock> visited = new HashSet<>();
+        retaddr = null;
+        if (retBlock.size() > 1 && !funcDef.returnType.equals(IRType.IRvoidType)) {
+            IRblock retblk = funcDef.newBlock("entry.return");
+            visited.add(retblk);
+            retaddr = handleTmpVarAlloc(funcDef.returnType, "%ret.ptr");
+            var retval = new IRvar(funcDef.returnType, "%ret.val");
+            retblk.addIns(new loadIns(retval, retaddr));
+            retblk.setEndIns(new returnIns(retval));
+        }
         dfs(funcDef.entryBlock, funcDef, visited);
         
         ArrayList<IRblock> tidied = new ArrayList<>();
@@ -238,17 +254,22 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
             dfs(then, func, visited);
             dfs(els, func, visited);
         } else if (cur.endIns instanceof returnIns) {
+            var ret = (returnIns) cur.endIns;
+            if (!ret.value.type.equals(IRType.IRvoidType) && retBlock.size() > 1) {
+                var retblk = curFunc.blockList.getLast();
+                cur.insList.add(new storeIns(ret.value, retaddr));
+                cur.endIns = new jumpIns(retblk.getLabel());
+            }
             // do nothing
         } else {
             throw new RuntimeException("Unexpected endIns");
-
         }
     }
 
     private IRvar handleTmpVarAlloc(IRType type, String name) {
         IRvar var = new IRvar(IRLabeler.getIdLabel(name));
-        curFunc.entryBlock.addIns(new allocaIns(var, type));
-        curFunc.entryBlock.addIns(new storeIns(new IRLiteral(type), var));
+        curFunc.entryBlock.insList.add(new allocaIns(var, type));
+        curFunc.entryBlock.insList.add(new storeIns(new IRLiteral(type), var));
         return var;
     }
 
@@ -1074,11 +1095,16 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
     public IRhelper visit(ReturnStmtNode it) {
         if (it.expr != null) {
             IRhelper helper = it.expr.accept(this);
-            if (!curBlock.isEnd()) curBlock.setEndIns(new returnIns(helper.exprVar));
+            if (!curBlock.isEnd()) {
+                retBlock.add(curBlock);
+                curBlock.setEndIns(new returnIns(helper.exprVar));
+            }
         } else {
-            if (!curBlock.isEnd()) curBlock.setEndIns(new returnIns(new IRLiteral("void")));
+            if (!curBlock.isEnd()) {
+                retBlock.add(curBlock);
+                curBlock.setEndIns(new returnIns(new IRLiteral("void")));
+            }
         }
-
         return null;
     }
 
