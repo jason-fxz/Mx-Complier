@@ -22,7 +22,7 @@ Sema: build
 
 .PHONY: Semall
 Semall: build
-	time -p ./testcases/sema/scripts/test_all.bash 'java $(JAVA_RUN_OPTS) Main -S' testcases/sema/
+	./testcases/sema/scripts/test_all.bash 'java $(JAVA_RUN_OPTS) Main -S' testcases/sema/
 
 .PHONY: irtest
 irtest: build genbuiltin

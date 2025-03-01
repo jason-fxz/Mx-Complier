@@ -11,7 +11,7 @@ asm_file="builtin.s"
 
 # 生成 LLVM IR
 echo "gen LLVM IR..."
-clang-17 -S -emit-llvm --target=riscv32-unknown-elf -O2 -fno-discard-value-names -fno-builtin-printf -fno-builtin-memcpy -fno-builtin-malloc -fno-builtin-strlen \
+clang -S -emit-llvm --target=riscv32-unknown-elf -O2 -fno-discard-value-names -fno-builtin-printf -fno-builtin-memcpy -fno-builtin-malloc -fno-builtin-strlen \
     $input_file -o $tmp_file
 
 
@@ -42,4 +42,4 @@ echo "replace ok, save to $output_file"
 # 生成汇编代码
 
 echo "gen asm..."
-llc-17 -march=riscv32 -filetype=asm $output_file -o $asm_file
+llc -march=riscv32 -filetype=asm $output_file -o $asm_file
