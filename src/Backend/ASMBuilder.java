@@ -581,7 +581,7 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
         // calculate stack size
         int countMaxCallParams = 0;
         int countCall = 0;
-        for (var blk : it.blocks.values()) {
+        for (var blk : it.blockList) {
             boolean lastIsCall = false;
             for (var ins : blk.insList) {
                 if (ins instanceof callIns) {
@@ -620,7 +620,7 @@ public class ASMBuilder implements IRvisitor<ASMHelper> {
             assert curFunc.stackSpillOffset + 4 * entry.getValue() < curFunc.stackSize - 4 : "ASMBuilder: spilled var overflow";
         }
 
-        for (var block : it.blocks.values()) {
+        for (var block : it.blockList) {
             if (block.empty()) throw new RuntimeException("ASMBuiler: block empty");
             if (block.getLabel().equals("entry")) continue;
             curBlock = new ASMBlock(getLabel(block.getLabel()));

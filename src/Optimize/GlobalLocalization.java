@@ -52,7 +52,7 @@ public class GlobalLocalization {
         for (var func : irRoot.funcs) {
             int sccid = tarjanMap.get(func.name).belong;
             var set = new HashSet<IRvar>();
-            for (var block : func.blocks.values()) {
+            for (var block : func.blockList) {
                 for (var ins : block.insList) {
                     if (ins instanceof loadIns) {
                         var load = (loadIns) ins;
@@ -109,7 +109,7 @@ public class GlobalLocalization {
                 func.entryBlock.insList.add(new storeIns(tmpvar, entry.getValue()));
             }
 
-            for (var block : func.blocks.values()) {
+            for (var block : func.blockList) {
                 if (block == func.entryBlock) continue;
                 for (var ins : block.insList) {
                     if (ins instanceof loadIns) {
@@ -141,7 +141,7 @@ public class GlobalLocalization {
         callEdge = new HashMap<>();
         for (var func : irRoot.funcs) {
             var set = new HashSet<String>();
-            for (var block : func.blocks.values()) {
+            for (var block : func.blockList) {
                 for (var ins : block.insList) {
                     if (ins instanceof callIns) {
                         String funcName = "@" + ((callIns) ins).func;

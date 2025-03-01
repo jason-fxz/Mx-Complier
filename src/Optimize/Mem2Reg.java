@@ -201,32 +201,32 @@ public class Mem2Reg {
         }        
     }
 
-    void reorderBlocks() {
-        // Reorder blocks to ensure connected blocks are closer
-        List<IRblock> orderedBlocks = new ArrayList<>();
-        Set<IRblock> visitedBlocks = new HashSet<>();
-        Queue<IRblock> blockQueue = new ArrayDeque<>();
+    // void reorderBlocks() {
+    //     // Reorder blocks to ensure connected blocks are closer
+    //     List<IRblock> orderedBlocks = new ArrayList<>();
+    //     Set<IRblock> visitedBlocks = new HashSet<>();
+    //     Queue<IRblock> blockQueue = new ArrayDeque<>();
 
-        blockQueue.add(curFunc.entryBlock);
-        visitedBlocks.add(curFunc.entryBlock);
+    //     blockQueue.add(curFunc.entryBlock);
+    //     visitedBlocks.add(curFunc.entryBlock);
 
-        while (!blockQueue.isEmpty()) {
-            IRblock currentBlock = blockQueue.poll();
-            orderedBlocks.add(currentBlock);
+    //     while (!blockQueue.isEmpty()) {
+    //         IRblock currentBlock = blockQueue.poll();
+    //         orderedBlocks.add(currentBlock);
 
-            for (IRblock nextBlock : currentBlock.getNextBlocks()) {
-                if (!visitedBlocks.contains(nextBlock)) {
-                    visitedBlocks.add(nextBlock);
-                    blockQueue.add(nextBlock);
-                }
-            }
-        }
+    //         for (IRblock nextBlock : currentBlock.getNextBlocks()) {
+    //             if (!visitedBlocks.contains(nextBlock)) {
+    //                 visitedBlocks.add(nextBlock);
+    //                 blockQueue.add(nextBlock);
+    //             }
+    //         }
+    //     }
 
-        curFunc.blocks.clear();
-        for (var block : orderedBlocks) {
-            curFunc.blocks.put(block.Label, block);
-        }
-    }
+    //     curFunc.blocks.clear();
+    //     for (var block : orderedBlocks) {
+    //         curFunc.blocks.put(block.Label, block);
+    //     }
+    // }
 
     // void insertBlockOnCriticalEdges() {
     //     List<Pair<IRblock, IRblock>> criticalEdges = findCirticalEdges();

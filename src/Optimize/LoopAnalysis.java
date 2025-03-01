@@ -34,7 +34,7 @@ public class LoopAnalysis {
 
     void findBackEdges(IRFuncDef func) {
         loops = new HashMap<>();
-        for (var block : func.blocks.values()) {
+        for (var block : func.blockList) {
             for (var nextBlock : block.getNextBlocks()) {
                 if (CFG.isAncestor(nextBlock, block)) {
                     if (!loops.containsKey(nextBlock)) {
@@ -47,7 +47,7 @@ public class LoopAnalysis {
     }
 
     void getLoops(IRFuncDef func) {
-        for (var block : func.blocks.values()) {
+        for (var block : func.blockList) {
             block.loopDepth = 0;
         }
 

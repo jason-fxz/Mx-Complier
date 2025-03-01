@@ -208,13 +208,15 @@ public class IRBuilder implements ASTVisitor<IRhelper> {
         HashSet<IRblock> visited = new HashSet<>();
         dfs(funcDef.entryBlock, funcDef, visited);
         
-        var iterator = funcDef.blocks.entrySet().iterator();
-        while (iterator.hasNext()) {
-            var entry = iterator.next();
-            if (entry.getValue().empty() || !visited.contains(entry.getValue())) {
-                iterator.remove();
+        ArrayList<IRblock> tidied = new ArrayList<>();
+        for (var block : funcDef.blockList) {
+            if (block.empty() || !visited.contains(block)) {
+                funcDef.blocks.remove(block.getLabel());
+            } else {
+                tidied.add(block);
             }
         }
+        funcDef.blockList = tidied;
     }
 
     private void dfs(IRblock cur, IRFuncDef func, HashSet<IRblock> visited) {

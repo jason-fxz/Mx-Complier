@@ -63,7 +63,7 @@ public class DCE {
             varDef.put(x, null);
         }
 
-        for (var block : func.blocks.values()) {
+        for (var block : func.blockList) {
             for (var ins : block.phiList) {
                 if (ins.getDef() != null) {
                     varDef.put(ins.getDef(), ins);
@@ -107,14 +107,14 @@ public class DCE {
             }
         }
 
-        for (var block : func.blocks.values()) {
+        for (var block : func.blockList) {
             block.phiList.removeIf(ins -> ins.removed);
             block.insList.removeIf(ins -> ins.removed);
         }
     }
 
     void jumpElimination(IRFuncDef func) {
-        for (var block : func.blocks.values()) {
+        for (var block : func.blockList) {
             if (block.phiList.size() == 0 && block.insList.size() == 0 && block.endIns instanceof jumpIns
             && block.moveList == null) {
                 var jump = (jumpIns) block.endIns;
@@ -162,9 +162,11 @@ public class DCE {
             }
         }
         curFunc.blocks.values().removeIf(block -> !reachable.contains(block));
-        for (var block : curFunc.blocks.values()) {
+        curFunc.blockList.removeIf(block -> !reachable.contains(block));
+        // remove phi values from unreachable blocks
+        for (var block : curFunc.blockList) {
             for (var phi : block.phiList) {
-                phi.values.removeIf(item -> !reachable.contains(curFunc.blocks.get(item.label)));
+                phi.values.removeIf(item -> curFunc.blocks.get(item.label) == null);
             }
         }
     }
@@ -179,7 +181,7 @@ public class DCE {
             varUseCnt.put(x, 1); // params just can't be removed
         }
 
-        for (var block : curFunc.blocks.values()) {
+        for (var block : curFunc.blockList) {
             for (var ins : block.phiList) {
                 if (ins.getDef() != null) {
                     varDef.put(ins.getDef(), ins);
@@ -209,7 +211,7 @@ public class DCE {
             }
         }
 
-        for (var block : curFunc.blocks.values()) {
+        for (var block : curFunc.blockList) {
             for (var ins : block.phiList) {
                 ins.getUses().forEach(var -> varUseCnt.put(var, varUseCnt.getOrDefault(var, 0) + 1));
             }
@@ -243,7 +245,7 @@ public class DCE {
             }
         }
 
-        for (var block : curFunc.blocks.values()) {
+        for (var block : curFunc.blockList) {
             block.insList.removeIf(ins -> ins.removed);
             block.phiList.removeIf(ins -> ins.removed);
         }
@@ -252,7 +254,7 @@ public class DCE {
 
         Set<IRvar> used = new HashSet<>();
 
-        for (var block : curFunc.blocks.values()) {
+        for (var block : curFunc.blockList) {
             for (var ins : block.phiList) {
                 ins.getUses().forEach(var -> used.add(var));
             }
@@ -262,7 +264,7 @@ public class DCE {
             block.endIns.getUses().forEach(var -> used.add(var));
         }
 
-        for (var block : curFunc.blocks.values()) {
+        for (var block : curFunc.blockList) {
             block.phiList.forEach(phi -> {
                 assert used.contains(phi.getDef());
             });

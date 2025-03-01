@@ -54,7 +54,7 @@ public class ArithmeticSimplification {
         Queue<InsRef> workList = new ArrayDeque<>();
 
 
-        for (var block : func.blocks.values()) {
+        for (var block : func.blockList) {
             ArrayList<IRIns> replaceList = new ArrayList<>();
             for (int i = 0; i < block.insList.size(); ++i) {
                 if (block.insList.get(i) instanceof arithIns) {
@@ -108,7 +108,7 @@ public class ArithmeticSimplification {
             block.insList = replaceList;
         }
 
-        for (var block : func.blocks.values()) {
+        for (var block : func.blockList) {
             for (int i = 0; i < block.insList.size(); ++i) {
                 var ins = block.insList.get(i);
                 if (ins instanceof arithIns) {

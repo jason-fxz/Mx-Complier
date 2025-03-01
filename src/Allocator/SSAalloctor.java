@@ -54,7 +54,7 @@ public class SSAalloctor {
     }
 
     void PhiElimation() {
-        for (var block : curFunc.blocks.values()) {
+        for (var block : curFunc.blockList) {
             if (block.empty()) throw new RuntimeException("PhiElimation: block empty");
             if (block.phiList.isEmpty()) continue;
             for (var prev : block.getPrevBlocks()) {
@@ -122,7 +122,7 @@ public class SSAalloctor {
 
         // count the usage of each var & get def use IRvar
         spillCost.clear();
-        for (var block : curFunc.blocks.values()) {
+        for (var block : curFunc.blockList) {
             double delta = Math.pow(10, block.loopDepth);
             block.phiList.forEach(ins -> countInsUsage(ins, delta));
             block.insList.forEach(ins -> countInsUsage(ins, delta));
@@ -137,13 +137,13 @@ public class SSAalloctor {
 
 
         // check if need to spill
-        for (var block : curFunc.blocks.values()) {
+        for (var block : curFunc.blockList) {
             block.phiList.forEach(ins -> SpillIns(ins, false));
             block.insList.forEach(ins -> SpillIns(ins, false));
             SpillIns(block.endIns, false);
         }
         // update the liveIn/liveOut
-        for (var block : curFunc.blocks.values()) {
+        for (var block : curFunc.blockList) {
             block.phiList.forEach(ins -> SpillIns(ins, true));
             block.insList.forEach(ins -> SpillIns(ins, true));
             SpillIns(block.endIns, true);
@@ -272,12 +272,13 @@ public class SSAalloctor {
 
             // curFunc.blocks.put(newBlock.Label, newBlock);
             CFG.blockList.add(CFG.blockList.indexOf(pred) + 1, newBlock);
+            curFunc.blocks.put(newBlock.Label, newBlock);
         }
 
-        curFunc.blocks.clear();
-        for (var block : CFG.blockList) {
-            curFunc.blocks.put(block.Label, block);
-        }
+        // curFunc.blocks.clear();
+        // for (var block : CFG.blockList) {
+        //     curFunc.blocks.put(block.Label, block);
+        // }
 
         if (!findCirticalEdges().isEmpty()) {
             throw new RuntimeException("critical edges not removed");
@@ -306,9 +307,11 @@ public class SSAalloctor {
 
         reorderBlocksDFS(curFunc.entryBlock, orderedBlocks, visitedBlocks);
 
-
+        curFunc.blockList.clear();
         curFunc.blocks.clear();
+
         for (var block : orderedBlocks) {
+            curFunc.blockList.add(block);
             curFunc.blocks.put(block.Label, block);
         }
     }

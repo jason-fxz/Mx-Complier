@@ -6,7 +6,6 @@ import java.util.BitSet;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,12 +31,12 @@ public class CFGBuilder {
     public CFGBuilder() { }
 
     // DFS to get reverse post order
-    private List<IRblock> getReversePostOrder(LinkedHashMap<String, IRblock> blocks) {
+    private List<IRblock> getReversePostOrder() {
         List<IRblock> reversePostOrder = new ArrayList<>();
         Set<IRblock> visited = new HashSet<>();
         Deque<IRblock> stack = new ArrayDeque<>();
 
-        for (IRblock block : blocks.values()) {
+        for (var block : blockList) {
             if (!visited.contains(block)) {
                 dfs(block, visited, stack);
             }
@@ -60,10 +59,10 @@ public class CFGBuilder {
         stack.push(block);
     }
 
-    private void initializeDomSets(LinkedHashMap<String, IRblock> blocks) {
+    private void initializeDomSets() {
         domSets = new HashMap<>();
-        int tot = blocks.size();
-        for (var curblock : blocks.values()) {
+        int tot = blockList.size();
+        for (var curblock : blockList) {
             BitSet domSet = new BitSet(tot);
             if (curblock == curFunc.entryBlock) {
                 domSet.set(0); // the entry block only dominates itself
@@ -74,10 +73,10 @@ public class CFGBuilder {
         }
     }
 
-    private void computeDominance(LinkedHashMap<String, IRblock> blocks) {
-        var ord = getReversePostOrder(blocks);
+    private void computeDominance() {
+        var ord = getReversePostOrder();
         boolean changed = true;
-        int tot = blocks.size();
+        int tot = blockList.size();
         while (changed) {
             changed = false;
             for (var block : ord) {
@@ -158,15 +157,15 @@ public class CFGBuilder {
 
     public CFGBuilder buildCFG(IRFuncDef func) {
         curFunc = func;
-        blockList = new ArrayList<>(func.blocks.values());
+        blockList = func.blockList;
         for (int i = 0; i < blockList.size(); i++) {
             blockList.get(i).index = i;
         }
         var blocks = func.blocks;
-        for (var block : blocks.values()) {
+        for (var block : blockList) {
             block.initPrevNextBlocks();
         }
-        for (var curblock : blocks.values()) {
+        for (var curblock : blockList) {
             if (curblock.endIns instanceof branchIns) {
                 IRblock trueBlock = blocks.get(((branchIns) curblock.endIns).trueLabel);
                 IRblock falseBlock = blocks.get(((branchIns) curblock.endIns).falseLabel);
@@ -198,8 +197,8 @@ public class CFGBuilder {
         if (curFunc == null) {
             throw new RuntimeException("calcDom: curFunc == null");
         }
-        initializeDomSets(curFunc.blocks);
-        computeDominance(curFunc.blocks);
+        initializeDomSets();
+        computeDominance();
         return this;
     }
     

@@ -60,7 +60,7 @@ public class SSALiveness {
         blockOfIns.clear();
         useOfVar.clear();
         totalUse = 0;
-        for (var block : func.blocks.values()) {
+        for (var block : func.blockList) {
             for (int i = 0; i < block.insList.size(); i++) {
                 var ins = block.insList.get(i);
                 if (i > 0){

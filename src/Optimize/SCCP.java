@@ -332,7 +332,7 @@ public class SCCP {
             varLattice.put(param, new Lattice(latticeType.BOTTOM, null));
         });
 
-        for (var block : curFunc.blocks.values()) {
+        for (var block : curFunc.blockList) {
             for (var ins : block.phiList) {
                 phi2Block.put(ins, block);
                 ins.getUses().forEach(var -> {
@@ -387,7 +387,7 @@ public class SCCP {
     }
 
     void replaceConst() {
-        for (var block : curFunc.blocks.values()) {
+        for (var block : curFunc.blockList) {
             block.phiList.forEach(phi -> {replaceConstIns(phi);});
             block.insList.forEach(ins -> {replaceConstIns(ins);});
             replaceConstIns(block.endIns);

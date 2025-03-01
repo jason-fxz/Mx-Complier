@@ -15,7 +15,8 @@ public class IRFuncDef extends IRDefNode {
     public IRType returnType;
     public ArrayList<IRvar> params;
     public IRblock entryBlock;
-    public LinkedHashMap<String, IRblock> blocks;
+    public HashMap<String, IRblock> blocks;
+    public ArrayList<IRblock> blockList;
 
     public HashMap<IRvar, Integer> spilledVar;
     public HashMap<IRvar, Integer> regOfVar;
@@ -28,7 +29,9 @@ public class IRFuncDef extends IRDefNode {
         this.params = new ArrayList<>();
         this.entryBlock = new IRblock("entry");
         this.blocks = new LinkedHashMap<>();
+        this.blockList = new ArrayList<>();
         this.blocks.put("entry", this.entryBlock);
+        this.blockList.add(this.entryBlock);
     }
 
     public void addParam(IRvar param) {
@@ -38,6 +41,7 @@ public class IRFuncDef extends IRDefNode {
     public IRblock newBlock(String label) {
         IRblock block = new IRblock(label);
         blocks.put(label, block);
+        blockList.add(block);
         return block;
     }
 
