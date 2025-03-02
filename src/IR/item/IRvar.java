@@ -57,4 +57,8 @@ public class IRvar extends IRitem {
         return name.startsWith("%");
     }
 
+    @Override
+    public IRitem clone() {
+        return new IRvar(type, new String(name));
+    }
 }

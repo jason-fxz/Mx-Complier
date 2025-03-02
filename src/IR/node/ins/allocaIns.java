@@ -40,6 +40,25 @@ public class allocaIns extends IRIns {
     }
 
     @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        if (result.equals(old)) {
+            result = nw;
+        }
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        if (map.containsKey(result)) {
+            result = (IRvar)map.get(result);
+        }
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        // No labels in allocaIns, so nothing to do
+    }
+
+    @Override
     public Set<IRvar> getUses() {
         return new HashSet<>();
     }
@@ -47,5 +66,10 @@ public class allocaIns extends IRIns {
     @Override
     public IRvar getDef() {
         return result;
+    }
+
+    @Override
+    public IRIns clone() {
+        return new allocaIns((IRvar) result.clone(), type);
     }
 }

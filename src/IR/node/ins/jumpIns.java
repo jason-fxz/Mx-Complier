@@ -44,6 +44,23 @@ public class jumpIns extends IRIns {
     }
 
     @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        // No definition in jump instruction
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        // No definition in jump instruction
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        if (map.containsKey(label)) {
+            label = map.get(label);
+        }
+    }
+
+    @Override
     public Set<IRvar> getUses() {
         return new HashSet<>();
     }
@@ -51,6 +68,11 @@ public class jumpIns extends IRIns {
     @Override
     public IRvar getDef() {
         return null;
+    }
+
+    @Override
+    public jumpIns clone() {
+        return new jumpIns(new String(label));
     }
 
 }

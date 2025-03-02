@@ -71,6 +71,25 @@ public class selectIns extends IRIns {
     }
 
     @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        if (result.equals(old)) {
+            result = nw;
+        }
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        if (map.containsKey(result)) {
+            result = (IRvar)map.get(result);
+        }
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        // Select instruction doesn't have labels to replace
+    }
+
+    @Override
     public Set<IRvar> getUses() {
         Set<IRvar> res = new HashSet<>();
         if (cond instanceof IRvar) {
@@ -88,5 +107,10 @@ public class selectIns extends IRIns {
     @Override
     public IRvar getDef() {
         return result;
+    }
+
+    @Override
+    public selectIns clone() {
+        return new selectIns((IRvar) result.clone(), cond.clone(), value1.clone(), value2.clone());
     }
 }

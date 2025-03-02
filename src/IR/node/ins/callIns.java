@@ -85,6 +85,25 @@ public class callIns extends IRIns {
     }
 
     @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        if (result != null && result.equals(old)) {
+            result = nw;
+        }
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        if (result != null && map.containsKey(result)) {
+            result = (IRvar)map.get(result);
+        }
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        // callIns doesn't contain labels, so nothing to replace
+    }
+
+    @Override
     public Set<IRvar> getUses() {
         Set<IRvar> res = new HashSet<>();
         for (var arg : args) {
@@ -98,5 +117,14 @@ public class callIns extends IRIns {
     @Override
     public IRvar getDef() {
         return result;
+    }
+
+    @Override
+    public IRIns clone() {
+        if (result != null) {
+            return new callIns((IRvar)result.clone(), new String(func), new ArrayList<>(args));
+        } else {
+            return new callIns(new String(func), new ArrayList<>(args));
+        }
     }
 }

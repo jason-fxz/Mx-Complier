@@ -42,6 +42,25 @@ public class loadIns extends IRIns {
     }
 
     @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        if (result.equals(old)) {
+            result = nw;
+        }
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        if (map.containsKey(result)) {
+            result = (IRvar)map.get(result);
+        }
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        // No labels to replace in loadIns
+    }
+
+    @Override
     public Set<IRvar> getUses() {
         Set<IRvar> res = new HashSet<>();
         if (pointer.isLocal()) res.add(pointer);
@@ -53,4 +72,8 @@ public class loadIns extends IRIns {
         return result;
     }
     
+    @Override
+    public loadIns clone() {
+        return new loadIns((IRvar) result.clone(), (IRvar) pointer.clone());
+    }
 }

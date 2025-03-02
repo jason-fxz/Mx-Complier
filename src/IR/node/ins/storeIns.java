@@ -49,6 +49,21 @@ public class storeIns extends IRIns {
     }
 
     @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        // No definition in store instruction
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        // No definition in store instruction
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        // No labels in store instruction
+    }
+
+    @Override
     public Set<IRvar> getUses() {
         Set<IRvar> res = new HashSet<>();
         if (value instanceof IRvar) {
@@ -63,4 +78,8 @@ public class storeIns extends IRIns {
         return null;
     }
 
+    @Override
+    public storeIns clone() {
+        return new storeIns(value.clone(), (IRvar) pointer.clone());
+    }
 }

@@ -61,7 +61,25 @@ public class getelementptrIns extends IRIns {
                 indices.set(i, map.get(indices.get(i)));
             }
         }
+    }
 
+    @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        if (result.equals(old)) {
+            result = nw;
+        }
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        if (map.containsKey(result)) {
+            result = (IRvar)map.get(result);
+        }
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        // No labels in getelementptrIns
     }
 
     @Override
@@ -81,5 +99,19 @@ public class getelementptrIns extends IRIns {
     @Override
     public IRvar getDef() {
         return result;
+    }
+
+    @Override
+    public IRIns clone() {
+        IRvar newResult = (IRvar) result.clone();
+        IRitem newPointer = pointer.clone();
+        ArrayList<IRitem> newIndices = new ArrayList<>();
+        for (IRitem ind : indices) {
+            newIndices.add(ind.clone());
+        }
+        
+        getelementptrIns clone = new getelementptrIns(newResult, newPointer, type);
+        clone.indices = newIndices;
+        return clone;
     }
 }

@@ -17,5 +17,7 @@ abstract public class IRitem {
     @Override
     public abstract boolean equals(Object obj);
 
+    @Override
+    public abstract IRitem clone();
 
 }

@@ -105,9 +105,13 @@ public class Main {
 
 
             new Optimize.Mem2Reg(irRoot).run();
-
+            
 
             new Optimize.DCE(irRoot).run();     // Dead Code Elimination
+            System.err.println(irRoot.toString());
+            new Optimize.Inline(irRoot).run();  // Inline
+            System.err.println(irRoot.toString());
+
             new Optimize.SCCP(irRoot).run();    // Sparse Conditional Constant Propagation
             new Optimize.DCE(irRoot).run();
             new Optimize.ArithmeticSimplification(irRoot).run();

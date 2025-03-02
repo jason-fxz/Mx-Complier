@@ -104,6 +104,29 @@ public class phiIns extends IRIns {
     }
 
     @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        if (result.equals(old)) {
+            result = nw;
+        }
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        if (map.containsKey(result)) {
+            result = (IRvar)map.get(result);
+        }
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        for (var val : values) {
+            if (map.containsKey(val.label)) {
+                val.label = map.get(val.label);
+            }
+        }
+    }
+
+    @Override
     public Set<IRvar> getUses() {
         Set<IRvar> res = new HashSet<>();
         for (var val : values) {
@@ -117,6 +140,15 @@ public class phiIns extends IRIns {
     @Override
     public IRvar getDef() {
         return result;
+    }
+
+    @Override
+    public IRIns clone() {
+        ArrayList<phiItem> newValues = new ArrayList<>();
+        for (phiItem item : values) {
+            newValues.add(new phiItem(item.value.clone(), new String(item.label)));
+        }
+        return new phiIns((IRvar) result.clone(), newValues);
     }
 }
 

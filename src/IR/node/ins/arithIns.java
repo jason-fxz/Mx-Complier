@@ -64,6 +64,25 @@ public class arithIns extends IRIns {
     }
 
     @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        if (result.equals(old)) {
+            result = nw;
+        }
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        if (map.containsKey(result)) {
+            result = (IRvar)map.get(result);
+        }
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        // No labels in arithIns, so nothing to replace
+    }
+
+    @Override
     public Set<IRvar> getUses() {
         Set<IRvar> res = new HashSet<>();
         if (lhs instanceof IRvar) {
@@ -80,5 +99,8 @@ public class arithIns extends IRIns {
         return result;
     }
 
-    
+    @Override
+    public IRIns clone() {
+        return new arithIns((IRvar)result.clone(), op, lhs.clone(), rhs.clone());
+    }
 }

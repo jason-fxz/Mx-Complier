@@ -61,4 +61,9 @@ public class IRLiteral extends IRitem {
         }
         return false;
     }
+
+    @Override
+    public IRitem clone() {
+        return new IRLiteral(this.type, new String(this.value));
+    }
 }

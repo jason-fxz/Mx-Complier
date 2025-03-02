@@ -68,6 +68,26 @@ public class branchIns extends IRIns {
     }
 
     @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        // No definition in branch instruction
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        // No definition in branch instruction
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        if (map.containsKey(trueLabel)) {
+            trueLabel = map.get(trueLabel);
+        }
+        if (map.containsKey(falseLabel)) {
+            falseLabel = map.get(falseLabel);
+        }
+    }
+
+    @Override
     public Set<IRvar> getUses() {
         Set<IRvar> res = new HashSet<>();
         if (cond instanceof IRvar) {
@@ -79,5 +99,10 @@ public class branchIns extends IRIns {
     @Override
     public IRvar getDef() {
         return null;
+    }
+    
+    @Override
+    public IRIns clone() {
+        return new branchIns(cond.clone(), new String(trueLabel), new String(falseLabel), likely);
     }
 }

@@ -41,6 +41,21 @@ public class returnIns extends IRIns {
     }
 
     @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        // No definition to replace in return instruction
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        // No definition to replace in return instruction
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        // No label to replace in return instruction
+    }
+
+    @Override
     public Set<IRvar> getUses() {
         Set<IRvar> res = new HashSet<>();
         if (value instanceof IRvar && !((IRvar) value).isGlobal()) {
@@ -54,5 +69,9 @@ public class returnIns extends IRIns {
         return null;
     }
     
-    
+    @Override
+    public returnIns clone() {
+        return new returnIns(value.clone());
+    }
+
 }

@@ -65,6 +65,25 @@ public class icmpIns extends IRIns {
     }
 
     @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        if (result.equals(old)) {
+            result = nw;
+        }
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        if (map.containsKey(result)) {
+            result = (IRvar)map.get(result);
+        }
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        // icmpIns doesn't have any label references
+    }
+
+    @Override
     public Set<IRvar> getUses() {
         Set<IRvar> res = new HashSet<>();
         if (lhs instanceof IRvar) {
@@ -79,6 +98,11 @@ public class icmpIns extends IRIns {
     @Override
     public IRvar getDef() {
         return result;
+    }
+
+    @Override
+    public IRIns clone() {
+        return new icmpIns((IRvar) result.clone(), op, lhs.clone(), rhs.clone());
     }
 
 }

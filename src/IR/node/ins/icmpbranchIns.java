@@ -18,7 +18,7 @@ public class icmpbranchIns extends IRIns {
     public String falseLabel;
     public boolean likely = true;
 
-    private IRvar llvmirTmpVar;
+    public IRvar llvmirTmpVar;
 
     public icmpbranchIns(IRitem lhs, IRitem rhs, String op, String trueLabel, String falseLabel) {
         if (!op.equals("eq") && !op.equals("ne") && !op.equals("slt") && !op.equals("sgt") && !op.equals("sle")
@@ -98,6 +98,26 @@ public class icmpbranchIns extends IRIns {
     }
 
     @Override
+    public void replaceDef(IRvar old, IRvar nw) {
+        // There is no definition in icmpbranchIns
+    }
+
+    @Override
+    public void replaceDef(Map<IRitem, IRitem> map) {
+        // There is no definition in icmpbranchIns
+    }
+
+    @Override
+    public void replaceLabel(Map<String, String> map) {
+        if (map.containsKey(trueLabel)) {
+            trueLabel = map.get(trueLabel);
+        }
+        if (map.containsKey(falseLabel)) {
+            falseLabel = map.get(falseLabel);
+        }
+    }
+
+    @Override
     public Set<IRvar> getUses() {
         Set<IRvar> res = new HashSet<>();
         if (lhs instanceof IRvar) {
@@ -112,5 +132,13 @@ public class icmpbranchIns extends IRIns {
     @Override
     public IRvar getDef() {
         return null;
+    }
+
+    @Override
+    public IRIns clone() {
+        icmpbranchIns clone = new icmpbranchIns(lhs.clone(), rhs.clone(), op, new String(trueLabel), new String(falseLabel));
+        clone.likely = this.likely;
+        clone.llvmirTmpVar = this.llvmirTmpVar;
+        return clone;
     }
 }

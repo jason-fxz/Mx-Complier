@@ -8,11 +8,12 @@ import IR.IRvisitor;
 import IR.item.IRitem;
 import IR.item.IRvar;
 import IR.node.ins.*;
+import Util.IRLabeler;
 import Util.Pair;
 
 public class IRblock extends IRNode {
     public String Label;
-    public ArrayList<phiIns> phiList = new ArrayList<>();
+    public ArrayList<phiIns> phiList;
     public ArrayList<IRIns> insList;
     public ArrayList<Pair<IRitem, IRitem>> moveList;
     public IRIns endIns;
@@ -61,7 +62,8 @@ public class IRblock extends IRNode {
     
     public IRblock(String Label) {
         this.Label = Label;
-        insList = new ArrayList<IRIns>();
+        insList = new ArrayList<>();
+        phiList = new ArrayList<>();
         endIns = null;
     }
 
@@ -147,6 +149,31 @@ public class IRblock extends IRNode {
     @Override
     public <T> T accecpt(IRvisitor<T> visitor) {
         return visitor.visit(this);
+    }
+
+    public IRblock splitBlock(int idx) {
+        var newBlock = new IRblock(IRLabeler.getIdLabel(Label + ".split"));
+        for (int i = idx; i < insList.size(); ++i) {
+            newBlock.addIns(insList.get(i));
+        }
+        insList.subList(idx, insList.size()).clear();
+        newBlock.endIns = endIns;
+        endIns = null;
+        return newBlock;
+    }
+
+    @Override
+    public IRblock clone() {
+        IRblock nw = new IRblock(Label);
+        nw.phiList = new ArrayList<>();
+        for (var phi : phiList) nw.phiList.add((phiIns)phi.clone());
+        nw.insList = new ArrayList<>();
+        for (var ins : insList) nw.insList.add(ins.clone());
+        assert moveList == null;
+        nw.endIns = endIns.clone();
+        nw.index = index;
+        nw.loopDepth = loopDepth;
+        return nw;
     }
     
     // public int StackVarCount() {

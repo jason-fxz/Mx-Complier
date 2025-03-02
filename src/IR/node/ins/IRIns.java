@@ -19,6 +19,12 @@ public abstract class IRIns extends IRNode {
 
     public abstract void replaceUse(Map<IRitem, IRitem> map);
 
+    public abstract void replaceDef(IRvar old, IRvar nw);
+
+    public abstract void replaceDef(Map<IRitem, IRitem> map);
+
+    public abstract void replaceLabel(Map<String, String> map);
+
     public abstract Set<IRvar> getUses();
 
     public abstract IRvar getDef();
@@ -28,4 +34,7 @@ public abstract class IRIns extends IRNode {
 
     @Override
     public abstract <T> T accecpt(IRvisitor<T> visitor);
+
+    @Override
+    public abstract IRIns clone();
 }
