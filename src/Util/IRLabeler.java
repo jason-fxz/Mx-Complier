@@ -16,4 +16,12 @@ public class IRLabeler {
             return name + ".0";
         }
     }
+
+    public static String getBase(String name) {
+        return name.replaceAll("\\.\\d+$", "");
+    }
+
+    public static String getNextLabel(String name) {
+        return getIdLabel(getBase(name));
+    }
 }

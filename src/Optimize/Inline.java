@@ -12,6 +12,7 @@ import IR.node.IRRoot;
 import IR.node.IRblock;
 import IR.node.def.IRFuncDef;
 import IR.node.ins.IRIns;
+import IR.node.ins.branchIns;
 import IR.node.ins.callIns;
 import IR.node.ins.icmpbranchIns;
 import IR.node.ins.jumpIns;
@@ -99,8 +100,18 @@ public class Inline {
                             continue;
                         }
                         if (tarjanMap.get(func).belong != tarjanMap.get(cfunc).belong) {
-                            func.inlineDepth = Math.max(func.inlineDepth, cfunc.inlineDepth + 1);
+                            if (func.inlineCount + cfunc.inlineCount > 8) continue;
+                            func.inlineCount = cfunc.inlineCount + 1;
                             var sblock = block.splitBlock(j + 1);
+                            if (sblock.endIns instanceof jumpIns) {
+                                func.blocks.get(((jumpIns)sblock.endIns).label).phiList.forEach(phi -> phi.replaceLabel(block.Label, sblock.Label));
+                            } else if (sblock.endIns instanceof branchIns) {
+                                func.blocks.get(((branchIns)sblock.endIns).trueLabel).phiList.forEach(phi -> phi.replaceLabel(block.Label, sblock.Label));
+                                func.blocks.get(((branchIns)sblock.endIns).falseLabel).phiList.forEach(phi -> phi.replaceLabel(block.Label, sblock.Label));
+                            } else if (sblock.endIns instanceof icmpbranchIns) {
+                                func.blocks.get(((icmpbranchIns)sblock.endIns).trueLabel).phiList.forEach(phi -> phi.replaceLabel(block.Label, sblock.Label));
+                                func.blocks.get(((icmpbranchIns)sblock.endIns).falseLabel).phiList.forEach(phi -> phi.replaceLabel(block.Label, sblock.Label));
+                            }
                             var sblockList = DumpFunc(cfunc, call.args, sblock, call.result);
                             block.insList.removeLast();
                             block.endIns = new jumpIns(sblockList.getFirst().getLabel());
@@ -108,7 +119,7 @@ public class Inline {
                             sblockList.forEach(Block -> {
                                 func.blocks.put(Block.Label, Block);
                             });
-                            i += sblockList.size();
+                            i += sblockList.size() - 1;
                             break;
                         }
                     }
@@ -120,28 +131,28 @@ public class Inline {
     HashMap<IRitem, IRitem> renameItem;
     HashMap<String, String> renameLabel;
 
-    private void SetRename(IRIns ins) {
+    private void SetRename(IRIns ins, String funcName) {
         ins.getUses().forEach(IRvar -> {
             if (!renameItem.containsKey(IRvar)) {
-                IRvar newVar = new IRvar(IRvar.type, IRLabeler.getIdLabel(IRvar.name + ".il"));
+                IRvar newVar = new IRvar(IRvar.type, IRLabeler.getIdLabel(IRvar.name + ".il." + funcName));
                 renameItem.put(IRvar, newVar);
             }
         });
         if (ins.getDef() != null) {
             if (!renameItem.containsKey(ins.getDef())) {
-                IRvar newVar = new IRvar(ins.getDef().type, IRLabeler.getIdLabel(ins.getDef().name + ".il"));
+                IRvar newVar = new IRvar(ins.getDef().type, IRLabeler.getIdLabel(ins.getDef().name + ".il." + funcName));
                 renameItem.put(ins.getDef(), newVar);
             }
         }
     }
 
-    private void GetRename(IRIns ins) {
+    private void GetRename(IRIns ins, String funcName) {
         ins.replaceDef(renameItem);
         ins.replaceUse(renameItem);
         ins.replaceLabel(renameLabel);
         if (ins instanceof icmpbranchIns) {
             var tins = (icmpbranchIns) ins;
-            tins.llvmirTmpVar = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel(tins.llvmirTmpVar.name + ".il"));
+            tins.llvmirTmpVar = new IRvar(IRType.IRBoolType, IRLabeler.getIdLabel(tins.llvmirTmpVar.name + ".il." + funcName));
         }
     }
 
@@ -155,20 +166,21 @@ public class Inline {
         for (int i = 0; i < args.size(); ++i) {
             renameItem.put(func.params.get(i), args.get(i));
         }
+        String funcName = func.name.substring(1);
         for (var block : blockList) {
-            renameLabel.put(block.Label, IRLabeler.getIdLabel(block.Label + ".il"));
+            renameLabel.put(block.Label, IRLabeler.getIdLabel(block.Label + ".il." + funcName));
             block.Label = renameLabel.get(block.Label);
-            for (var phi : block.phiList) SetRename(phi);
-            for (var ins : block.insList) SetRename(ins);
-            SetRename(block.endIns);
+            for (var phi : block.phiList) SetRename(phi, funcName);
+            for (var ins : block.insList) SetRename(ins, funcName);
+            SetRename(block.endIns, funcName);
             if (block.endIns instanceof returnIns && retVar != null) {
                 renameItem.put(((returnIns) block.endIns).value, retVar);
             }
         }
         for (var block : blockList) {
-            for (var phi : block.phiList) GetRename(phi);
-            for (var ins : block.insList) GetRename(ins);
-            GetRename(block.endIns);
+            for (var phi : block.phiList) GetRename(phi, funcName);
+            for (var ins : block.insList) GetRename(ins, funcName);
+            GetRename(block.endIns, funcName);
             if (block.endIns instanceof returnIns) {
                 block.endIns = new jumpIns(retBlock.getLabel());
             }
