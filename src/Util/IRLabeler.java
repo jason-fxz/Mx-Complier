@@ -17,11 +17,12 @@ public class IRLabeler {
         }
     }
 
-    public static String getBase(String name) {
-        return name.replaceAll("\\.\\d+$", "");
+    public static String getBase(String name, String suffix) {
+        // x.suffix.123 -> x
+        return name.replaceAll("\\." + suffix + "\\.\\d+$", "");
     }
 
-    public static String getNextLabel(String name) {
-        return getIdLabel(getBase(name));
+    public static String getNextLabel(String name, String suffix) {
+        return getIdLabel(getBase(name, suffix) + "." + suffix);
     }
 }

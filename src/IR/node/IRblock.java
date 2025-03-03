@@ -152,7 +152,7 @@ public class IRblock extends IRNode {
     }
 
     public IRblock splitBlock(int idx) {
-        var newBlock = new IRblock(IRLabeler.getNextLabel(Label));
+        var newBlock = new IRblock(IRLabeler.getNextLabel(Label, "split"));
         for (int i = idx; i < insList.size(); ++i) {
             newBlock.addIns(insList.get(i));
         }
